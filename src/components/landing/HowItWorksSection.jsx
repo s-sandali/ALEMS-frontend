@@ -60,14 +60,14 @@ export default function HowItWorksSection() {
             id="how-it-works"
             ref={sectionRef}
             className="py-24"
-            style={{ background: "#0d1b2a" }}
+            style={{ background: "#0C0C0C" }}
         >
-            <div className="max-w-7xl mx-auto px-6">
+            <div className="max-w-[1200px] mx-auto px-6">
                 <div ref={titleRef} className="text-center mb-16">
-                    <p className="text-cyan-400 text-sm font-semibold uppercase tracking-widest mb-3">
+                    <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "#D5FF40" }}>
                         How It Works
                     </p>
-                    <h2 className="text-4xl lg:text-5xl font-black text-white">
+                    <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
                         From confused to{" "}
                         <span className="gradient-text">confident in 3 steps</span>
                     </h2>
@@ -80,7 +80,7 @@ export default function HowItWorksSection() {
                             ref={lineRef}
                             style={{
                                 height: "2px",
-                                background: "linear-gradient(90deg, #3b82f6, #7c3aed, #06b6d4)",
+                                background: "linear-gradient(90deg, #D5FF40, #a8e600, #D5FF40)",
                                 transformOrigin: "left",
                                 scaleX: 0,
                             }}
@@ -95,19 +95,20 @@ export default function HowItWorksSection() {
                         >
                             {/* Number circle */}
                             <div
-                                className="w-20 h-20 rounded-full flex items-center justify-center mb-6 font-black text-2xl text-white relative"
+                                className="w-20 h-20 rounded-full flex items-center justify-center mb-6 font-bold text-2xl text-black relative"
                                 style={{
-                                    background: `radial-gradient(circle, ${step.color}40, ${step.color}10)`,
-                                    border: `2px solid ${step.color}60`,
-                                    boxShadow: `0 0 20px ${step.color}40`,
+                                    background: "rgba(213,255,64,0.15)",
+                                    border: "2px solid rgba(213,255,64,0.4)",
+                                    boxShadow: "0 0 24px rgba(213,255,64,0.2)",
+                                    color: "#D5FF40",
                                 }}
                             >
                                 {step.num}
                             </div>
 
                             <div className="glass rounded-2xl p-6 w-full">
-                                <h3 className="text-xl font-bold text-white mb-3">{step.title}</h3>
-                                <p className="text-slate-400 text-sm leading-relaxed">{step.desc}</p>
+                                <h3 className="text-xl font-semibold text-white mb-3">{step.title}</h3>
+                                <p className="text-sm leading-relaxed" style={{ color: "#A1A1A1" }}>{step.desc}</p>
                             </div>
                         </div>
                     ))}
