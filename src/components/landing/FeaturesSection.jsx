@@ -46,14 +46,14 @@ export default function FeaturesSection() {
             id="features"
             ref={sectionRef}
             className="py-24"
-            style={{ background: "#0a0f1e" }}
+            style={{ background: "#0C0C0C" }}
         >
-            <div className="max-w-7xl mx-auto px-6">
+            <div className="max-w-[1200px] mx-auto px-6">
                 <div ref={titleRef} className="text-center mb-16">
-                    <p className="text-violet-400 text-sm font-semibold uppercase tracking-widest mb-3">
+                    <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "#D5FF40" }}>
                         Platform Features
                     </p>
-                    <h2 className="text-4xl lg:text-5xl font-black text-white">
+                    <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
                         Everything you need to{" "}
                         <span className="gradient-text">master algorithms</span>
                     </h2>
@@ -70,15 +70,15 @@ export default function FeaturesSection() {
                             >
                                 <div
                                     className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                                    style={{ background: `${feat.color}18`, border: `1px solid ${feat.color}33` }}
+                                    style={{ background: "rgba(213,255,64,0.08)", border: "1px solid rgba(213,255,64,0.15)" }}
                                 >
-                                    <IconComp className="w-6 h-6" style={{ color: feat.color }} />
+                                    <IconComp className="w-6 h-6" style={{ color: "#D5FF40" }} />
                                 </div>
-                                <h3 className="text-lg font-bold text-white mb-2">{feat.title}</h3>
-                                <p className="text-slate-400 text-sm leading-relaxed">{feat.desc}</p>
+                                <h3 className="text-lg font-semibold text-white mb-2">{feat.title}</h3>
+                                <p className="text-sm leading-relaxed" style={{ color: "#A1A1A1" }}>{feat.desc}</p>
                                 <div
                                     className="mt-4 h-0.5 w-0 rounded-full transition-all duration-500"
-                                    style={{ background: `linear-gradient(90deg, ${feat.color}, transparent)` }}
+                                    style={{ background: "linear-gradient(90deg, #D5FF40, transparent)" }}
                                     onMouseEnter={(e) => (e.currentTarget.style.width = "100%")}
                                     onMouseLeave={(e) => (e.currentTarget.style.width = "0")}
                                 />
