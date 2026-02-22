@@ -3,6 +3,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronRight } from "lucide-react";
 import { ALGORITHMS } from "../../data/landingData";
+import ElectricBorder from "../ui/ElectricBorder";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -68,43 +69,55 @@ export default function AlgorithmsSection() {
                         <div
                             key={algo.name}
                             ref={(el) => (cardsRef.current[i] = el)}
-                            className="algo-card glass rounded-2xl p-6 cursor-pointer"
                         >
-                            <div
-                                className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
-                                style={{ background: "rgba(213,255,64,0.08)", border: "1px solid rgba(213,255,64,0.15)" }}
+                            <ElectricBorder
+                                color="#D5FF40"
+                                speed={1}
+                                chaos={0.12}
+                                borderRadius={16}
+                                className="cursor-pointer h-full"
                             >
-                                {algo.icon}
-                            </div>
-
-                            <h3 className="text-xl font-bold text-white mb-2">{algo.name}</h3>
-                            <p className="text-sm mb-4 leading-relaxed" style={{ color: "#A1A1A1" }}>{algo.desc}</p>
-
-                            <div className="flex items-center justify-between">
-                                <span
-                                    className="font-mono text-sm font-bold"
-                                    style={{ color: "#D5FF40" }}
+                                <div
+                                    className="p-6 h-full"
+                                    style={{ background: "#151515", borderRadius: "inherit" }}
                                 >
-                                    {algo.complexity}
-                                </span>
-                                <span
-                                    className="text-xs font-semibold px-3 py-1 rounded-full text-black"
-                                    style={{ background: "#D5FF40" }}
-                                >
-                                    {algo.tag}
-                                </span>
-                            </div>
+                                    <div
+                                        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
+                                        style={{ background: "rgba(213,255,64,0.08)", border: "1px solid rgba(213,255,64,0.15)" }}
+                                    >
+                                        {algo.icon}
+                                    </div>
 
-                            <button
-                                className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
-                                style={{
-                                    background: "rgba(213,255,64,0.08)",
-                                    color: "#D5FF40",
-                                    border: "1px solid rgba(213,255,64,0.2)",
-                                }}
-                            >
-                                Explore <ChevronRight className="w-4 h-4" />
-                            </button>
+                                    <h3 className="text-xl font-bold text-white mb-2">{algo.name}</h3>
+                                    <p className="text-sm mb-4 leading-relaxed" style={{ color: "#A1A1A1" }}>{algo.desc}</p>
+
+                                    <div className="flex items-center justify-between">
+                                        <span
+                                            className="font-mono text-sm font-bold"
+                                            style={{ color: "#D5FF40" }}
+                                        >
+                                            {algo.complexity}
+                                        </span>
+                                        <span
+                                            className="text-xs font-semibold px-3 py-1 rounded-full text-black"
+                                            style={{ background: "#D5FF40" }}
+                                        >
+                                            {algo.tag}
+                                        </span>
+                                    </div>
+
+                                    <button
+                                        className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
+                                        style={{
+                                            background: "rgba(213,255,64,0.08)",
+                                            color: "#D5FF40",
+                                            border: "1px solid rgba(213,255,64,0.2)",
+                                        }}
+                                    >
+                                        Explore <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </ElectricBorder>
                         </div>
                     ))}
                 </div>
