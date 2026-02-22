@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ChevronRight, Play } from "lucide-react";
 import SortingBars from "./SortingBars";
+import { HoleBackground } from "@/components/animate-ui/components/backgrounds/hole";
 
 export default function HeroSection() {
     const sectionRef = useRef(null);
@@ -64,19 +65,12 @@ export default function HeroSection() {
             className="relative min-h-screen flex items-center pt-24 pb-16 overflow-hidden"
             style={{ background: "#0C0C0C" }}
         >
-            {/* Subtle grid */}
-            <div
-                className="absolute inset-0 opacity-[0.04]"
-                style={{
-                    backgroundImage:
-                        "linear-gradient(rgba(213,255,64,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(213,255,64,0.3) 1px, transparent 1px)",
-                    backgroundSize: "60px 60px",
-                }}
+            {/* Animated hole background */}
+            <HoleBackground
+                className="absolute inset-0"
+                strokeColor="#3a4a10"
+                particleRGBColor={[213, 255, 64]}
             />
-
-            {/* Neon glow blobs */}
-            <div className="neon-glow-bg absolute top-20 left-1/4" />
-            <div className="neon-glow-bg absolute bottom-20 right-1/4" style={{ animationDelay: "3s", opacity: 0.07 }} />
 
             <div className="max-w-[1200px] mx-auto px-6 w-full">
                 <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -106,22 +100,10 @@ export default function HeroSection() {
                                 Start Learning Free
                                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </button>
-                            <button className="btn-secondary flex items-center gap-2 px-6 py-3.5 text-sm font-semibold">
-                                <Play className="w-4 h-4" style={{ color: "#D5FF40" }} />
-                                Watch Demo
-                            </button>
+
                         </div>
 
-                        {/* Badge chips */}
-                        <div ref={badgesRef} className="flex flex-wrap gap-2 mt-8">
-                            {["XP System", "Step Animations", "Auto-Graded Quizzes", "CI/CD Deployed"].map(
-                                (chip) => (
-                                    <span key={chip} className="badge-chip">
-                                        {chip}
-                                    </span>
-                                )
-                            )}
-                        </div>
+
                     </div>
 
                     {/* Right visual */}
