@@ -13,7 +13,13 @@ import {
     Activity,
     BookOpen,
     Cpu,
+    Circle,
+    Search,
+    GitMerge,
 } from "lucide-react";
+
+// ─── Color tokens ─────────────────────────────────────────────────────────────
+const ACCENT = "#D5FF40";
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 export const NAV_LINKS = ["Features", "Algorithms", "How It Works", "Leaderboard"];
@@ -25,36 +31,32 @@ export const ALGORITHMS = [
         desc: "Repeatedly swaps adjacent elements until sorted",
         complexity: "O(n²)",
         tag: "Beginner",
-        tagColor: "from-green-500 to-emerald-400",
-        accentColor: "#10b981",
-        icon: "🔵",
+        accentColor: ACCENT,
+        icon: Circle,
     },
     {
         name: "Binary Search",
         desc: "Halves the search space with each comparison",
         complexity: "O(log n)",
         tag: "Intermediate",
-        tagColor: "from-blue-500 to-cyan-400",
-        accentColor: "#3b82f6",
-        icon: "🔍",
+        accentColor: ACCENT,
+        icon: Search,
     },
     {
         name: "Quick Sort",
         desc: "Partition-based divide-and-conquer sorting",
         complexity: "O(n log n)",
         tag: "Intermediate",
-        tagColor: "from-violet-500 to-purple-400",
-        accentColor: "#7c3aed",
-        icon: "⚡",
+        accentColor: ACCENT,
+        icon: Zap,
     },
     {
         name: "Merge Sort",
         desc: "Stable sort by recursive merging of halves",
         complexity: "O(n log n)",
         tag: "Advanced",
-        tagColor: "from-orange-500 to-red-400",
-        accentColor: "#f97316",
-        icon: "🔀",
+        accentColor: ACCENT,
+        icon: GitMerge,
     },
 ];
 
@@ -64,37 +66,37 @@ export const FEATURES = [
         Icon: Play,
         title: "Step-by-Step Visualisation",
         desc: "Watch each algorithm execute, one step at a time",
-        color: "#3b82f6",
+        color: ACCENT,
     },
     {
         Icon: Code2,
         title: "Code Sync Panel",
         desc: "Pseudocode highlights in sync with every animation frame",
-        color: "#7c3aed",
+        color: ACCENT,
     },
     {
         Icon: Zap,
         title: "Gamified Quizzes",
         desc: "Predict the next step. Earn XP. Unlock badges.",
-        color: "#06b6d4",
+        color: ACCENT,
     },
     {
         Icon: Trophy,
         title: "XP & Badge System",
         desc: "Progress milestones keep students motivated",
-        color: "#f59e0b",
+        color: ACCENT,
     },
     {
         Icon: BarChart3,
         title: "Performance Analytics",
         desc: "Instructors get full dashboards and exportable reports",
-        color: "#10b981",
+        color: ACCENT,
     },
     {
         Icon: Rewind,
         title: "Playback Controls",
         desc: "Speed slider, step-forward, step-backward, and replay",
-        color: "#f97316",
+        color: ACCENT,
     },
 ];
 
@@ -104,19 +106,19 @@ export const STEPS = [
         num: "01",
         title: "Register & Choose",
         desc: "Pick an algorithm to explore from our curated library of 4 core algorithms",
-        color: "#3b82f6",
+        color: ACCENT,
     },
     {
         num: "02",
         title: "Visualise & Sync",
         desc: "Watch it execute step-by-step with live pseudocode highlighting",
-        color: "#7c3aed",
+        color: ACCENT,
     },
     {
         num: "03",
         title: "Quiz & Earn XP",
         desc: "Test yourself, earn experience points, and track your leaderboard rank",
-        color: "#06b6d4",
+        color: ACCENT,
     },
 ];
 
@@ -130,28 +132,28 @@ export const STATS = [
 
 // ─── Dashboard Preview ───────────────────────────────────────────────────────
 export const BADGES = [
-    { icon: Star, label: "First Sort", awarded: true, color: "#f59e0b" },
-    { icon: Zap, label: "Speed Run", awarded: true, color: "#3b82f6" },
-    { icon: Trophy, label: "Quiz Master", awarded: true, color: "#7c3aed" },
-    { icon: BookOpen, label: "Bookworm", awarded: false, color: "#6b7280" },
-    { icon: TrendingUp, label: "Top 10%", awarded: false, color: "#6b7280" },
-    { icon: Award, label: "Perfectionist", awarded: false, color: "#6b7280" },
+    { icon: Star, label: "First Sort", awarded: true, color: ACCENT },
+    { icon: Zap, label: "Speed Run", awarded: true, color: ACCENT },
+    { icon: Trophy, label: "Quiz Master", awarded: true, color: ACCENT },
+    { icon: BookOpen, label: "Bookworm", awarded: false, color: "#3a3a3a" },
+    { icon: TrendingUp, label: "Top 10%", awarded: false, color: "#3a3a3a" },
+    { icon: Award, label: "Perfectionist", awarded: false, color: "#3a3a3a" },
 ];
 
 export const QUIZ_SCORES = [
-    { algo: "Bubble Sort", score: 95, color: "#10b981" },
-    { algo: "Binary Search", score: 80, color: "#3b82f6" },
-    { algo: "Quick Sort", score: 65, color: "#7c3aed" },
-    { algo: "Merge Sort", score: 40, color: "#f97316" },
+    { algo: "Bubble Sort", score: 95, color: ACCENT },
+    { algo: "Binary Search", score: 80, color: "#a8e600" },
+    { algo: "Quick Sort", score: 65, color: ACCENT },
+    { algo: "Merge Sort", score: 40, color: "#a8e600" },
 ];
 
 // ─── Sort Bar Colors for Hero Animation ───────────────────────────────────────
 export const BAR_COLORS = [
-    "#3b82f6", // blue
-    "#7c3aed", // violet
-    "#06b6d4", // cyan
-    "#10b981", // green
-    "#f59e0b", // amber
-    "#f97316", // orange
-    "#ec4899", // pink
+    "#D5FF40",
+    "#b8e030",
+    "#a8e600",
+    "#c4f020",
+    "#D5FF40",
+    "#deff66",
+    "#e8ff80",
 ];
