@@ -11,14 +11,11 @@ export default function Footer() {
                     {/* Logo + tagline */}
                     <div className="flex flex-col items-center md:items-start gap-1">
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-black text-xs shadow"
-                                style={{ background: "#D5FF40" }}
-                            >
-                                A
-                            </div>
-                            <span className="font-bold text-lg text-white">
-                                AL<span className="gradient-text">EMS</span>
-                            </span>
+                            <img
+                                src="/BIGO.png"
+                                alt="BIGO Logo"
+                                className="h-12 w-auto"
+                            />
                         </div>
                         <p className="text-xs mt-1" style={{ color: "#A1A1A1" }}>
                             Algorithm Learning & Evaluation Management System
@@ -48,10 +45,7 @@ export default function Footer() {
                     </div>
                 </div>
 
-                <div className="border-t pt-6 text-center text-sm"
-                    style={{ borderColor: "rgba(213,255,64,0.06)", color: "#A1A1A1" }}>
-                    © 2026 ALEMS – Group 5, SE3022 · Built with React + Vite + GSAP
-                </div>
+
             </div>
         </footer>
     );
