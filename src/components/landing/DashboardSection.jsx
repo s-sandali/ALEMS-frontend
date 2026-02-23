@@ -68,11 +68,11 @@ export default function DashboardSection() {
                             <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-black font-bold text-xl shadow-lg"
                                 style={{ background: "#D5FF40" }}
                             >
-                                JD
+                                HD
                             </div>
                             <div>
-                                <h3 className="text-xl font-semibold text-white">Jane Developer</h3>
-                                <p className="text-sm" style={{ color: "#A1A1A1" }}>CS Year 3 · Rank #12 on Leaderboard</p>
+                                <h3 className="text-xl font-semibold text-white">Himasha Devindi</h3>
+                                <p className="text-sm" style={{ color: "#A1A1A1" }}>Rank #9 on Leaderboard</p>
                             </div>
                             <div className="ml-auto text-right">
                                 <div className="font-bold text-lg" style={{ color: "#D5FF40" }}>2,840 XP</div>

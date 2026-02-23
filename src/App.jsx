@@ -17,12 +17,20 @@ export default function App() {
 
                 <Route
                     path="/login/*"
-                    element={<SignIn routing="path" path="/login" />}
+                    element={
+                        <div className="min-h-screen flex items-center justify-center" style={{ background: "#0C0C0C" }}>
+                            <SignIn routing="path" path="/login" />
+                        </div>
+                    }
                 />
 
                 <Route
                     path="/register/*"
-                    element={<SignUp routing="path" path="/register" />}
+                    element={
+                        <div className="min-h-screen flex items-center justify-center" style={{ background: "#0C0C0C" }}>
+                            <SignUp routing="path" path="/register" />
+                        </div>
+                    }
                 />
 
                 <Route
