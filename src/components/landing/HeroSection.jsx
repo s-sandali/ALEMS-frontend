@@ -67,7 +67,7 @@ export default function HeroSection() {
         >
             {/* Animated hole background */}
             <HoleBackground
-                className="absolute inset-0"
+                className="absolute inset-0 opacity-[0.95]"
                 strokeColor="#3a4a10"
                 particleRGBColor={[213, 255, 64]}
             />
@@ -87,14 +87,12 @@ export default function HeroSection() {
 
                         <p
                             ref={subRef}
-                            className="text-lg leading-relaxed mb-8 max-w-xl"
-                            style={{ color: "#A1A1A1" }}
+                            className="text-lg leading-relaxed mb-10 max-w-xl"
+                            style={{ color: "#f8f5f5ff" }}
                         >
                             Step-by-step visualisations, gamified quizzes, and real-time
-                            feedback — built for CS students who want to{" "}
-                            <span className="text-white font-medium">truly understand algorithms.</span>
+                            feedback built for CS students who want to truly understand algorithms.
                         </p>
-
                         <div ref={ctaRef} className="flex flex-wrap gap-4">
                             <button className="btn-primary group flex items-center gap-2 px-6 py-3.5 text-sm font-semibold">
                                 Start Learning Free
