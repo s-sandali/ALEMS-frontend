@@ -13,6 +13,9 @@ import {
     Activity,
     BookOpen,
     Cpu,
+    Circle,
+    Search,
+    GitMerge,
 } from "lucide-react";
 
 // ─── Color tokens ─────────────────────────────────────────────────────────────
@@ -29,7 +32,7 @@ export const ALGORITHMS = [
         complexity: "O(n²)",
         tag: "Beginner",
         accentColor: ACCENT,
-        icon: "🔵",
+        icon: Circle,
     },
     {
         name: "Binary Search",
@@ -37,7 +40,7 @@ export const ALGORITHMS = [
         complexity: "O(log n)",
         tag: "Intermediate",
         accentColor: ACCENT,
-        icon: "🔍",
+        icon: Search,
     },
     {
         name: "Quick Sort",
@@ -45,7 +48,7 @@ export const ALGORITHMS = [
         complexity: "O(n log n)",
         tag: "Intermediate",
         accentColor: ACCENT,
-        icon: "⚡",
+        icon: Zap,
     },
     {
         name: "Merge Sort",
@@ -53,7 +56,7 @@ export const ALGORITHMS = [
         complexity: "O(n log n)",
         tag: "Advanced",
         accentColor: ACCENT,
-        icon: "🔀",
+        icon: GitMerge,
     },
 ];
 
