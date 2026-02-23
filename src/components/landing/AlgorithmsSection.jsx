@@ -82,10 +82,10 @@ export default function AlgorithmsSection() {
                                     style={{ background: "#151515", borderRadius: "inherit" }}
                                 >
                                     <div
-                                        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
+                                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
                                         style={{ background: "rgba(213,255,64,0.08)", border: "1px solid rgba(213,255,64,0.15)" }}
                                     >
-                                        {algo.icon}
+                                        <algo.icon className="w-6 h-6" style={{ color: "#D5FF40" }} />
                                     </div>
 
                                     <h3 className="text-xl font-bold text-white mb-2">{algo.name}</h3>
