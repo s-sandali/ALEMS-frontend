@@ -53,9 +53,9 @@ export default function StatsSection() {
         <section
             ref={sectionRef}
             className="py-20"
-            style={{ background: "linear-gradient(135deg, #0a0f1e, #1e1b4b, #0a0f1e)" }}
+            style={{ background: "#151515" }}
         >
-            <div className="max-w-7xl mx-auto px-6">
+            <div className="max-w-[1200px] mx-auto px-6">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     {STATS.map((stat, i) => {
                         const IconComp = stat.icon;
@@ -64,14 +64,14 @@ export default function StatsSection() {
                                 key={stat.label}
                                 className="stat-card glass rounded-2xl p-6 flex flex-col items-center text-center"
                             >
-                                <IconComp className="w-8 h-8 text-blue-400 mb-3 opacity-80" />
+                                <IconComp className="w-8 h-8 mb-3 opacity-80" style={{ color: "#D5FF40" }} />
                                 <div
                                     ref={(el) => (counterRefs.current[i] = el)}
                                     className="counter-num gradient-text"
                                 >
                                     0{stat.suffix}
                                 </div>
-                                <p className="text-slate-400 text-sm mt-2">{stat.label}</p>
+                                <p className="text-sm mt-2" style={{ color: "#A1A1A1" }}>{stat.label}</p>
                             </div>
                         );
                     })}
