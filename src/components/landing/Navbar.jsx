@@ -42,18 +42,31 @@ export default function Navbar() {
 
                 {/* Desktop nav */}
                 <div className="hidden md:flex items-center gap-8">
-                    {NAV_LINKS.map((link) => (
-                        <a
-                            key={link}
-                            href={`#${link.toLowerCase().replace(/\s/g, "-")}`}
-                            className="text-text-secondary text-sm font-medium transition-colors duration-200"
-                            style={{ color: "#A1A1A1" }}
-                            onMouseEnter={(e) => (e.target.style.color = "#D5FF40")}
-                            onMouseLeave={(e) => (e.target.style.color = "#A1A1A1")}
-                        >
-                            {link}
-                        </a>
-                    ))}
+                    {NAV_LINKS.map((link) =>
+                        link === "Dashboard" ? (
+                            <Link
+                                key={link}
+                                to="/dashboard"
+                                className="text-text-secondary text-sm font-medium transition-colors duration-200"
+                                style={{ color: "#A1A1A1" }}
+                                onMouseEnter={(e) => (e.target.style.color = "#D5FF40")}
+                                onMouseLeave={(e) => (e.target.style.color = "#A1A1A1")}
+                            >
+                                {link}
+                            </Link>
+                        ) : (
+                            <a
+                                key={link}
+                                href={`#${link.toLowerCase().replace(/\s/g, "-")}`}
+                                className="text-text-secondary text-sm font-medium transition-colors duration-200"
+                                style={{ color: "#A1A1A1" }}
+                                onMouseEnter={(e) => (e.target.style.color = "#D5FF40")}
+                                onMouseLeave={(e) => (e.target.style.color = "#A1A1A1")}
+                            >
+                                {link}
+                            </a>
+                        )
+                    )}
                 </div>
 
                 {/* Auth Buttons */}
@@ -94,17 +107,29 @@ export default function Navbar() {
             {/* Mobile menu */}
             {menuOpen && (
                 <div className="md:hidden glass mx-4 mb-4 rounded-xl p-4 space-y-3">
-                    {NAV_LINKS.map((link) => (
-                        <a
-                            key={link}
-                            href={`#${link.toLowerCase().replace(/\s/g, "-")}`}
-                            className="block py-1 text-sm"
-                            style={{ color: "#A1A1A1" }}
-                            onClick={() => setMenuOpen(false)}
-                        >
-                            {link}
-                        </a>
-                    ))}
+                    {NAV_LINKS.map((link) =>
+                        link === "Dashboard" ? (
+                            <Link
+                                key={link}
+                                to="/dashboard"
+                                className="block py-1 text-sm"
+                                style={{ color: "#A1A1A1" }}
+                                onClick={() => setMenuOpen(false)}
+                            >
+                                {link}
+                            </Link>
+                        ) : (
+                            <a
+                                key={link}
+                                href={`#${link.toLowerCase().replace(/\s/g, "-")}`}
+                                className="block py-1 text-sm"
+                                style={{ color: "#A1A1A1" }}
+                                onClick={() => setMenuOpen(false)}
+                            >
+                                {link}
+                            </a>
+                        )
+                    )}
                     <div className="flex gap-2 pt-2">
                         <SignedOut>
                             <Link to="/login" className="btn-secondary flex-1 py-2 text-sm text-center" onClick={() => setMenuOpen(false)}>
