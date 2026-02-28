@@ -27,8 +27,7 @@ export default function Footer() {
                         {[
                             { label: "Privacy", href: "#" },
                             { label: "Terms", href: "#" },
-                            { label: "GitHub", href: "#", icon: <Github className="w-3.5 h-3.5" /> },
-                            { label: "Swagger API Docs", href: "#", icon: <ExternalLink className="w-3.5 h-3.5" /> },
+
                         ].map((link) => (
                             <a
                                 key={link.label}

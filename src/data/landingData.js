@@ -4,6 +4,7 @@ import {
     Zap,
     Trophy,
     BarChart3,
+    Bubbles,
     Rewind,
     Star,
     Award,
@@ -16,13 +17,15 @@ import {
     Circle,
     Search,
     GitMerge,
+    FileQuestionMark,
+    Code,
 } from "lucide-react";
 
 // ─── Color tokens ─────────────────────────────────────────────────────────────
 const ACCENT = "#D5FF40";
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
-export const NAV_LINKS = ["Features", "Algorithms", "How It Works", "Leaderboard"];
+export const NAV_LINKS = ["Features", "Algorithms", "How It Works", "Dashboard"];
 
 // ─── Algorithms ───────────────────────────────────────────────────────────────
 export const ALGORITHMS = [
@@ -32,7 +35,7 @@ export const ALGORITHMS = [
         complexity: "O(n²)",
         tag: "Beginner",
         accentColor: ACCENT,
-        icon: Circle,
+        icon: Bubbles,
     },
     {
         name: "Binary Search",
@@ -83,13 +86,13 @@ export const FEATURES = [
     {
         Icon: Trophy,
         title: "XP & Badge System",
-        desc: "Progress milestones keep students motivated",
+        desc: "Earn XP for Every Correct Answer",
         color: ACCENT,
     },
     {
         Icon: BarChart3,
         title: "Performance Analytics",
-        desc: "Instructors get full dashboards and exportable reports",
+        desc: "Track Your Algorithm Mastery",
         color: ACCENT,
     },
     {
@@ -105,7 +108,7 @@ export const STEPS = [
     {
         num: "01",
         title: "Register & Choose",
-        desc: "Pick an algorithm to explore from our curated library of 4 core algorithms",
+        desc: "Pick an algorithm to explore from our curated library of core algorithms",
         color: ACCENT,
     },
     {
@@ -124,10 +127,10 @@ export const STEPS = [
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 export const STATS = [
-    { label: "Algorithms", value: 4, suffix: "", icon: Cpu },
+    { label: "Algorithms. More to come!", value: 5, suffix: "+", icon: Code },
+    { label: "Autograded quizzes", value: 10, suffix: "+", icon: FileQuestionMark },
+    { label: "XP badge system", value: 12, suffix: " level", icon: Shield },
     { label: "Concurrent Users Supported", value: 100, suffix: "+", icon: Users },
-    { label: "Test Coverage", value: 70, suffix: "%", icon: Shield },
-    { label: "Uptime SLA", value: 99, suffix: "%", icon: Activity },
 ];
 
 // ─── Dashboard Preview ───────────────────────────────────────────────────────

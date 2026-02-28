@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ChevronRight, Play } from "lucide-react";
+import { Link } from "react-router-dom";
 import SortingBars from "./SortingBars";
 import { HoleBackground } from "@/components/animate-ui/components/backgrounds/hole";
 
@@ -67,7 +68,7 @@ export default function HeroSection() {
         >
             {/* Animated hole background */}
             <HoleBackground
-                className="absolute inset-0 opacity-[0.95]"
+                className="absolute inset-0 opacity-[0.65]"
                 strokeColor="#3a4a10"
                 particleRGBColor={[213, 255, 64]}
             />
@@ -94,11 +95,10 @@ export default function HeroSection() {
                             feedback built for CS students who want to truly understand algorithms.
                         </p>
                         <div ref={ctaRef} className="flex flex-wrap gap-4">
-                            <button className="btn-primary group flex items-center gap-2 px-6 py-3.5 text-sm font-semibold">
-                                Start Learning Free
+                            <Link to="/register" className="btn-primary group flex items-center gap-2 px-6 py-3.5 text-sm font-semibold">
+                                Get started right now!
                                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </button>
-
+                            </Link>
                         </div>
 
 
@@ -108,6 +108,7 @@ export default function HeroSection() {
                     <div ref={visualRef} className="flex justify-center lg:justify-end">
                         <SortingBars />
                     </div>
+
                 </div>
             </div>
         </section>

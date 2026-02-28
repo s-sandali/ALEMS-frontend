@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronRight, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -55,10 +56,7 @@ export default function CTASection() {
             />
 
             <div ref={contentRef} className="max-w-[1200px] mx-auto px-6 text-center relative z-10">
-                <div className="inline-flex items-center gap-2 badge-chip mb-6">
-                    <Star className="w-3 h-3" style={{ color: "#D5FF40", fill: "#D5FF40" }} />
-                    Free for all university students
-                </div>
+
 
                 <h2 className="text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight">
                     Ready to visualise algorithms{" "}
@@ -66,28 +64,15 @@ export default function CTASection() {
                 </h2>
 
                 <p className="text-xl mb-10 max-w-xl mx-auto" style={{ color: "#A1A1A1" }}>
-                    Join students already learning smarter with ALEMS.
+                    Join students already learning smarter with BigO
                 </p>
 
-                <button className="btn-primary group inline-flex items-center gap-3 px-8 py-4 text-lg font-bold rounded-2xl shadow-2xl">
-                    Get Started — It's Free
+                <Link to="/register" className="btn-primary group inline-flex items-center gap-3 px-8 py-4 text-lg font-bold rounded-2xl shadow-2xl">
+                    Get Started right now
                     <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
+                </Link>
 
-                <div className="mt-8 flex justify-center gap-8 text-sm" style={{ color: "#A1A1A1" }}>
-                    <span className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#D5FF40" }} />
-                        No credit card required
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#D5FF40" }} />
-                        Instant access
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#D5FF40" }} />
-                        4 algorithms free
-                    </span>
-                </div>
+
             </div>
         </section>
     );
