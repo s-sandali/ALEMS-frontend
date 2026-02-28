@@ -25,7 +25,7 @@ import {
 const ACCENT = "#D5FF40";
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
-export const NAV_LINKS = ["Features", "Algorithms", "How It Works", "Leaderboard"];
+export const NAV_LINKS = ["Features", "Algorithms", "How It Works", "Dashboard"];
 
 // ─── Algorithms ───────────────────────────────────────────────────────────────
 export const ALGORITHMS = [
