@@ -38,12 +38,23 @@ async function apiFetch(endpoint: string, { method = "GET", headers, body, getTo
         throw new Error("UNAUTHORIZED");
     }
 
+    if (response.status === 403) {
+        console.error("403 Forbidden - User lacks required roles.");
+        throw new Error("You do not have permission to access Admin resources (403 Forbidden).");
+    }
+
     // Handle 204 No Content
     if (response.status === 204) {
         return null;
     }
 
-    const data = await response.json();
+    // Safely parse JSON in case the server returned a plain string or empty body for an error
+    let data;
+    try {
+        data = await response.json();
+    } catch {
+        data = { message: `API error: ${response.status} ${response.statusText}` };
+    }
 
     if (!response.ok) {
         throw new Error(data.message || "An API error occurred");
