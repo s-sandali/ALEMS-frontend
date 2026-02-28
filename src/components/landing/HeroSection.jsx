@@ -68,7 +68,7 @@ export default function HeroSection() {
         >
             {/* Animated hole background */}
             <HoleBackground
-                className="absolute inset-0 opacity-[0.95]"
+                className="absolute inset-0 opacity-[0.65]"
                 strokeColor="#3a4a10"
                 particleRGBColor={[213, 255, 64]}
             />
