@@ -27,23 +27,25 @@ export default function SortingBars() {
     return (
         <div className="relative flex flex-col items-center">
             {/* Monitor frame */}
-            <div className="glass glow-blue rounded-2xl p-6 w-full max-w-sm">
+            <div className="glass glow-accent rounded-2xl p-6 w-full max-w-sm">
                 <div className="flex items-center gap-2 mb-4">
                     <div className="w-3 h-3 rounded-full bg-red-500 opacity-80" />
                     <div className="w-3 h-3 rounded-full bg-yellow-500 opacity-80" />
                     <div className="w-3 h-3 rounded-full bg-green-500 opacity-80" />
-                    <span className="ml-2 text-xs text-slate-400 font-mono">bubble_sort.js</span>
+                    <span className="ml-2 text-xs text-text-secondary font-mono">bubble_sort.js</span>
                 </div>
                 {/* Bars */}
-                <div className="flex items-end gap-3 justify-center h-32 bg-slate-900/50 rounded-xl px-4 pb-3 pt-2">
+                <div className="flex items-end gap-3 justify-center h-32 rounded-xl px-4 pb-3 pt-2"
+                    style={{ background: "rgba(12,12,12,0.6)" }}
+                >
                     {BAR_COLORS.map((color, i) => (
                         <div
                             key={i}
                             ref={(el) => (barRefs.current[i] = el)}
                             className="sort-bar flex-1"
                             style={{
-                                background: `linear-gradient(180deg, ${color}, ${color}88)`,
-                                boxShadow: `0 0 8px ${color}66`,
+                                background: `linear-gradient(180deg, ${color}, ${color}66)`,
+                                boxShadow: `0 0 10px ${color}55`,
                                 minWidth: "18px",
                                 height: "60px",
                             }}
@@ -51,21 +53,23 @@ export default function SortingBars() {
                     ))}
                 </div>
                 {/* Code snippet below bars */}
-                <div className="mt-3 font-mono text-xs text-slate-400 bg-slate-900/50 rounded px-3 py-2 space-y-1">
+                <div className="mt-3 font-mono text-xs rounded px-3 py-2 space-y-1"
+                    style={{ background: "rgba(12,12,12,0.6)", color: "#A1A1A1" }}
+                >
                     <div>
-                        <span className="text-violet-400">for</span>{" "}
-                        <span className="text-cyan-400">(i = 0; i &lt; n; i++)</span>
+                        <span style={{ color: "#D5FF40" }}>for</span>{" "}
+                        <span className="text-text-secondary">(i = 0; i &lt; n; i++)</span>
                     </div>
                     <div className="pl-4">
-                        <span className="text-blue-400">if</span>{" "}
-                        <span className="text-slate-300">(arr[i] &gt; arr[i+1])</span>
+                        <span style={{ color: "#D5FF40" }}>if</span>{" "}
+                        <span className="text-white/70">(arr[i] &gt; arr[i+1])</span>
                     </div>
-                    <div className="pl-8 text-green-400">swap(arr, i, i+1)</div>
+                    <div className="pl-8" style={{ color: "#D5FF40" }}>swap(arr, i, i+1)</div>
                 </div>
             </div>
             {/* Floating labels */}
             <div className="absolute -top-3 -right-3 badge-chip">O(n²) Time</div>
-            <div className="absolute -bottom-3 -left-3 badge-chip">O(1) Space</div>
+
         </div>
     );
 }
