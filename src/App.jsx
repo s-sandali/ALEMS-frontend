@@ -1,13 +1,8 @@
 import { Routes, Route } from "react-router-dom";
-import {
-    SignIn,
-    SignUp,
-    SignedIn,
-    SignedOut,
-    RedirectToSignIn,
-} from "@clerk/clerk-react";
+import { SignIn, SignUp } from "@clerk/clerk-react";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
     return (
@@ -36,14 +31,9 @@ export default function App() {
                 <Route
                     path="/dashboard"
                     element={
-                        <>
-                            <SignedIn>
-                                <Dashboard />
-                            </SignedIn>
-                            <SignedOut>
-                                <RedirectToSignIn />
-                            </SignedOut>
-                        </>
+                        <ProtectedRoute>
+                            <Dashboard />
+                        </ProtectedRoute>
                     }
                 />
             </Routes>
