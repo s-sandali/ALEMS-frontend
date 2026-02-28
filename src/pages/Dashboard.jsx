@@ -1,116 +1,106 @@
-import { useState, useEffect } from "react";
-import { useAuth, UserButton } from "@clerk/clerk-react";
-import { UserService } from "../lib/api";
+import { useUser, UserButton } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
+import { Zap, BookOpen, Flame, ArrowRight } from "lucide-react";
+import StatsCard from "../components/dashboard/StatsCard";
+import ContributionGrid from "../components/dashboard/ContributionGrid";
+import BadgeSection from "../components/dashboard/BadgeSection";
+import { mockDashboardData } from "../data/dashboardMockData";
 
 export default function Dashboard() {
-    const { getToken, user } = useAuth();
-    const [users, setUsers] = useState([]);
-    const [message, setMessage] = useState("");
-    const [error, setError] = useState("");
+    const { user } = useUser();
+    const navigate = useNavigate();
+    const data = mockDashboardData;
 
-    const fetchUsers = async () => {
-        try {
-            setError("");
-            setMessage("Fetching users from backend...");
-            const response = await UserService.getAllUsers(getToken);
-            setUsers(response.data || []);
-            setMessage("Successfully fetched users!");
-        } catch (err) {
-            console.error(err);
-            setError(err.message || "Failed to fetch users. Are you an Admin?");
-            setMessage("");
-        }
-    };
-
-
-    const testSync = async () => {
-        try {
-            setError("");
-            setMessage("Testing Sync endpoint...");
-            const response = await UserService.syncUser(getToken);
-            setMessage(`Sync result: ${JSON.stringify(response.data)}`);
-            fetchUsers(); // Refresh the list
-        } catch (err) {
-            console.error(err);
-            setError(err.message || "Sync failed.");
-            setMessage("");
-        }
-    };
-
-    useEffect(() => {
-        // Automatically fetch users on load
-        fetchUsers();
-    }, []);
+    const firstName = user?.firstName || user?.username || "Learner";
+    const hasModules = data.modulesCompleted > 0;
 
     return (
-        <div className="min-h-screen p-8 text-white" style={{ background: "#0C0C0C" }}>
-            <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-800">
-                <h1 className="text-3xl font-bold">Admin Workbench test</h1>
-                <div className="flex items-center gap-4">
-                    <p className="text-gray-400">Signed in as: {user?.primaryEmailAddress?.emailAddress}</p>
-                    <UserButton afterSignOutUrl="/" />
+        <div className="min-h-screen bg-bg">
+            {/* Top nav bar */}
+            <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-bg/80 backdrop-blur-xl">
+                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <span className="text-xl font-bold text-accent tracking-tight">
+                            BigO
+                        </span>
+                        <span className="text-sm text-text-secondary hidden sm:inline">
+                            / Dashboard
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <span className="text-sm text-text-secondary hidden md:inline">
+                            {user?.primaryEmailAddress?.emailAddress}
+                        </span>
+                        <UserButton afterSignOutUrl="/" />
+                    </div>
                 </div>
-            </div>
+            </header>
 
-            <div className="flex gap-4 mb-6">
-                <button
-                    onClick={fetchUsers}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded font-medium transition-colors"
-                >
-                    GET /api/users
-                </button>
+            <main className="max-w-7xl mx-auto px-6 py-8">
+                {/* Welcome section */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-white tracking-tight">
+                        Welcome back,{" "}
+                        <span className="text-accent">{firstName}</span>
+                    </h1>
+                    <p className="text-text-secondary mt-1">
+                        Here&apos;s your learning progress at a glance.
+                    </p>
+                </div>
 
-                <button
-                    onClick={testSync}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded font-medium transition-colors"
-                >
-                    POST /api/users/sync
-                </button>
-            </div>
+                {/* Empty state */}
+                {!hasModules && (
+                    <div className="mb-8 rounded-xl border border-accent/20 bg-accent/5 p-8 text-center">
+                        <div className="mx-auto w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-4">
+                            <BookOpen className="w-8 h-8 text-accent" />
+                        </div>
+                        <h2 className="text-xl font-semibold text-white mb-2">
+                            You haven&apos;t started learning yet.
+                        </h2>
+                        <p className="text-text-secondary mb-6 max-w-md mx-auto">
+                            Begin your journey into algorithms and data structures.
+                            Track your progress and earn badges along the way!
+                        </p>
+                        <button
+                            onClick={() => navigate("/algorithms")}
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-accent text-bg font-semibold text-sm transition-all duration-300 hover:shadow-lg hover:shadow-accent/25 hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            Start Learning
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
 
-            {message && <div className="mb-4 p-4 bg-green-900/50 text-green-200 border border-green-800 rounded">{message}</div>}
-            {error && <div className="mb-4 p-4 bg-red-900/50 text-red-200 border border-red-800 rounded">{error}</div>}
+                {/* Stats cards row */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <StatsCard
+                        title="Total XP"
+                        value={data.xpTotal.toLocaleString()}
+                        icon={<Zap className="w-5 h-5" />}
+                        subtitle="Experience points earned"
+                    />
+                    <StatsCard
+                        title="Modules Completed"
+                        value={data.modulesCompleted}
+                        icon={<BookOpen className="w-5 h-5" />}
+                        subtitle={`${data.modulesCompleted} of 12 modules`}
+                    />
+                    <StatsCard
+                        title="Current Streak"
+                        value={`${data.streak} days`}
+                        icon={<Flame className="w-5 h-5" />}
+                        subtitle="Keep it going!"
+                    />
+                </div>
 
-            <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-800 text-gray-300">
-                        <tr>
-                            <th className="p-4">ID</th>
-                            <th className="p-4">Username</th>
-                            <th className="p-4">Email</th>
-                            <th className="p-4">Role</th>
-                            <th className="p-4">Clerk ID</th>
-                            <th className="p-4">Active</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.length === 0 ? (
-                            <tr>
-                                <td colSpan="6" className="p-8 text-center text-gray-500">
-                                    No users found or could not connect to backend.
-                                </td>
-                            </tr>
-                        ) : (
-                            users.map(u => (
-                                <tr key={u.userId} className="border-t border-gray-800 hover:bg-gray-800/50">
-                                    <td className="p-4">{u.userId}</td>
-                                    <td className="p-4">{u.username}</td>
-                                    <td className="p-4">{u.email}</td>
-                                    <td className="p-4">
-                                        <span className={`px-2 py-1 text-xs rounded-full ${u.role === 'Admin' ? 'bg-red-900/80 text-red-200' : 'bg-blue-900/80 text-blue-200'}`}>
-                                            {u.role}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-xs font-mono text-gray-400">
-                                        {u.clerkUserId ? `${u.clerkUserId.substring(0, 8)}...` : 'N/A'}
-                                    </td>
-                                    <td className="p-4">{u.isActive ? "Yes" : "No"}</td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                {/* Contribution heatmap */}
+                <div className="mb-8">
+                    <ContributionGrid contributions={data.contributions} />
+                </div>
+
+                {/* Badges section */}
+                <BadgeSection badges={data.badges} />
+            </main>
         </div>
     );
 }
