@@ -14,7 +14,7 @@ export default function App() {
                     path="/login/*"
                     element={
                         <div className="min-h-screen flex items-center justify-center" style={{ background: "#0C0C0C" }}>
-                            <SignIn routing="path" path="/login" />
+                            <SignIn routing="path" path="/login" fallbackRedirectUrl="/dashboard" />
                         </div>
                     }
                 />
@@ -23,7 +23,7 @@ export default function App() {
                     path="/register/*"
                     element={
                         <div className="min-h-screen flex items-center justify-center" style={{ background: "#0C0C0C" }}>
-                            <SignUp routing="path" path="/register" />
+                            <SignUp routing="path" path="/register" fallbackRedirectUrl="/dashboard" />
                         </div>
                     }
                 />
