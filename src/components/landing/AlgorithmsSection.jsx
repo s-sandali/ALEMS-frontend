@@ -56,8 +56,8 @@ export default function AlgorithmsSection() {
                         Core Curriculum
                     </p>
                     <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
-                        4 Algorithms.{" "}
-                        <span className="gradient-text">Infinite Insight.</span>
+                        Master Algorithms.{" "}
+                        <span className="gradient-text">Gain Infinite Insight.</span>
                     </h2>
                     <p className="mt-4 max-w-xl mx-auto" style={{ color: "#A1A1A1" }}>
                         Master the fundamentals through interactive exploration and guided challenges.
