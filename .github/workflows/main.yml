@@ -26,6 +26,8 @@ jobs:
 
       - name: Build Vite app
         run: npm run build
+      # trigger rebuild
+
 
       # Upload the compiled 'dist/' folder as an artifact
       # so the deploy jobs can download it without rebuilding.
