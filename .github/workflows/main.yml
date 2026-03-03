@@ -51,8 +51,8 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Zip dist folder
-        run: zip -r dist.zip dist/
+      - name: Zip dist contents
+        run: cd dist && zip -r ../dist.zip .
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
