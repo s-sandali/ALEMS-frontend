@@ -12,6 +12,15 @@ const algorithmKeyByName = {
     "quick sort": "quick_sort",
 };
 
+const spaceComplexityByAlgorithm = {
+    "bubble sort": "O(1)",
+    "binary search": "O(1)",
+    "merge sort": "O(n)",
+    "quick sort": "O(log n)",
+};
+
+const sampleSizes = [8, 16, 32, 64, 128, 256];
+
 export function getAlgorithmDifficulty(name) {
     return difficultyByAlgorithm[name.trim().toLowerCase()] || "Core";
 }
@@ -34,6 +43,72 @@ export function getAlgorithmSampleInput(name) {
 
 export function getSimulationAlgorithmKey(name) {
     return algorithmKeyByName[name.trim().toLowerCase()] || name.trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+export function getSpaceComplexity(name) {
+    return spaceComplexityByAlgorithm[name.trim().toLowerCase()] || "O(n)";
+}
+
+function normalizeComplexityLabel(label) {
+    return label
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replace("²", "^2");
+}
+
+function evaluateComplexity(label, n) {
+    const normalized = normalizeComplexityLabel(label);
+
+    switch (normalized) {
+        case "o(1)":
+            return 1;
+        case "o(logn)":
+            return Math.log2(n);
+        case "o(n)":
+            return n;
+        case "o(nlogn)":
+            return n * Math.log2(n);
+        case "o(n^2)":
+            return n * n;
+        default:
+            return n;
+    }
+}
+
+function scaleSeriesValues(values) {
+    const maxValue = Math.max(...values, 1);
+
+    return values.map((value) => Math.max(1, Math.round((value / maxValue) * 100)));
+}
+
+export function getComplexityChartData(algorithm) {
+    const timeLabels = {
+        best: algorithm.timeComplexityBest || "O(n)",
+        average: algorithm.timeComplexityAverage || algorithm.timeComplexityWorst || "O(n)",
+        worst: algorithm.timeComplexityWorst || algorithm.timeComplexityAverage || "O(n)",
+    };
+    const spaceLabel = getSpaceComplexity(algorithm.name);
+
+    const bestValues = scaleSeriesValues(sampleSizes.map((n) => evaluateComplexity(timeLabels.best, n)));
+    const averageValues = scaleSeriesValues(sampleSizes.map((n) => evaluateComplexity(timeLabels.average, n)));
+    const worstValues = scaleSeriesValues(sampleSizes.map((n) => evaluateComplexity(timeLabels.worst, n)));
+    const spaceValues = scaleSeriesValues(sampleSizes.map((n) => evaluateComplexity(spaceLabel, n)));
+
+    return {
+        timeLabels,
+        spaceLabel,
+        timeData: sampleSizes.map((n, index) => ({
+            n,
+            best: bestValues[index],
+            average: averageValues[index],
+            worst: worstValues[index],
+        })),
+        spaceData: sampleSizes.map((n, index) => ({
+            n,
+            space: spaceValues[index],
+        })),
+    };
 }
 
 export function getAlgorithmIntroduction(name) {
