@@ -2,6 +2,8 @@ import { Routes, Route } from "react-router-dom";
 import { SignIn, SignUp } from "@clerk/clerk-react";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
+import AlgorithmsPage from "./pages/AlgorithmsPage";
+import AlgorithmDetailPage from "./pages/AlgorithmDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -33,6 +35,24 @@ export default function App() {
                     element={
                         <ProtectedRoute>
                             <Dashboard />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/algorithms"
+                    element={
+                        <ProtectedRoute>
+                            <AlgorithmsPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/algorithms/:id"
+                    element={
+                        <ProtectedRoute>
+                            <AlgorithmDetailPage />
                         </ProtectedRoute>
                     }
                 />
