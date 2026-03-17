@@ -5,6 +5,8 @@ import { Link, useParams } from "react-router-dom";
 
 import AlgorithmComplexityCharts from "../components/algorithms/AlgorithmComplexityCharts";
 import AlgorithmIntroductionSection from "../components/algorithms/AlgorithmIntroductionSection";
+import AlgorithmQuizCTA from "../components/algorithms/AlgorithmQuizCTA";
+import SimulationControls from "../components/algorithms/SimulationControls";
 import AlgorithmVisualizer from "../components/algorithms/AlgorithmVisualizer";
 import { AlgorithmService, SimulationService } from "../lib/api";
 import {
@@ -15,6 +17,8 @@ import {
 } from "../lib/algorithmPresentation";
 
 export default function AlgorithmDetailPage() {
+    const playbackSpeeds = [0.5, 1, 2, 4];
+    const basePlaybackIntervalMs = 1400;
     const { id } = useParams();
     const { getToken } = useAuth();
     const { user } = useUser();
@@ -24,9 +28,34 @@ export default function AlgorithmDetailPage() {
     const [error, setError] = useState("");
     const [simulationError, setSimulationError] = useState("");
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [playbackSpeed, setPlaybackSpeed] = useState(1);
+    const [sampleInput, setSampleInput] = useState([]);
+    const [arraySize, setArraySize] = useState(0);
+    const [elementsText, setElementsText] = useState("");
 
     useEffect(() => {
         let isMounted = true;
+
+        async function runSimulationTrace(algorithmRecord, inputArray) {
+            const simulationResponse = await SimulationService.runSimulation(
+                getSimulationAlgorithmKey(algorithmRecord.name),
+                inputArray,
+                getToken,
+            );
+
+            if (!isMounted) {
+                return;
+            }
+
+            setSampleInput(inputArray);
+            setArraySize(inputArray.length);
+            setElementsText(inputArray.join(", "));
+            setSteps(Array.isArray(simulationResponse?.steps) ? simulationResponse.steps : []);
+            setCurrentStepIndex(0);
+            setIsPlaying(false);
+            setSimulationError("");
+        }
 
         async function loadAlgorithmDetails() {
             try {
@@ -48,25 +77,20 @@ export default function AlgorithmDetailPage() {
                 }
 
                 try {
-                    const simulationResponse = await SimulationService.runSimulation(
-                        getSimulationAlgorithmKey(algorithmRecord.name),
-                        getAlgorithmSampleInput(algorithmRecord.name),
-                        getToken,
-                    );
-
-                    if (!isMounted) {
-                        return;
-                    }
-
-                    setSteps(Array.isArray(simulationResponse?.steps) ? simulationResponse.steps : []);
-                    setCurrentStepIndex(0);
+                    const initialInput = getAlgorithmSampleInput(algorithmRecord.name);
+                    await runSimulationTrace(algorithmRecord, initialInput);
                 } catch (runError) {
                     if (!isMounted) {
                         return;
                     }
 
+                    const fallbackInput = getAlgorithmSampleInput(algorithmRecord.name);
+                    setSampleInput(fallbackInput);
+                    setArraySize(fallbackInput.length);
+                    setElementsText(fallbackInput.join(", "));
                     setSteps([]);
                     setCurrentStepIndex(0);
+                    setIsPlaying(false);
                     setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
                 }
             } catch (loadError) {
@@ -89,8 +113,121 @@ export default function AlgorithmDetailPage() {
         };
     }, [getToken, id]);
 
+    useEffect(() => {
+        if (!isPlaying || steps.length <= 1) {
+            return undefined;
+        }
+
+        if (currentStepIndex >= steps.length - 1) {
+            setIsPlaying(false);
+            return undefined;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            setCurrentStepIndex((previousIndex) => Math.min(previousIndex + 1, steps.length - 1));
+        }, basePlaybackIntervalMs / playbackSpeed);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [basePlaybackIntervalMs, currentStepIndex, isPlaying, playbackSpeed, steps.length]);
+
     const difficulty = algorithm ? getAlgorithmDifficulty(algorithm.name) : "";
     const primaryComplexity = algorithm ? getPrimaryComplexity(algorithm) : "";
+
+    function handleTogglePlayback() {
+        if (steps.length <= 1) {
+            return;
+        }
+
+        if (currentStepIndex >= steps.length - 1) {
+            setCurrentStepIndex(0);
+            setIsPlaying(true);
+            return;
+        }
+
+        setIsPlaying((previousValue) => !previousValue);
+    }
+
+    function handleStepChange(nextStepIndex) {
+        setIsPlaying(false);
+        setCurrentStepIndex(nextStepIndex);
+    }
+
+    function handleStepForward() {
+        if (steps.length <= 1) {
+            return;
+        }
+
+        setIsPlaying(false);
+        setCurrentStepIndex((previousIndex) => Math.min(previousIndex + 1, steps.length - 1));
+    }
+
+    function handleStepBackward() {
+        if (steps.length === 0) {
+            return;
+        }
+
+        setIsPlaying(false);
+        setCurrentStepIndex((previousIndex) => Math.max(previousIndex - 1, 0));
+    }
+
+    function handleReset() {
+        setIsPlaying(false);
+        setCurrentStepIndex(0);
+    }
+
+    function handleArraySizeChange(nextSize) {
+        const normalizedSize = Number.isFinite(nextSize)
+            ? Math.min(Math.max(Math.floor(nextSize), 2), 16)
+            : 2;
+
+        setArraySize(normalizedSize);
+        setElementsText((previousText) => {
+            const parsedValues = previousText
+                .split(",")
+                .map((value) => value.trim())
+                .filter(Boolean)
+                .map((value) => Number(value));
+
+            const resizedValues = Array.from({ length: normalizedSize }, (_, index) => parsedValues[index] ?? 0);
+            return resizedValues.join(", ");
+        });
+    }
+
+    async function handleApplyInput() {
+        if (!algorithm) {
+            return;
+        }
+
+        const parsedValues = elementsText
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean)
+            .map((value) => Number(value));
+
+        if (parsedValues.length !== arraySize || parsedValues.some((value) => Number.isNaN(value))) {
+            setSimulationError(`Enter exactly ${arraySize} numeric values separated by commas.`);
+            return;
+        }
+
+        try {
+            setSimulationError("");
+            const simulationResponse = await SimulationService.runSimulation(
+                getSimulationAlgorithmKey(algorithm.name),
+                parsedValues,
+                getToken,
+            );
+
+            setSampleInput(parsedValues);
+            setSteps(Array.isArray(simulationResponse?.steps) ? simulationResponse.steps : []);
+            setCurrentStepIndex(0);
+            setIsPlaying(false);
+        } catch (runError) {
+            setSteps([]);
+            setCurrentStepIndex(0);
+            setIsPlaying(false);
+            setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
+        }
+    }
 
     return (
         <div className="min-h-screen bg-bg">
@@ -165,49 +302,36 @@ export default function AlgorithmDetailPage() {
                             algorithmName={algorithm.name}
                             steps={steps}
                             currentStepIndex={currentStepIndex}
-                            onStepChange={setCurrentStepIndex}
+                            onStepChange={handleStepChange}
                         />
 
                         <AlgorithmComplexityCharts algorithm={algorithm} />
 
-                        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.8fr)]">
+                        <SimulationControls
+                            isPlaying={isPlaying}
+                            speed={playbackSpeed}
+                            speeds={playbackSpeeds}
+                            currentStepIndex={currentStepIndex}
+                            totalSteps={steps.length}
+                            arraySize={arraySize}
+                            elementsText={elementsText}
+                            sampleInput={sampleInput}
+                            simulationError={simulationError}
+                            onTogglePlayback={handleTogglePlayback}
+                            onStepBackward={handleStepBackward}
+                            onStepForward={handleStepForward}
+                            onReset={handleReset}
+                            onSpeedChange={setPlaybackSpeed}
+                            onArraySizeChange={handleArraySizeChange}
+                            onElementsChange={setElementsText}
+                            onApplyInput={handleApplyInput}
+                        />
+
+                        <section className="grid gap-6">
                             <AlgorithmVisualizer steps={steps} currentStepIndex={currentStepIndex} />
-
-                            <aside className="rounded-[2rem] border border-white/[0.06] bg-surface p-6">
-                                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
-                                    Backend Trace
-                                </p>
-                                <h2 className="mt-3 text-2xl font-bold tracking-tight text-white">
-                                    Simulation snapshot
-                                </h2>
-                                <p className="mt-3 text-sm leading-7 text-text-secondary">
-                                    The visualizer requests a step trace from the backend API for a sample input, so the frontend never reimplements algorithm execution rules.
-                                </p>
-
-                                <div className="mt-6 rounded-2xl border border-white/[0.06] bg-bg/60 p-4">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-text-secondary">Sample input</span>
-                                        <span className="font-medium text-white">
-                                            [{getAlgorithmSampleInput(algorithm.name).join(", ")}]
-                                        </span>
-                                    </div>
-                                    <div className="mt-4 flex items-center justify-between text-sm">
-                                        <span className="text-text-secondary">Steps returned</span>
-                                        <span className="font-medium text-white">{steps.length}</span>
-                                    </div>
-                                </div>
-
-                                {simulationError ? (
-                                    <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm leading-6 text-amber-100">
-                                        {simulationError}
-                                    </div>
-                                ) : (
-                                    <div className="mt-6 rounded-2xl border border-accent/15 bg-accent/5 p-4 text-sm leading-6 text-text-secondary">
-                                        The current route is ready for backend-powered walkthroughs as more simulation engines are added.
-                                    </div>
-                                )}
-                            </aside>
                         </section>
+
+                        <AlgorithmQuizCTA algorithm={algorithm} />
                     </>
                 ) : null}
             </main>
