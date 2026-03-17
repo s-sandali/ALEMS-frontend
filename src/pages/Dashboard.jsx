@@ -4,6 +4,7 @@ import { Zap, BookOpen, Flame, ArrowRight } from "lucide-react";
 import StatsCard from "../components/dashboard/StatsCard";
 import ContributionGrid from "../components/dashboard/ContributionGrid";
 import BadgeSection from "../components/dashboard/BadgeSection";
+import ExploreAlgorithmsSection from "../components/algorithms/ExploreAlgorithmsSection";
 import { mockDashboardData } from "../data/dashboardMockData";
 
 export default function Dashboard() {
@@ -99,7 +100,15 @@ export default function Dashboard() {
                 </div>
 
                 {/* Badges section */}
-                <BadgeSection badges={data.badges} />
+                <div className="mb-8">
+                    <BadgeSection badges={data.badges} />
+                </div>
+
+                <ExploreAlgorithmsSection
+                    limit={4}
+                    showViewAll
+                    description="Continue from your dashboard into the algorithm library. Each card highlights the name, average complexity, and difficulty before you open its dedicated route."
+                />
             </main>
         </div>
     );
