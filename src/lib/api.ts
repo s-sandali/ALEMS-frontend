@@ -11,6 +11,31 @@ type Initializer = {
     getToken: GetTokenFn;
 };
 
+export type AlgorithmSimulationStep = {
+    stepNumber: number;
+    arrayState: number[];
+    activeIndices: number[];
+    lineNumber: number;
+    actionLabel: string;
+};
+
+export type AlgorithmSimulationResponse = {
+    algorithmName: string;
+    steps: AlgorithmSimulationStep[];
+    totalSteps: number;
+};
+
+export type AlgorithmSummary = {
+    algorithmId: number;
+    name: string;
+    category: string;
+    description: string;
+    timeComplexityBest: string;
+    timeComplexityAverage: string;
+    timeComplexityWorst: string;
+    createdAt: string;
+};
+
 /**
  * Core fetch wrapper that intercepts requests to inject the Clerk JWT
  * and globally standardises error handling.
@@ -109,4 +134,39 @@ export const UserService = {
      */
     deleteUser: (id: number, getToken: GetTokenFn) =>
         apiFetch(`/users/${id}`, { method: "DELETE", getToken })
+};
+
+export const AlgorithmService = {
+    /**
+     * GET /algorithms
+     * Retrieves the algorithm library available to authenticated learners.
+     */
+    getAll: (getToken: GetTokenFn) =>
+        apiFetch("/algorithms", {
+            method: "GET",
+            getToken,
+        }) as Promise<{ status: string; data: AlgorithmSummary[] }>,
+
+    /**
+     * GET /algorithms/{id}
+     * Retrieves a single algorithm record.
+     */
+    getById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/algorithms/${id}`, {
+            method: "GET",
+            getToken,
+        }) as Promise<{ status: string; data: AlgorithmSummary }>,
+};
+
+export const SimulationService = {
+    /**
+     * POST /simulation/run
+     * Requests the backend-generated step trace for an algorithm/input pair.
+     */
+    runSimulation: (algorithm: string, array: number[], getToken: GetTokenFn) =>
+        apiFetch("/simulation/run", {
+            method: "POST",
+            body: { algorithm, array },
+            getToken,
+        }) as Promise<AlgorithmSimulationResponse>,
 };
