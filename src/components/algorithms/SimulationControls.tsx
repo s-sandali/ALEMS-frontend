@@ -1,4 +1,4 @@
-import { Pause, Play, RotateCcw, SkipBack, SkipForward, WandSparkles } from "lucide-react";
+import { Pause, Play, RotateCcw, Shuffle, SkipBack, SkipForward, WandSparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ type SimulationControlsProps = {
     onArraySizeChange: (size: number) => void;
     onElementsChange: (value: string) => void;
     onApplyInput: () => void;
+    onGenerateRandomArray: () => void;
     className?: string;
 };
 
@@ -44,6 +45,7 @@ export default function SimulationControls({
     onArraySizeChange,
     onElementsChange,
     onApplyInput,
+    onGenerateRandomArray,
     className,
 }: SimulationControlsProps) {
     const speedIndex = Math.max(speeds.indexOf(speed), 0);
@@ -62,14 +64,12 @@ export default function SimulationControls({
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
-                            Playback
+                            03- Simulation
                         </p>
                         <h2 className="mt-3 text-2xl font-bold tracking-tight text-white">
                             Simulation controls
                         </h2>
-                        <p className="mt-2 text-sm leading-7 text-text-secondary">
-                            Step through the backend simulation trace manually or replay it at different speeds.
-                        </p>
+                        
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
@@ -129,9 +129,7 @@ export default function SimulationControls({
                                 <p className="text-sm font-semibold text-white">
                                     Playback speed
                                 </p>
-                                <p className="mt-1 text-xs leading-6 text-text-secondary">
-                                    Controls the animation interval
-                                </p>
+                                
                             </div>
 
                             <div className="flex-1">
@@ -156,17 +154,7 @@ export default function SimulationControls({
 
                         <div className="rounded-2xl border border-white/[0.06] bg-surface/60 p-4">
                             <div className="flex flex-col gap-4">
-                                <div>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
-                                        Backend Trace
-                                    </p>
-                                    <h3 className="mt-3 text-xl font-bold tracking-tight text-white">
-                                        Simulation snapshot
-                                    </h3>
-                                    <p className="mt-2 text-sm leading-7 text-text-secondary">
-                                        Customize the input array here, then request a fresh step trace from the backend API.
-                                    </p>
-                                </div>
+                                
 
                                 <div className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)_auto]">
                                     <label className="flex flex-col gap-2 text-sm">
@@ -191,14 +179,24 @@ export default function SimulationControls({
                                     </label>
 
                                     <div className="flex items-end">
-                                        <Button
-                                            variant="default"
-                                            onClick={onApplyInput}
-                                            className="w-full lg:w-auto"
-                                        >
-                                            <WandSparkles className="h-4 w-4" />
-                                            Run trace
-                                        </Button>
+                                        <div className="flex w-full flex-col gap-2 lg:w-auto">
+                                            <Button
+                                                variant="secondary"
+                                                onClick={onGenerateRandomArray}
+                                                className="w-full lg:w-auto"
+                                            >
+                                                <Shuffle className="h-4 w-4" />
+                                                Random array
+                                            </Button>
+                                            <Button
+                                                variant="default"
+                                                onClick={onApplyInput}
+                                                className="w-full lg:w-auto"
+                                            >
+                                                <WandSparkles className="h-4 w-4" />
+                                                Run trace
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -219,11 +217,7 @@ export default function SimulationControls({
                                     <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm leading-6 text-amber-100">
                                         {simulationError}
                                     </div>
-                                ) : (
-                                    <div className="rounded-2xl border border-accent/15 bg-accent/5 p-4 text-sm leading-6 text-text-secondary">
-                                        The simulation panel is now focused on backend-driven input, playback, and step control so the visualizer can sit beside future code-sync content.
-                                    </div>
-                                )}
+                                ) : null}
                             </div>
                         </div>
                     </div>
