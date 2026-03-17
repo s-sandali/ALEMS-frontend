@@ -46,6 +46,197 @@ const quizMetadataByAlgorithm = {
     },
 };
 
+const pseudocodeByAlgorithm = {
+    "bubble sort": [
+        "start with the unsorted array",
+        "begin a new pass through the array",
+        "compare adjacent elements",
+        "swap them if left > right",
+        "mark the largest unsorted value as placed",
+        "finish when no unsorted elements remain",
+    ],
+    "binary search": [
+        "set low = 0 and high = n - 1",
+        "repeat while low <= high",
+        "find the middle index",
+        "return if the target matches the middle value",
+        "discard the half that cannot contain the target",
+        "stop when the search interval is empty",
+    ],
+    "merge sort": [
+        "return when the array has one element",
+        "split the array into left and right halves",
+        "recursively sort the left half",
+        "recursively sort the right half",
+        "merge the sorted halves into one array",
+        "return the merged result",
+    ],
+    "quick sort": [
+        "return when the partition has zero or one element",
+        "choose a pivot",
+        "partition elements around the pivot",
+        "place the pivot in its final position",
+        "recursively sort the left partition",
+        "recursively sort the right partition",
+    ],
+};
+
+const codeSnippetsByAlgorithm = {
+    "bubble sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 4,
+                5: 5,
+                6: 6,
+            },
+            code: `initialize the unsorted array
+begin the next pass through the unsorted region
+compare the current adjacent pair
+swap the pair when left > right
+mark the largest remaining value as sorted
+return the sorted array`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Bubble Sort in JavaScript
+function bubbleSort(arr) {
+  let n = arr.length;
+
+  // Outer loop for passes
+  for (let i = 0; i < n - 1; i++) {
+    // Inner loop for comparisons
+    for (let j = 0; j < n - i - 1; j++) {
+      // Swap if current element is greater than next
+      if (arr[j] > arr[j + 1]) {
+        // ES6 destructuring assignment for swap
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+      }
+    }
+  }
+  return arr;
+}
+
+// Usage example
+const unsortedArray = [64, 34, 25, 12, 22, 11, 90];
+console.log("Unsorted array:", unsortedArray);
+const sortedArray = bubbleSort(unsortedArray);
+console.log("Sorted array:", sortedArray);`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Bubble Sort in Python
+def bubble_sort(arr):
+    n = len(arr)
+
+    # Outer loop for passes
+    for i in range(n - 1):
+        # Inner loop for comparisons
+        for j in range(n - i - 1):
+            # Swap if current element is greater than next
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+
+    return arr
+
+
+# Usage example
+unsorted_array = [64, 34, 25, 12, 22, 11, 90]
+print("Unsorted array:", unsorted_array)
+sorted_array = bubble_sort(unsorted_array[:])
+print("Sorted array:", sorted_array)`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Bubble Sort in Java
+import java.util.Arrays;
+
+public class BubbleSortExample {
+    public static int[] bubbleSort(int[] arr) {
+        int n = arr.length;
+
+        // Outer loop for passes
+        for (int i = 0; i < n - 1; i++) {
+            // Inner loop for comparisons
+            for (int j = 0; j < n - i - 1; j++) {
+                // Swap if current element is greater than next
+                if (arr[j] > arr[j + 1]) {
+                    int temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                }
+            }
+        }
+
+        return arr;
+    }
+
+    public static void main(String[] args) {
+        int[] unsortedArray = {64, 34, 25, 12, 22, 11, 90};
+        System.out.println("Unsorted array: " + Arrays.toString(unsortedArray));
+        int[] sortedArray = bubbleSort(unsortedArray.clone());
+        System.out.println("Sorted array: " + Arrays.toString(sortedArray));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Bubble Sort in C++
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+vector<int> bubbleSort(vector<int> arr) {
+    int n = static_cast<int>(arr.size());
+
+    // Outer loop for passes
+    for (int i = 0; i < n - 1; i++) {
+        // Inner loop for comparisons
+        for (int j = 0; j < n - i - 1; j++) {
+            // Swap if current element is greater than next
+            if (arr[j] > arr[j + 1]) {
+                swap(arr[j], arr[j + 1]);
+            }
+        }
+    }
+
+    return arr;
+}
+
+int main() {
+    vector<int> unsortedArray = {64, 34, 25, 12, 22, 11, 90};
+    cout << "Unsorted array: ";
+    for (int value : unsortedArray) cout << value << " ";
+    cout << endl;
+
+    vector<int> sortedArray = bubbleSort(unsortedArray);
+    cout << "Sorted array: ";
+    for (int value : sortedArray) cout << value << " ";
+    cout << endl;
+}`,
+        },
+    ],
+};
+
 const sampleSizes = [8, 16, 32, 64, 128, 256];
 
 export function getAlgorithmDifficulty(name) {
@@ -145,6 +336,38 @@ export function getAlgorithmQuizMetadata(name) {
         xpReward: 50,
         timeMinutes: 3,
     };
+}
+
+export function getAlgorithmPseudocode(name) {
+    return pseudocodeByAlgorithm[name.trim().toLowerCase()] || [
+        "initialize the algorithm state",
+        "evaluate the current input region",
+        "apply the next comparison or decision",
+        "update the data structure state",
+        "repeat until the algorithm reaches its stopping condition",
+    ];
+}
+
+export function getAlgorithmCodeSnippets(name) {
+    const normalizedName = name.trim().toLowerCase();
+
+    return codeSnippetsByAlgorithm[normalizedName] || [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 4,
+                5: 5,
+            },
+            code: getAlgorithmPseudocode(name)
+                .join("\n"),
+        },
+    ];
 }
 
 export function getAlgorithmIntroduction(name) {
