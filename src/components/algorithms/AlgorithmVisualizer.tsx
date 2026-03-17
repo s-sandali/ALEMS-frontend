@@ -1,4 +1,6 @@
-import { memo } from "react";
+import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import type { Transition } from "motion/react";
 
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
@@ -9,6 +11,27 @@ type AlgorithmVisualizerProps = {
     className?: string;
 };
 
+type VisualBar = {
+    id: string;
+    value: number;
+};
+
+const layoutTransition = {
+    type: "spring" as const,
+    stiffness: 360,
+    damping: 30,
+    mass: 0.9,
+};
+
+const reducedMotionTransition: Transition = { duration: 0 };
+
+const activeBarTransition: Transition = {
+    layout: layoutTransition,
+    height: { duration: 0.32, ease: "easeInOut" },
+    y: { duration: 0.22, ease: "easeOut" },
+    scale: { duration: 0.22, ease: "easeOut" },
+};
+
 function getStepTone(step: AlgorithmSimulationStep | undefined) {
     const action = step?.actionLabel.trim().toLowerCase() ?? "";
 
@@ -16,12 +39,14 @@ function getStepTone(step: AlgorithmSimulationStep | undefined) {
         return {
             badgeClassName: "border-red-400/30 bg-red-400/10 text-red-200",
             activeBarClassName: "from-red-400 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.35)]",
+            emphasisLabel: "Swapped",
         };
     }
 
     return {
         badgeClassName: "border-accent/20 bg-accent/10 text-accent",
         activeBarClassName: "from-accent to-accent/70 shadow-[0_0_18px_rgba(213,255,64,0.3)]",
+        emphasisLabel: "Comparing",
     };
 }
 
@@ -33,19 +58,73 @@ function formatActionLabel(actionLabel: string) {
         .join(" ");
 }
 
+function reconcileBars(previousBars: VisualBar[], nextValues: number[], createBar: (value: number) => VisualBar) {
+    const availableBars = new Map<number, VisualBar[]>();
+
+    previousBars.forEach((bar) => {
+        const queue = availableBars.get(bar.value) ?? [];
+        queue.push(bar);
+        availableBars.set(bar.value, queue);
+    });
+
+    return nextValues.map((value) => {
+        const queue = availableBars.get(value);
+        const reusedBar = queue?.shift();
+
+        return reusedBar ?? createBar(value);
+    });
+}
+
 function AlgorithmVisualizer({
     steps,
     currentStepIndex,
     className,
 }: AlgorithmVisualizerProps) {
+    const shouldReduceMotion = useReducedMotion();
+    const nextBarIdRef = useRef(0);
+
     const safeIndex = steps.length === 0
         ? 0
         : Math.min(Math.max(currentStepIndex, 0), steps.length - 1);
     const currentStep = steps[safeIndex];
     const values = currentStep?.arrayState ?? [];
-    const globalMax = Math.max(...steps.flatMap((step) => step.arrayState), 1);
-    const activeIndices = new Set(currentStep?.activeIndices ?? []);
-    const { badgeClassName, activeBarClassName } = getStepTone(currentStep);
+    const globalMax = useMemo(
+        () => Math.max(...steps.flatMap((step) => step.arrayState), 1),
+        [steps],
+    );
+    const activeIndices = useMemo(
+        () => new Set(currentStep?.activeIndices ?? []),
+        [currentStep],
+    );
+    const { badgeClassName, activeBarClassName, emphasisLabel } = getStepTone(currentStep);
+
+    const createBar = (value: number): VisualBar => ({
+        id: `visual-bar-${nextBarIdRef.current++}`,
+        value,
+    });
+
+    const [visualBars, setVisualBars] = useState<VisualBar[]>(
+        () => values.map((value) => createBar(value)),
+    );
+
+    useLayoutEffect(() => {
+        if (!currentStep) {
+            setVisualBars([]);
+            return;
+        }
+
+        setVisualBars((previousBars) => {
+            if (
+                currentStepIndex === 0 ||
+                previousBars.length === 0 ||
+                previousBars.length !== currentStep.arrayState.length
+            ) {
+                return currentStep.arrayState.map((value) => createBar(value));
+            }
+
+            return reconcileBars(previousBars, currentStep.arrayState, createBar);
+        });
+    }, [currentStep, currentStepIndex]);
 
     return (
         <section
@@ -62,12 +141,21 @@ function AlgorithmVisualizer({
                             Algorithm Trace
                         </p>
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className={cn(
-                                "inline-flex rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-300",
-                                badgeClassName,
-                            )}>
-                                {currentStep ? formatActionLabel(currentStep.actionLabel) : "Waiting for steps"}
-                            </span>
+                            <AnimatePresence mode="wait" initial={false}>
+                                <motion.span
+                                    key={currentStep?.actionLabel ?? "empty-action"}
+                                    initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={shouldReduceMotion ? {} : { opacity: 0, y: -6 }}
+                                    transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
+                                    className={cn(
+                                        "inline-flex rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-300",
+                                        badgeClassName,
+                                    )}
+                                >
+                                    {currentStep ? formatActionLabel(currentStep.actionLabel) : "Waiting for steps"}
+                                </motion.span>
+                            </AnimatePresence>
                             <span className="text-sm text-text-secondary">
                                 Step {steps.length === 0 ? 0 : safeIndex + 1} of {steps.length}
                             </span>
@@ -87,48 +175,69 @@ function AlgorithmVisualizer({
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-bg/60 p-3 sm:p-4">
+                    <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm">
+                        <span className="text-text-secondary">Current transition</span>
+                        <span className={cn("font-medium", currentStep ? "text-white" : "text-text-secondary")}>
+                            {currentStep ? emphasisLabel : "No active step"}
+                        </span>
+                    </div>
+
                     <div className="flex min-h-64 items-end gap-2 overflow-x-auto rounded-xl px-1 pb-1 pt-6 sm:min-h-72 sm:gap-3">
-                        {values.length > 0 ? (
-                            values.map((value, index) => {
+                        {visualBars.length > 0 ? (
+                            visualBars.map((bar, index) => {
                                 const isActive = activeIndices.has(index);
-                                const height = `${Math.max((value / globalMax) * 100, 8)}%`;
+                                const height = `${Math.max((bar.value / globalMax) * 100, 8)}%`;
 
                                 return (
-                                    <div
-                                        key={index}
+                                    <motion.div
+                                        key={bar.id}
+                                        layout
+                                        transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
                                         className="flex min-w-10 flex-1 flex-col items-center justify-end gap-2 sm:min-w-12"
                                     >
-                                        <span
+                                        <motion.span
+                                            animate={shouldReduceMotion ? {} : { y: isActive ? -2 : 0 }}
+                                            transition={{ duration: 0.2 }}
                                             className={cn(
                                                 "text-xs font-medium text-text-secondary transition-colors duration-300",
                                                 isActive && "text-text-primary",
                                             )}
                                         >
-                                            {value}
-                                        </span>
+                                            {bar.value}
+                                        </motion.span>
 
                                         <div className="relative flex h-56 w-full items-end sm:h-60">
-                                            <div
+                                            <motion.div
+                                                layout="position"
+                                                animate={shouldReduceMotion ? { height } : {
+                                                    height,
+                                                    y: isActive ? -6 : 0,
+                                                    scale: isActive ? 1.03 : 1,
+                                                }}
+                                                transition={shouldReduceMotion
+                                                    ? reducedMotionTransition
+                                                    : activeBarTransition}
                                                 className={cn(
-                                                    "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[height,transform,background-color,box-shadow] duration-500 ease-out",
+                                                    "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
                                                     isActive && activeBarClassName,
-                                                    isActive && "border-transparent -translate-y-1",
+                                                    isActive && "border-transparent",
                                                 )}
-                                                style={{ height }}
-                                                aria-label={`Index ${index}, value ${value}`}
+                                                aria-label={`Index ${index}, value ${bar.value}`}
                                                 aria-current={isActive ? "true" : undefined}
                                             />
                                         </div>
 
-                                        <span
+                                        <motion.span
+                                            animate={shouldReduceMotion ? {} : { y: isActive ? 2 : 0 }}
+                                            transition={{ duration: 0.2 }}
                                             className={cn(
                                                 "text-[11px] text-text-secondary transition-colors duration-300",
                                                 isActive && "text-text-primary",
                                             )}
                                         >
                                             {index}
-                                        </span>
-                                    </div>
+                                        </motion.span>
+                                    </motion.div>
                                 );
                             })
                         ) : (
