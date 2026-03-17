@@ -89,19 +89,23 @@ const codeSnippetsByAlgorithm = {
             language: "PSEUDOCODE",
             syncsWithTrace: true,
             traceLineMap: {
-                1: 1,
-                2: 2,
-                3: 3,
-                4: 4,
-                5: 5,
-                6: 6,
+                1: [1, 2],
+                2: [3, 4],
+                3: [5, 6],
+                4: [7, 8],
+                5: 9,
+                6: 10,
             },
-            code: `initialize the unsorted array
-begin the next pass through the unsorted region
-compare the current adjacent pair
-swap the pair when left > right
-mark the largest remaining value as sorted
-return the sorted array`,
+            code: `function bubbleSort(arr)
+n ← length(arr)
+for i ← 0 to n-2
+  swapped ← false
+  for j ← 0 to n-i-2
+    if arr[j] > arr[j+1]
+      swap arr[j], arr[j+1]
+      swapped ← true
+  if not swapped: break
+return arr`,
         },
         {
             id: "javascript",

@@ -25,6 +25,29 @@ export type AlgorithmSimulationResponse = {
     totalSteps: number;
 };
 
+export type SimulationValidationAction = {
+    type: string;
+    indices: number[];
+};
+
+export type SimulationSession = {
+    sessionId: string;
+    steps: AlgorithmSimulationStep[];
+    currentStepIndex: number;
+};
+
+export type SimulationValidationResponse = {
+    sessionId: string;
+    correct: boolean;
+    newArrayState: number[];
+    nextState: number[];
+    nextExpectedAction: string;
+    message: string;
+    hint: string;
+    suggestedIndices: number[];
+    currentStepIndex: number;
+};
+
 export type AlgorithmSummary = {
     algorithmId: number;
     name: string;
@@ -169,4 +192,30 @@ export const SimulationService = {
             body: { algorithm, array },
             getToken,
         }) as Promise<AlgorithmSimulationResponse>,
+
+    /**
+     * POST /simulation/start
+     * Starts a stateful practice-mode session backed by the auto-mode trace.
+     */
+    startSession: (algorithm: string, array: number[], getToken: GetTokenFn) =>
+        apiFetch("/simulation/start", {
+            method: "POST",
+            body: { algorithm, array },
+            getToken,
+        }) as Promise<SimulationSession>,
+
+    /**
+     * POST /simulation/validate-step
+     * Validates an interactive learner action against the backend engine.
+     */
+    validateStep: (
+        sessionId: string,
+        action: SimulationValidationAction,
+        getToken: GetTokenFn,
+    ) =>
+        apiFetch("/simulation/validate-step", {
+            method: "POST",
+            body: { sessionId, action },
+            getToken,
+        }) as Promise<SimulationValidationResponse>,
 };

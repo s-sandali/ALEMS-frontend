@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
+type LearningMode = "auto" | "practice";
+
 type SimulationControlsProps = {
+    mode: LearningMode;
     isPlaying: boolean;
     speed: number;
     speeds: number[];
@@ -15,6 +18,12 @@ type SimulationControlsProps = {
     elementsText: string;
     sampleInput: number[];
     simulationError: string;
+    feedbackMessage: string;
+    hintMessage: string;
+    isCorrect: boolean | null;
+    isValidatingStep: boolean;
+    practiceCompleted: boolean;
+    onModeChange: (mode: LearningMode) => void;
     onTogglePlayback: () => void;
     onStepBackward: () => void;
     onStepForward: () => void;
@@ -27,7 +36,20 @@ type SimulationControlsProps = {
     className?: string;
 };
 
+function getFeedbackClassName(isCorrect: boolean | null) {
+    if (isCorrect === true) {
+        return "border-emerald-400/20 bg-emerald-400/5 text-emerald-100";
+    }
+
+    if (isCorrect === false) {
+        return "border-red-400/20 bg-red-400/5 text-red-100";
+    }
+
+    return "border-white/[0.06] bg-bg/60 text-text-secondary";
+}
+
 export default function SimulationControls({
+    mode,
     isPlaying,
     speed,
     speeds,
@@ -37,6 +59,12 @@ export default function SimulationControls({
     elementsText,
     sampleInput,
     simulationError,
+    feedbackMessage,
+    hintMessage,
+    isCorrect,
+    isValidatingStep,
+    practiceCompleted,
+    onModeChange,
     onTogglePlayback,
     onStepBackward,
     onStepForward,
@@ -49,9 +77,10 @@ export default function SimulationControls({
     className,
 }: SimulationControlsProps) {
     const speedIndex = Math.max(speeds.indexOf(speed), 0);
-    const canStepBackward = totalSteps > 0 && currentStepIndex > 0;
-    const canStepForward = totalSteps > 1 && currentStepIndex < totalSteps - 1;
-    const canControlPlayback = totalSteps > 1;
+    const canStepBackward = totalSteps > 0 && currentStepIndex > 0 && mode === "auto";
+    const canStepForward = totalSteps > 1 && currentStepIndex < totalSteps - 1 && mode === "auto";
+    const canControlPlayback = totalSteps > 1 && mode === "auto";
+    const isPracticeMode = mode === "practice";
 
     return (
         <section
@@ -61,9 +90,9 @@ export default function SimulationControls({
             )}
         >
             <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="max-w-2xl">
+                        <p className="text-s font-semibold uppercase tracking-[0.28em] text-accent">
                             03- Simulation
                         </p>
                         <h2 className="mt-3 text-2xl font-bold tracking-tight text-white">
@@ -72,13 +101,26 @@ export default function SimulationControls({
                         
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <Badge variant="secondary">
-                            Step {totalSteps === 0 ? 0 : currentStepIndex + 1} / {totalSteps}
-                        </Badge>
-                        <Badge>
-                            {speed}x
-                        </Badge>
+                    <div className="flex flex-col gap-3">
+                        
+                        <div className="inline-flex rounded-full border border-white/10 bg-bg/60 p-1">
+                            <Button
+                                variant={isPracticeMode ? "ghost" : "default"}
+                                size="sm"
+                                onClick={() => onModeChange("auto")}
+                                className="rounded-full"
+                            >
+                                Auto Mode
+                            </Button>
+                            <Button
+                                variant={isPracticeMode ? "default" : "ghost"}
+                                size="sm"
+                                onClick={() => onModeChange("practice")}
+                                className="rounded-full"
+                            >
+                                Practice Mode
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -117,15 +159,17 @@ export default function SimulationControls({
                             <Button
                                 variant="outline"
                                 onClick={onReset}
-                                disabled={totalSteps === 0 || currentStepIndex === 0}
+                                disabled={isPracticeMode
+                                    ? sampleInput.length === 0
+                                    : totalSteps === 0 || currentStepIndex === 0}
                             >
                                 <RotateCcw className="h-4 w-4" />
-                                Reset
+                                {isPracticeMode ? "Reset practice" : "Reset"}
                             </Button>
                         </div>
 
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
-                            <div className="min-w-0 md:w-40">
+                            <div className="min-w-0 md:w-52">
                                 <p className="text-sm font-semibold text-white">
                                     Playback speed
                                 </p>
@@ -138,6 +182,7 @@ export default function SimulationControls({
                                     min={0}
                                     max={speeds.length - 1}
                                     step={1}
+                                    disabled={isPracticeMode}
                                     onValueChange={([nextIndex]) => {
                                         const nextSpeed = speeds[nextIndex] ?? speeds[0];
                                         onSpeedChange(nextSpeed);
@@ -152,10 +197,8 @@ export default function SimulationControls({
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-white/[0.06] bg-surface/60 p-4">
-                            <div className="flex flex-col gap-4">
-                                
-
+                        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
+                            <div className="rounded-2xl border border-white/[0.06] bg-surface/60 p-4">
                                 <div className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)_auto]">
                                     <label className="flex flex-col gap-2 text-sm">
                                         <span className="font-medium text-white">Array size</span>
@@ -200,7 +243,7 @@ export default function SimulationControls({
                                     </div>
                                 </div>
 
-                                <div className="rounded-2xl border border-white/[0.06] bg-bg/60 p-4">
+                                <div className="mt-4 rounded-2xl border border-white/[0.06] bg-bg/60 p-4">
                                     <div className="flex items-center justify-between gap-4 text-sm">
                                         <span className="text-text-secondary">Sample input</span>
                                         <span className="font-medium text-white">
@@ -211,6 +254,31 @@ export default function SimulationControls({
                                         <span className="text-text-secondary">Steps returned</span>
                                         <span className="font-medium text-white">{totalSteps}</span>
                                     </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-4">
+                                <div className={cn(
+                                    "rounded-2xl border p-4 text-sm leading-6",
+                                    getFeedbackClassName(isCorrect),
+                                )}>
+                                    <p className="font-semibold text-white">
+                                        {isPracticeMode ? "Practice feedback" : "Current mode"}
+                                    </p>
+                                    <p className="mt-2">
+                                        {isPracticeMode
+                                            ? feedbackMessage || "Select two bars to attempt the next swap."
+                                            : "Watch as Auto Mode swaps the elements."}
+                                    </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-white/[0.06] bg-bg/60 p-4 text-sm leading-6 text-text-secondary">
+                                    <p className="font-semibold text-white">Current hint</p>
+                                    <p className="mt-2">
+                                        {isPracticeMode
+                                            ? hintMessage || "Select two bars and BigO will validate the swap."
+                                            : "Use the transport controls to inspect each step at your own pace."}
+                                    </p>
                                 </div>
 
                                 {simulationError ? (

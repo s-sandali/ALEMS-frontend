@@ -9,7 +9,7 @@ type CodeSnippet = {
     label: string;
     language: string;
     syncsWithTrace?: boolean;
-    traceLineMap?: Record<number, number>;
+    traceLineMap?: Record<number, number | number[]>;
     code: string;
 };
 
@@ -47,12 +47,13 @@ export default function CodePanel({
         () => activeSnippet?.code.split("\n") ?? [],
         [activeSnippet],
     );
-    const activeDisplayLine = useMemo(() => {
+    const activeDisplayLines = useMemo(() => {
         if (!activeSnippet?.syncsWithTrace || activeLine <= 0) {
-            return 0;
+            return [];
         }
 
-        return activeSnippet.traceLineMap?.[activeLine] ?? activeLine;
+        const mappedLine = activeSnippet.traceLineMap?.[activeLine] ?? activeLine;
+        return Array.isArray(mappedLine) ? mappedLine : [mappedLine];
     }, [activeLine, activeSnippet]);
     const displayLineToTraceLineMap = useMemo(() => {
         if (!activeSnippet?.syncsWithTrace || !activeSnippet.traceLineMap) {
@@ -60,22 +61,27 @@ export default function CodePanel({
         }
 
         return Object.entries(activeSnippet.traceLineMap).reduce<Record<number, number>>((accumulator, [traceLine, displayLine]) => {
-            accumulator[displayLine] = Number(traceLine);
+            const displayLines = Array.isArray(displayLine) ? displayLine : [displayLine];
+
+            displayLines.forEach((lineNumber) => {
+                accumulator[lineNumber] = Number(traceLine);
+            });
+
             return accumulator;
         }, {});
     }, [activeSnippet]);
 
     useEffect(() => {
-        if (!activeSnippet?.syncsWithTrace || activeDisplayLine <= 0) {
+        if (!activeSnippet?.syncsWithTrace || activeDisplayLines.length === 0) {
             return;
         }
 
-        const activeElement = lineRefs.current[activeDisplayLine - 1];
+        const activeElement = lineRefs.current[activeDisplayLines[0] - 1];
         activeElement?.scrollIntoView({
             block: "nearest",
             behavior: "smooth",
         });
-    }, [activeDisplayLine, activeSnippet]);
+    }, [activeDisplayLines, activeSnippet]);
 
     useEffect(() => {
         if (!copied) {
@@ -158,7 +164,7 @@ export default function CodePanel({
                     <div className="space-y-[2px]">
                         {codeLines.map((line, index) => {
                             const lineNumber = index + 1;
-                            const isActive = Boolean(activeSnippet?.syncsWithTrace) && activeDisplayLine === lineNumber;
+                            const isActive = Boolean(activeSnippet?.syncsWithTrace) && activeDisplayLines.includes(lineNumber);
                             const isClickable = Boolean(activeSnippet?.syncsWithTrace && typeof lineToStepIndexMap === "object" && onSeekToStep);
 
                             return (
