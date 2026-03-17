@@ -1,0 +1,234 @@
+import { Pause, Play, RotateCcw, SkipBack, SkipForward, WandSparkles } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
+
+type SimulationControlsProps = {
+    isPlaying: boolean;
+    speed: number;
+    speeds: number[];
+    currentStepIndex: number;
+    totalSteps: number;
+    arraySize: number;
+    elementsText: string;
+    sampleInput: number[];
+    simulationError: string;
+    onTogglePlayback: () => void;
+    onStepBackward: () => void;
+    onStepForward: () => void;
+    onReset: () => void;
+    onSpeedChange: (speed: number) => void;
+    onArraySizeChange: (size: number) => void;
+    onElementsChange: (value: string) => void;
+    onApplyInput: () => void;
+    className?: string;
+};
+
+export default function SimulationControls({
+    isPlaying,
+    speed,
+    speeds,
+    currentStepIndex,
+    totalSteps,
+    arraySize,
+    elementsText,
+    sampleInput,
+    simulationError,
+    onTogglePlayback,
+    onStepBackward,
+    onStepForward,
+    onReset,
+    onSpeedChange,
+    onArraySizeChange,
+    onElementsChange,
+    onApplyInput,
+    className,
+}: SimulationControlsProps) {
+    const speedIndex = Math.max(speeds.indexOf(speed), 0);
+    const canStepBackward = totalSteps > 0 && currentStepIndex > 0;
+    const canStepForward = totalSteps > 1 && currentStepIndex < totalSteps - 1;
+    const canControlPlayback = totalSteps > 1;
+
+    return (
+        <section
+            className={cn(
+                "rounded-[2rem] border border-white/[0.06] bg-surface p-6",
+                className,
+            )}
+        >
+            <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
+                            Playback
+                        </p>
+                        <h2 className="mt-3 text-2xl font-bold tracking-tight text-white">
+                            Simulation controls
+                        </h2>
+                        <p className="mt-2 text-sm leading-7 text-text-secondary">
+                            Step through the backend simulation trace manually or replay it at different speeds.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Badge variant="secondary">
+                            Step {totalSteps === 0 ? 0 : currentStepIndex + 1} / {totalSteps}
+                        </Badge>
+                        <Badge>
+                            {speed}x
+                        </Badge>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/[0.06] bg-bg/50 p-4 sm:p-5">
+                    <div className="flex flex-col gap-5">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Button
+                                variant="default"
+                                onClick={onTogglePlayback}
+                                disabled={!canControlPlayback}
+                            >
+                                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                                {isPlaying ? "Pause" : currentStepIndex >= totalSteps - 1 ? "Replay" : "Play"}
+                            </Button>
+
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                onClick={onStepBackward}
+                                disabled={!canStepBackward}
+                                aria-label="Step backward"
+                            >
+                                <SkipBack className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                onClick={onStepForward}
+                                disabled={!canStepForward}
+                                aria-label="Step forward"
+                            >
+                                <SkipForward className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                onClick={onReset}
+                                disabled={totalSteps === 0 || currentStepIndex === 0}
+                            >
+                                <RotateCcw className="h-4 w-4" />
+                                Reset
+                            </Button>
+                        </div>
+
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
+                            <div className="min-w-0 md:w-40">
+                                <p className="text-sm font-semibold text-white">
+                                    Playback speed
+                                </p>
+                                <p className="mt-1 text-xs leading-6 text-text-secondary">
+                                    Controls the animation interval
+                                </p>
+                            </div>
+
+                            <div className="flex-1">
+                                <Slider
+                                    value={[speedIndex]}
+                                    min={0}
+                                    max={speeds.length - 1}
+                                    step={1}
+                                    onValueChange={([nextIndex]) => {
+                                        const nextSpeed = speeds[nextIndex] ?? speeds[0];
+                                        onSpeedChange(nextSpeed);
+                                    }}
+                                    aria-label="Simulation playback speed"
+                                />
+                                <div className="mt-3 flex items-center justify-between text-xs text-text-secondary">
+                                    {speeds.map((value) => (
+                                        <span key={value}>{value}x</span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-white/[0.06] bg-surface/60 p-4">
+                            <div className="flex flex-col gap-4">
+                                <div>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
+                                        Backend Trace
+                                    </p>
+                                    <h3 className="mt-3 text-xl font-bold tracking-tight text-white">
+                                        Simulation snapshot
+                                    </h3>
+                                    <p className="mt-2 text-sm leading-7 text-text-secondary">
+                                        Customize the input array here, then request a fresh step trace from the backend API.
+                                    </p>
+                                </div>
+
+                                <div className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)_auto]">
+                                    <label className="flex flex-col gap-2 text-sm">
+                                        <span className="font-medium text-white">Array size</span>
+                                        <input
+                                            type="number"
+                                            min="2"
+                                            max="16"
+                                            value={arraySize}
+                                            onChange={(event) => onArraySizeChange(Number(event.target.value))}
+                                        />
+                                    </label>
+
+                                    <label className="flex flex-col gap-2 text-sm">
+                                        <span className="font-medium text-white">Elements</span>
+                                        <input
+                                            type="text"
+                                            value={elementsText}
+                                            onChange={(event) => onElementsChange(event.target.value)}
+                                            placeholder="8, 3, 5, 1, 9, 2"
+                                        />
+                                    </label>
+
+                                    <div className="flex items-end">
+                                        <Button
+                                            variant="default"
+                                            onClick={onApplyInput}
+                                            className="w-full lg:w-auto"
+                                        >
+                                            <WandSparkles className="h-4 w-4" />
+                                            Run trace
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-2xl border border-white/[0.06] bg-bg/60 p-4">
+                                    <div className="flex items-center justify-between gap-4 text-sm">
+                                        <span className="text-text-secondary">Sample input</span>
+                                        <span className="font-medium text-white">
+                                            [{sampleInput.join(", ")}]
+                                        </span>
+                                    </div>
+                                    <div className="mt-4 flex items-center justify-between gap-4 text-sm">
+                                        <span className="text-text-secondary">Steps returned</span>
+                                        <span className="font-medium text-white">{totalSteps}</span>
+                                    </div>
+                                </div>
+
+                                {simulationError ? (
+                                    <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm leading-6 text-amber-100">
+                                        {simulationError}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-2xl border border-accent/15 bg-accent/5 p-4 text-sm leading-6 text-text-secondary">
+                                        The simulation panel is now focused on backend-driven input, playback, and step control so the visualizer can sit beside future code-sync content.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
