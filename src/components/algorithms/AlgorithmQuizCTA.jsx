@@ -27,8 +27,8 @@ export default function AlgorithmQuizCTA({ algorithm }) {
 
     return (
         <section className="rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-8 lg:p-10">
-            <div className="border-t border-white/[0.06] pt-8">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
+            <div >
+                <p className="text-s font-semibold uppercase tracking-[0.3em] text-accent">
                     05 - Challenge
                 </p>
 
@@ -37,7 +37,7 @@ export default function AlgorithmQuizCTA({ algorithm }) {
                         Ready to test your <span className="text-accent">knowledge</span>?
                     </h2>
                     <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-text-secondary sm:text-base">
-                        Take a short challenge for {algorithm.name} and turn your walkthrough into measurable progress on the dashboard.
+                        Take a short challenge for {algorithm.name} and Earn XP for each correct answer and track your mastery on your dashboard..
                     </p>
 
                     <div className="mt-8 flex flex-wrap items-center justify-center gap-8">

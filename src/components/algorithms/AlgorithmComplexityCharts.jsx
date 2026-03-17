@@ -171,10 +171,10 @@ function getAnalysisCopy(algorithm) {
             eyebrow: "02 - Analysis",
             title: "Time & Space Complexity",
             description:
-                "For each pass, Bubble Sort compares adjacent values across the unsorted region. That leads to quadratic average and worst-case work, while an optimized early-exit version finishes in linear time when no swaps are needed.",
+                "For each of n passes, we do up to n–1 comparisons, giving O(n²). The optimised version exits early if no swaps occur, giving O(n) on an already-sorted input.",
             timeCard: {
-                eyebrow: "Time Complexity - Comparisons vs N",
-                title: "Comparison growth",
+                eyebrow: " ",
+                title: "Time Complexity",
                 description: "The chart contrasts Bubble Sort's best-case linear pass against its quadratic average and worst-case behavior as the input grows.",
                 footer: "Normalized comparisons by input size",
                 summaryRows: [
@@ -184,8 +184,8 @@ function getAnalysisCopy(algorithm) {
                 ],
             },
             spaceCard: {
-                eyebrow: "Space Complexity - In-place Sort",
-                title: "Memory profile",
+                eyebrow: " ",
+                title: " Space Complexity",
                 description: "Bubble Sort swaps values inside the original array, so its extra memory stays constant while the input itself grows linearly with n.",
                 footer: "Auxiliary memory vs input footprint",
                 summaryRows: [
@@ -205,7 +205,7 @@ function getAnalysisCopy(algorithm) {
         description:
             `${algorithm.name} can be compared across best, average, and worst-case growth. The charts below summarize how runtime scales with larger inputs and how much extra memory the algorithm typically needs.`,
         timeCard: {
-            eyebrow: "Time Complexity - Growth vs N",
+            eyebrow: "Time Complexity ",
             title: "Runtime growth",
             description: "Best, average, and worst-case complexity curves are normalized to show how execution cost expands as input size increases.",
             footer: "Normalized runtime growth",

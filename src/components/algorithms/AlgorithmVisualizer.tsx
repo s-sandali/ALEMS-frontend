@@ -35,6 +35,14 @@ const activeBarTransition: Transition = {
 function getStepTone(step: AlgorithmSimulationStep | undefined) {
     const action = step?.actionLabel.trim().toLowerCase() ?? "";
 
+    if (action.includes("sorted") || action.includes("complete")) {
+        return {
+            badgeClassName: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
+            activeBarClassName: "from-emerald-400 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.3)]",
+            emphasisLabel: "Sorted",
+        };
+    }
+
     if (action.includes("swap")) {
         return {
             badgeClassName: "border-red-400/30 bg-red-400/10 text-red-200",
@@ -75,6 +83,20 @@ function reconcileBars(previousBars: VisualBar[], nextValues: number[], createBa
     });
 }
 
+function getSortedIndices(step: AlgorithmSimulationStep | undefined, totalValues: number) {
+    const action = step?.actionLabel.trim().toLowerCase() ?? "";
+
+    if (action.includes("complete")) {
+        return new Set(Array.from({ length: totalValues }, (_, index) => index));
+    }
+
+    if (action.includes("sorted")) {
+        return new Set(step?.activeIndices ?? []);
+    }
+
+    return new Set<number>();
+}
+
 function AlgorithmVisualizer({
     steps,
     currentStepIndex,
@@ -95,6 +117,10 @@ function AlgorithmVisualizer({
     const activeIndices = useMemo(
         () => new Set(currentStep?.activeIndices ?? []),
         [currentStep],
+    );
+    const sortedIndices = useMemo(
+        () => getSortedIndices(currentStep, values.length),
+        [currentStep, values.length],
     );
     const { badgeClassName, activeBarClassName, emphasisLabel } = getStepTone(currentStep);
 
@@ -136,10 +162,11 @@ function AlgorithmVisualizer({
         >
             <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-1">
-                        <p className="text-xs font-medium uppercase tracking-[0.24em] text-text-secondary">
-                            Algorithm Trace
+                    <div className="space-y-4">
+                         <p className="text-s font-semibold uppercase tracking-[0.28em] text-accent">
+                            04- Visualization
                         </p>
+                        
                         <div className="flex flex-wrap items-center gap-2">
                             <AnimatePresence mode="wait" initial={false}>
                                 <motion.span
@@ -171,6 +198,10 @@ function AlgorithmVisualizer({
                             <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
                             Swapped
                         </span>
+                        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                            Sorted
+                        </span>
                     </div>
                 </div>
 
@@ -186,6 +217,7 @@ function AlgorithmVisualizer({
                         {visualBars.length > 0 ? (
                             visualBars.map((bar, index) => {
                                 const isActive = activeIndices.has(index);
+                                const isSorted = sortedIndices.has(index);
                                 const height = `${Math.max((bar.value / globalMax) * 100, 8)}%`;
 
                                 return (
@@ -200,6 +232,7 @@ function AlgorithmVisualizer({
                                             transition={{ duration: 0.2 }}
                                             className={cn(
                                                 "text-xs font-medium text-text-secondary transition-colors duration-300",
+                                                isSorted && "text-emerald-200",
                                                 isActive && "text-text-primary",
                                             )}
                                         >
@@ -219,6 +252,7 @@ function AlgorithmVisualizer({
                                                     : activeBarTransition}
                                                 className={cn(
                                                     "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
+                                                    isSorted && "border-emerald-400/40 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
                                                     isActive && activeBarClassName,
                                                     isActive && "border-transparent",
                                                 )}
@@ -232,6 +266,7 @@ function AlgorithmVisualizer({
                                             transition={{ duration: 0.2 }}
                                             className={cn(
                                                 "text-[11px] text-text-secondary transition-colors duration-300",
+                                                isSorted && "text-emerald-200",
                                                 isActive && "text-text-primary",
                                             )}
                                         >

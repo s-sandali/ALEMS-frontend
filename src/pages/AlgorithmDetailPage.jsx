@@ -1,15 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { UserButton, useAuth, useUser } from "@clerk/clerk-react";
 import { ChevronRight, LoaderCircle } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { Link, useParams } from "react-router-dom";
 
 import AlgorithmComplexityCharts from "../components/algorithms/AlgorithmComplexityCharts";
+import CodePanel from "../components/algorithms/CodePanel";
 import AlgorithmIntroductionSection from "../components/algorithms/AlgorithmIntroductionSection";
 import AlgorithmQuizCTA from "../components/algorithms/AlgorithmQuizCTA";
 import SimulationControls from "../components/algorithms/SimulationControls";
 import AlgorithmVisualizer from "../components/algorithms/AlgorithmVisualizer";
 import { AlgorithmService, SimulationService } from "../lib/api";
 import {
+    getAlgorithmCodeSnippets,
     getAlgorithmDifficulty,
     getAlgorithmSampleInput,
     getPrimaryComplexity,
@@ -33,6 +36,7 @@ export default function AlgorithmDetailPage() {
     const [sampleInput, setSampleInput] = useState([]);
     const [arraySize, setArraySize] = useState(0);
     const [elementsText, setElementsText] = useState("");
+    const [showCompletionToast, setShowCompletionToast] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -120,6 +124,7 @@ export default function AlgorithmDetailPage() {
 
         if (currentStepIndex >= steps.length - 1) {
             setIsPlaying(false);
+            setShowCompletionToast(true);
             return undefined;
         }
 
@@ -130,8 +135,32 @@ export default function AlgorithmDetailPage() {
         return () => window.clearTimeout(timeoutId);
     }, [basePlaybackIntervalMs, currentStepIndex, isPlaying, playbackSpeed, steps.length]);
 
+    useEffect(() => {
+        if (!showCompletionToast) {
+            return undefined;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            setShowCompletionToast(false);
+        }, 2600);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [showCompletionToast]);
+
     const difficulty = algorithm ? getAlgorithmDifficulty(algorithm.name) : "";
     const primaryComplexity = algorithm ? getPrimaryComplexity(algorithm) : "";
+    const codeSnippets = algorithm ? getAlgorithmCodeSnippets(algorithm.name) : [];
+    const activeLine = steps[currentStepIndex]?.lineNumber ?? 0;
+    const lineToStepIndexMap = useMemo(
+        () => steps.reduce((accumulator, step, index) => {
+            if (typeof step.lineNumber === "number" && accumulator[step.lineNumber] === undefined) {
+                accumulator[step.lineNumber] = index;
+            }
+
+            return accumulator;
+        }, {}),
+        [steps],
+    );
 
     function handleTogglePlayback() {
         if (steps.length <= 1) {
@@ -141,14 +170,17 @@ export default function AlgorithmDetailPage() {
         if (currentStepIndex >= steps.length - 1) {
             setCurrentStepIndex(0);
             setIsPlaying(true);
+            setShowCompletionToast(false);
             return;
         }
 
+        setShowCompletionToast(false);
         setIsPlaying((previousValue) => !previousValue);
     }
 
     function handleStepChange(nextStepIndex) {
         setIsPlaying(false);
+        setShowCompletionToast(false);
         setCurrentStepIndex(nextStepIndex);
     }
 
@@ -158,6 +190,7 @@ export default function AlgorithmDetailPage() {
         }
 
         setIsPlaying(false);
+        setShowCompletionToast(false);
         setCurrentStepIndex((previousIndex) => Math.min(previousIndex + 1, steps.length - 1));
     }
 
@@ -167,11 +200,13 @@ export default function AlgorithmDetailPage() {
         }
 
         setIsPlaying(false);
+        setShowCompletionToast(false);
         setCurrentStepIndex((previousIndex) => Math.max(previousIndex - 1, 0));
     }
 
     function handleReset() {
         setIsPlaying(false);
+        setShowCompletionToast(false);
         setCurrentStepIndex(0);
     }
 
@@ -193,6 +228,27 @@ export default function AlgorithmDetailPage() {
         });
     }
 
+    async function runSimulationForInput(inputArray) {
+        if (!algorithm) {
+            return;
+        }
+
+        const simulationResponse = await SimulationService.runSimulation(
+            getSimulationAlgorithmKey(algorithm.name),
+            inputArray,
+            getToken,
+        );
+
+        setSampleInput(inputArray);
+        setArraySize(inputArray.length);
+        setElementsText(inputArray.join(", "));
+        setSteps(Array.isArray(simulationResponse?.steps) ? simulationResponse.steps : []);
+        setCurrentStepIndex(0);
+        setIsPlaying(false);
+        setShowCompletionToast(false);
+        setSimulationError("");
+    }
+
     async function handleApplyInput() {
         if (!algorithm) {
             return;
@@ -210,21 +266,30 @@ export default function AlgorithmDetailPage() {
         }
 
         try {
-            setSimulationError("");
-            const simulationResponse = await SimulationService.runSimulation(
-                getSimulationAlgorithmKey(algorithm.name),
-                parsedValues,
-                getToken,
-            );
-
-            setSampleInput(parsedValues);
-            setSteps(Array.isArray(simulationResponse?.steps) ? simulationResponse.steps : []);
-            setCurrentStepIndex(0);
-            setIsPlaying(false);
+            await runSimulationForInput(parsedValues);
         } catch (runError) {
             setSteps([]);
             setCurrentStepIndex(0);
             setIsPlaying(false);
+            setShowCompletionToast(false);
+            setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
+        }
+    }
+
+    async function handleGenerateRandomArray() {
+        const size = Math.max(arraySize || sampleInput.length || 6, 2);
+        const randomInput = Array.from(
+            { length: size },
+            () => Math.floor(Math.random() * 90) + 10,
+        );
+
+        try {
+            await runSimulationForInput(randomInput);
+        } catch (runError) {
+            setSteps([]);
+            setCurrentStepIndex(0);
+            setIsPlaying(false);
+            setShowCompletionToast(false);
             setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
         }
     }
@@ -325,16 +390,42 @@ export default function AlgorithmDetailPage() {
                             onArraySizeChange={handleArraySizeChange}
                             onElementsChange={setElementsText}
                             onApplyInput={handleApplyInput}
+                            onGenerateRandomArray={handleGenerateRandomArray}
                         />
 
-                        <section className="grid gap-6">
+                        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
                             <AlgorithmVisualizer steps={steps} currentStepIndex={currentStepIndex} />
+                            <CodePanel
+                                snippets={codeSnippets}
+                                activeLine={activeLine}
+                                lineToStepIndexMap={lineToStepIndexMap}
+                                onSeekToStep={handleStepChange}
+                            />
                         </section>
 
                         <AlgorithmQuizCTA algorithm={algorithm} />
                     </>
                 ) : null}
             </main>
+
+            <AnimatePresence>
+                {showCompletionToast ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 16 }}
+                        transition={{ duration: 0.22, ease: "easeOut" }}
+                        className="fixed bottom-6 right-6 z-50 rounded-2xl border border-accent/20 bg-surface/95 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+                    >
+                        <p className="text-sm font-semibold text-white">
+                            Sorting is done
+                        </p>
+                        <p className="mt-1 text-xs text-text-secondary">
+                            The backend simulation finished all steps.
+                        </p>
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
         </div>
     );
 }
