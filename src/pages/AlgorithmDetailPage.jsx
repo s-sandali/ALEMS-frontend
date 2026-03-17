@@ -36,6 +36,18 @@ export default function AlgorithmDetailPage() {
     const [sampleInput, setSampleInput] = useState([]);
     const [arraySize, setArraySize] = useState(0);
     const [elementsText, setElementsText] = useState("");
+    const [mode, setMode] = useState("auto");
+    const [practiceSessionId, setPracticeSessionId] = useState("");
+    const [currentArray, setCurrentArray] = useState([]);
+    const [selectedIndices, setSelectedIndices] = useState([]);
+    const [feedbackIndices, setFeedbackIndices] = useState([]);
+    const [feedbackMessage, setFeedbackMessage] = useState("Select two bars to attempt the next swap.");
+    const [hintMessage, setHintMessage] = useState("Each swap is validated by the backend before the array updates.");
+    const [isCorrect, setIsCorrect] = useState(null);
+    const [suggestedIndices, setSuggestedIndices] = useState([]);
+    const [isValidatingStep, setIsValidatingStep] = useState(false);
+    const [practiceCompleted, setPracticeCompleted] = useState(false);
+    const [feedbackVersion, setFeedbackVersion] = useState(0);
     const [showCompletionToast, setShowCompletionToast] = useState(false);
 
     useEffect(() => {
@@ -56,9 +68,11 @@ export default function AlgorithmDetailPage() {
             setArraySize(inputArray.length);
             setElementsText(inputArray.join(", "));
             setSteps(Array.isArray(simulationResponse?.steps) ? simulationResponse.steps : []);
-            setCurrentStepIndex(0);
             setIsPlaying(false);
+            setShowCompletionToast(false);
             setSimulationError("");
+            resetPracticeState(inputArray, 0);
+            await startPracticeSession(inputArray);
         }
 
         async function loadAlgorithmDetails() {
@@ -93,9 +107,10 @@ export default function AlgorithmDetailPage() {
                     setArraySize(fallbackInput.length);
                     setElementsText(fallbackInput.join(", "));
                     setSteps([]);
-                    setCurrentStepIndex(0);
                     setIsPlaying(false);
+                    setShowCompletionToast(false);
                     setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
+                    resetPracticeState(fallbackInput, 0);
                 }
             } catch (loadError) {
                 if (!isMounted) {
@@ -118,7 +133,7 @@ export default function AlgorithmDetailPage() {
     }, [getToken, id]);
 
     useEffect(() => {
-        if (!isPlaying || steps.length <= 1) {
+        if (mode !== "auto" || !isPlaying || steps.length <= 1) {
             return undefined;
         }
 
@@ -133,7 +148,7 @@ export default function AlgorithmDetailPage() {
         }, basePlaybackIntervalMs / playbackSpeed);
 
         return () => window.clearTimeout(timeoutId);
-    }, [basePlaybackIntervalMs, currentStepIndex, isPlaying, playbackSpeed, steps.length]);
+    }, [basePlaybackIntervalMs, currentStepIndex, isPlaying, mode, playbackSpeed, steps.length]);
 
     useEffect(() => {
         if (!showCompletionToast) {
@@ -150,6 +165,7 @@ export default function AlgorithmDetailPage() {
     const difficulty = algorithm ? getAlgorithmDifficulty(algorithm.name) : "";
     const primaryComplexity = algorithm ? getPrimaryComplexity(algorithm) : "";
     const codeSnippets = algorithm ? getAlgorithmCodeSnippets(algorithm.name) : [];
+    const simulationAlgorithmKey = algorithm ? getSimulationAlgorithmKey(algorithm.name) : "";
     const activeLine = steps[currentStepIndex]?.lineNumber ?? 0;
     const lineToStepIndexMap = useMemo(
         () => steps.reduce((accumulator, step, index) => {
@@ -162,8 +178,55 @@ export default function AlgorithmDetailPage() {
         [steps],
     );
 
+    function resetPracticeState(inputArray, nextStepIndex = 0) {
+        setCurrentArray(inputArray);
+        setPracticeSessionId("");
+        setSelectedIndices([]);
+        setFeedbackIndices([]);
+        setFeedbackMessage("Select two bars to attempt the next swap.");
+        setHintMessage("Each swap is validated by the backend before the array updates.");
+        setIsCorrect(null);
+        setSuggestedIndices([]);
+        setIsValidatingStep(false);
+        setPracticeCompleted(false);
+        setFeedbackVersion((previousValue) => previousValue + 1);
+        setCurrentStepIndex(nextStepIndex);
+    }
+
+    async function startPracticeSession(inputArray) {
+        if (!algorithm) {
+            return null;
+        }
+
+        const session = await SimulationService.startSession(
+            simulationAlgorithmKey,
+            inputArray,
+            getToken,
+        );
+
+        setPracticeSessionId(session?.sessionId ?? "");
+        setCurrentStepIndex(typeof session?.currentStepIndex === "number" ? session.currentStepIndex : 0);
+
+        if (Array.isArray(session?.steps) && session.steps.length > 0) {
+            setSteps(session.steps);
+        }
+
+        const sessionStep = Array.isArray(session?.steps)
+            ? session.steps[session.currentStepIndex]
+            : null;
+        const isComplete = sessionStep?.actionLabel?.trim().toLowerCase() === "complete"
+            || sessionStep?.actionLabel?.trim().toLowerCase() === "early_exit";
+
+        setPracticeCompleted(isComplete);
+        setHintMessage(isComplete
+            ? "No more actions are needed."
+            : "Each swap is validated by the backend before the array updates.");
+
+        return session;
+    }
+
     function handleTogglePlayback() {
-        if (steps.length <= 1) {
+        if (mode !== "auto" || steps.length <= 1) {
             return;
         }
 
@@ -185,7 +248,7 @@ export default function AlgorithmDetailPage() {
     }
 
     function handleStepForward() {
-        if (steps.length <= 1) {
+        if (mode !== "auto" || steps.length <= 1) {
             return;
         }
 
@@ -195,7 +258,7 @@ export default function AlgorithmDetailPage() {
     }
 
     function handleStepBackward() {
-        if (steps.length === 0) {
+        if (mode !== "auto" || steps.length === 0) {
             return;
         }
 
@@ -207,7 +270,134 @@ export default function AlgorithmDetailPage() {
     function handleReset() {
         setIsPlaying(false);
         setShowCompletionToast(false);
+
+        if (mode === "practice") {
+            resetPracticeState(sampleInput, 0);
+            void startPracticeSession(sampleInput);
+            return;
+        }
+
         setCurrentStepIndex(0);
+    }
+
+    function handleModeChange(nextMode) {
+        setMode(nextMode);
+        setIsPlaying(false);
+        setShowCompletionToast(false);
+
+        if (nextMode === "practice") {
+            resetPracticeState(sampleInput, 0);
+            void startPracticeSession(sampleInput);
+            return;
+        }
+
+        setPracticeSessionId("");
+        setSelectedIndices([]);
+        setFeedbackIndices([]);
+        setIsCorrect(null);
+        setSuggestedIndices([]);
+        setIsValidatingStep(false);
+        setPracticeCompleted(false);
+        setFeedbackVersion((previousValue) => previousValue + 1);
+    }
+
+    async function validatePracticeSwap(indices) {
+        if (!algorithm || !practiceSessionId) {
+            return;
+        }
+
+        setIsPlaying(false);
+        setShowCompletionToast(false);
+        setSimulationError("");
+        setIsValidatingStep(true);
+        setFeedbackIndices(indices);
+        setSuggestedIndices([]);
+
+        try {
+            const validationResponse = await SimulationService.validateStep(
+                practiceSessionId,
+                {
+                    type: "swap",
+                    indices,
+                },
+                getToken,
+            );
+
+            const nextArrayState = Array.isArray(validationResponse?.newArrayState)
+                ? validationResponse.newArrayState
+                : currentArray;
+            const nextSuggestedIndices = Array.isArray(validationResponse?.suggestedIndices)
+                ? validationResponse.suggestedIndices
+                : [];
+            const nextExpectedAction = validationResponse?.nextExpectedAction ?? "";
+            const wasCorrect = Boolean(validationResponse?.correct);
+
+            setIsCorrect(wasCorrect);
+            setFeedbackMessage(validationResponse?.message || (wasCorrect ? "Correct swap." : "Incorrect step."));
+            setHintMessage(validationResponse?.hint || "");
+            setSuggestedIndices(nextSuggestedIndices);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+
+            if (!wasCorrect) {
+                return;
+            }
+
+            const isComplete = nextExpectedAction === "complete";
+            setCurrentArray(nextArrayState);
+            setPracticeCompleted(isComplete);
+            setCurrentStepIndex(
+                typeof validationResponse?.currentStepIndex === "number"
+                    ? validationResponse.currentStepIndex
+                    : currentStepIndex,
+            );
+
+            if (isComplete) {
+                setShowCompletionToast(true);
+            }
+        } catch (validationError) {
+            setIsCorrect(false);
+            setFeedbackMessage("We couldn't validate that move right now.");
+            setHintMessage("Please try again once the backend validation endpoint is available.");
+            setSuggestedIndices([]);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setSimulationError(validationError instanceof Error ? validationError.message : "Failed to validate the practice step.");
+        } finally {
+            setSelectedIndices([]);
+            setIsValidatingStep(false);
+        }
+    }
+
+    async function handlePracticeBarClick(index) {
+        if (
+            mode !== "practice"
+            || !algorithm
+            || isValidatingStep
+            || practiceCompleted
+            || currentArray.length === 0
+        ) {
+            return;
+        }
+
+        if (selectedIndices.includes(index)) {
+            setSelectedIndices((previousIndices) => previousIndices.filter((value) => value !== index));
+            return;
+        }
+
+        if (selectedIndices.length === 0) {
+            setSelectedIndices([index]);
+            setFeedbackIndices([]);
+            setIsCorrect(null);
+            setFeedbackMessage("Select one more bar to validate the swap.");
+            setHintMessage("The backend will confirm whether this swap is the next valid move.");
+            return;
+        }
+
+        const attemptedIndices = [...selectedIndices, index]
+            .slice(0, 2)
+            .sort((leftIndex, rightIndex) => leftIndex - rightIndex);
+
+        setSelectedIndices(attemptedIndices);
+        await validatePracticeSwap(attemptedIndices);
     }
 
     function handleArraySizeChange(nextSize) {
@@ -234,7 +424,7 @@ export default function AlgorithmDetailPage() {
         }
 
         const simulationResponse = await SimulationService.runSimulation(
-            getSimulationAlgorithmKey(algorithm.name),
+            simulationAlgorithmKey,
             inputArray,
             getToken,
         );
@@ -243,10 +433,11 @@ export default function AlgorithmDetailPage() {
         setArraySize(inputArray.length);
         setElementsText(inputArray.join(", "));
         setSteps(Array.isArray(simulationResponse?.steps) ? simulationResponse.steps : []);
-        setCurrentStepIndex(0);
         setIsPlaying(false);
         setShowCompletionToast(false);
         setSimulationError("");
+        resetPracticeState(inputArray, 0);
+        await startPracticeSession(inputArray);
     }
 
     async function handleApplyInput() {
@@ -373,6 +564,7 @@ export default function AlgorithmDetailPage() {
                         <AlgorithmComplexityCharts algorithm={algorithm} />
 
                         <SimulationControls
+                            mode={mode}
                             isPlaying={isPlaying}
                             speed={playbackSpeed}
                             speeds={playbackSpeeds}
@@ -382,6 +574,12 @@ export default function AlgorithmDetailPage() {
                             elementsText={elementsText}
                             sampleInput={sampleInput}
                             simulationError={simulationError}
+                            feedbackMessage={feedbackMessage}
+                            hintMessage={hintMessage}
+                            isCorrect={isCorrect}
+                            isValidatingStep={isValidatingStep}
+                            practiceCompleted={practiceCompleted}
+                            onModeChange={handleModeChange}
                             onTogglePlayback={handleTogglePlayback}
                             onStepBackward={handleStepBackward}
                             onStepForward={handleStepForward}
@@ -394,7 +592,21 @@ export default function AlgorithmDetailPage() {
                         />
 
                         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
-                            <AlgorithmVisualizer steps={steps} currentStepIndex={currentStepIndex} />
+                            <AlgorithmVisualizer
+                                steps={steps}
+                                currentStepIndex={currentStepIndex}
+                                mode={mode}
+                                practiceArray={currentArray}
+                                selectedIndices={selectedIndices}
+                                suggestedIndices={suggestedIndices}
+                                feedbackIndices={feedbackIndices}
+                                feedbackTone={isCorrect === null ? null : (isCorrect ? "correct" : "incorrect")}
+                                feedbackVersion={feedbackVersion}
+                                hintMessage={mode === "practice" ? hintMessage : ""}
+                                practiceCompleted={practiceCompleted}
+                                isInteractionDisabled={mode !== "practice" || isValidatingStep || practiceCompleted}
+                                onBarClick={handlePracticeBarClick}
+                            />
                             <CodePanel
                                 snippets={codeSnippets}
                                 activeLine={activeLine}
@@ -418,10 +630,12 @@ export default function AlgorithmDetailPage() {
                         className="fixed bottom-6 right-6 z-50 rounded-2xl border border-accent/20 bg-surface/95 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl"
                     >
                         <p className="text-sm font-semibold text-white">
-                            Sorting is done
+                            {mode === "practice" ? "Practice complete" : "Sorting is done"}
                         </p>
                         <p className="mt-1 text-xs text-text-secondary">
-                            The backend simulation finished all steps.
+                            {mode === "practice"
+                                ? "The backend confirmed the array is sorted."
+                                : "The backend simulation finished all steps."}
                         </p>
                     </motion.div>
                 ) : null}
