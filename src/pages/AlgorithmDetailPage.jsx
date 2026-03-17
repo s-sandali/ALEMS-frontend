@@ -3,6 +3,7 @@ import { UserButton, useAuth, useUser } from "@clerk/clerk-react";
 import { ChevronRight, LoaderCircle } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
+import AlgorithmComplexityCharts from "../components/algorithms/AlgorithmComplexityCharts";
 import AlgorithmIntroductionSection from "../components/algorithms/AlgorithmIntroductionSection";
 import AlgorithmVisualizer from "../components/algorithms/AlgorithmVisualizer";
 import { AlgorithmService, SimulationService } from "../lib/api";
@@ -166,6 +167,8 @@ export default function AlgorithmDetailPage() {
                             currentStepIndex={currentStepIndex}
                             onStepChange={setCurrentStepIndex}
                         />
+
+                        <AlgorithmComplexityCharts algorithm={algorithm} />
 
                         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.8fr)]">
                             <AlgorithmVisualizer steps={steps} currentStepIndex={currentStepIndex} />
