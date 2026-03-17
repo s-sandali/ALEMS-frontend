@@ -19,6 +19,33 @@ const spaceComplexityByAlgorithm = {
     "quick sort": "O(log n)",
 };
 
+const quizMetadataByAlgorithm = {
+    "bubble sort": {
+        available: true,
+        questionCount: 5,
+        xpReward: 50,
+        timeMinutes: 3,
+    },
+    "binary search": {
+        available: false,
+        questionCount: 5,
+        xpReward: 60,
+        timeMinutes: 3,
+    },
+    "merge sort": {
+        available: false,
+        questionCount: 6,
+        xpReward: 75,
+        timeMinutes: 4,
+    },
+    "quick sort": {
+        available: false,
+        questionCount: 6,
+        xpReward: 75,
+        timeMinutes: 4,
+    },
+};
+
 const sampleSizes = [8, 16, 32, 64, 128, 256];
 
 export function getAlgorithmDifficulty(name) {
@@ -111,12 +138,21 @@ export function getComplexityChartData(algorithm) {
     };
 }
 
+export function getAlgorithmQuizMetadata(name) {
+    return quizMetadataByAlgorithm[name.trim().toLowerCase()] || {
+        available: false,
+        questionCount: 5,
+        xpReward: 50,
+        timeMinutes: 3,
+    };
+}
+
 export function getAlgorithmIntroduction(name) {
     const normalizedName = name.trim().toLowerCase();
 
     if (normalizedName === "bubble sort") {
         return {
-            eyebrow: "01 — Introduction",
+            eyebrow: "01 - Introduction",
             title: "How does Bubble Sort work?",
             paragraphs: [
                 "Bubble Sort scans the array from left to right, comparing adjacent values and swapping them whenever the left value is larger than the right one.",
@@ -158,7 +194,7 @@ export function getAlgorithmIntroduction(name) {
     }
 
     return {
-        eyebrow: "01 — Introduction",
+        eyebrow: "01 - Introduction",
         title: `How does ${name} work?`,
         paragraphs: [
             `${name} follows a structured sequence of comparisons and state changes that can be explored step by step through the backend simulation trace.`,
