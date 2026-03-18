@@ -199,9 +199,10 @@ function AlgorithmVisualizer({
         : Math.min(Math.max(currentStepIndex, 0), steps.length - 1);
     const currentStep = steps[safeIndex];
     const isPracticeMode = mode === "practice";
-    const values = isPracticeMode
-        ? practiceArray
-        : (currentStep?.arrayState ?? []);
+    const values = useMemo(
+        () => (isPracticeMode ? practiceArray : (currentStep?.arrayState ?? [])),
+        [isPracticeMode, practiceArray, currentStep],
+    );
     const globalMax = useMemo(() => {
         const sourceValues = isPracticeMode
             ? values
