@@ -67,19 +67,19 @@ function getStepTone(step: AlgorithmSimulationStep | undefined) {
         };
     }
 
-    if (action === "found" || action.includes("found")) {
-        return {
-            badgeClassName: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-            activeBarClassName: "from-emerald-400 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.3)]",
-            emphasisLabel: "Found",
-        };
-    }
-
     if (action === "not_found" || action.includes("not_found") || action.includes("not found")) {
         return {
             badgeClassName: "border-red-400/30 bg-red-400/10 text-red-200",
             activeBarClassName: "from-red-400 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.35)]",
             emphasisLabel: "Not Found",
+        };
+    }
+
+    if (action === "found" || action.includes("found")) {
+        return {
+            badgeClassName: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
+            activeBarClassName: "from-emerald-400 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.3)]",
+            emphasisLabel: "Found",
         };
     }
 

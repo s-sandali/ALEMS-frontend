@@ -19,6 +19,60 @@ import {
     getSimulationAlgorithmKey,
 } from "../lib/algorithmPresentation";
 
+function buildMockBinarySearchSteps(array) {
+    const values = Array.isArray(array) && array.length > 0
+        ? [...array].sort((left, right) => left - right)
+        : [3, 7, 12, 19, 25, 31, 44, 58];
+    const midIndex = Math.floor((values.length - 1) / 2);
+    const rightMidIndex = Math.floor((midIndex + 1 + (values.length - 1)) / 2);
+
+    return [
+        {
+            stepNumber: 1,
+            arrayState: values,
+            activeIndices: [midIndex],
+            lineNumber: 4,
+            actionLabel: "compare",
+        },
+        {
+            stepNumber: 2,
+            arrayState: values,
+            activeIndices: [midIndex],
+            lineNumber: 7,
+            actionLabel: "discard_left",
+        },
+        {
+            stepNumber: 3,
+            arrayState: values,
+            activeIndices: [rightMidIndex],
+            lineNumber: 4,
+            actionLabel: "compare",
+        },
+        {
+            stepNumber: 4,
+            arrayState: values,
+            activeIndices: [rightMidIndex],
+            lineNumber: 5,
+            actionLabel: "found",
+        },
+        {
+            stepNumber: 5,
+            arrayState: values,
+            activeIndices: [],
+            lineNumber: 8,
+            actionLabel: "not_found",
+        },
+    ];
+}
+
+function getFallbackStepsForAlgorithm(algorithmName, inputArray) {
+    if (algorithmName?.trim().toLowerCase() === "binary search") {
+        return buildMockBinarySearchSteps(inputArray);
+    }
+
+    return [];
+}
+
 export default function AlgorithmDetailPage() {
     const playbackSpeeds = [0.5, 1, 2, 4];
     const basePlaybackIntervalMs = 1400;
@@ -106,10 +160,12 @@ export default function AlgorithmDetailPage() {
                     setSampleInput(fallbackInput);
                     setArraySize(fallbackInput.length);
                     setElementsText(fallbackInput.join(", "));
-                    setSteps([]);
+                    setSteps(getFallbackStepsForAlgorithm(algorithmRecord.name, fallbackInput));
                     setIsPlaying(false);
                     setShowCompletionToast(false);
-                    setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
+                    setSimulationError(runError instanceof Error
+                        ? `${runError.message} Showing local mock steps for visual testing.`
+                        : "Simulation trace is not available yet. Showing local mock steps for visual testing.");
                     resetPracticeState(fallbackInput, 0);
                 }
             } catch (loadError) {
@@ -166,6 +222,7 @@ export default function AlgorithmDetailPage() {
     const primaryComplexity = algorithm ? getPrimaryComplexity(algorithm) : "";
     const codeSnippets = algorithm ? getAlgorithmCodeSnippets(algorithm.name) : [];
     const simulationAlgorithmKey = algorithm ? getSimulationAlgorithmKey(algorithm.name) : "";
+    const algorithmType = simulationAlgorithmKey === "binary_search" ? "search" : "sort";
     const activeLine = steps[currentStepIndex]?.lineNumber ?? 0;
     const lineToStepIndexMap = useMemo(
         () => steps.reduce((accumulator, step, index) => {
@@ -459,11 +516,13 @@ export default function AlgorithmDetailPage() {
         try {
             await runSimulationForInput(parsedValues);
         } catch (runError) {
-            setSteps([]);
+            setSteps(getFallbackStepsForAlgorithm(algorithm?.name, parsedValues));
             setCurrentStepIndex(0);
             setIsPlaying(false);
             setShowCompletionToast(false);
-            setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
+            setSimulationError(runError instanceof Error
+                ? `${runError.message} Showing local mock steps for visual testing.`
+                : "Simulation trace is not available yet. Showing local mock steps for visual testing.");
         }
     }
 
@@ -477,11 +536,13 @@ export default function AlgorithmDetailPage() {
         try {
             await runSimulationForInput(randomInput);
         } catch (runError) {
-            setSteps([]);
+            setSteps(getFallbackStepsForAlgorithm(algorithm?.name, randomInput));
             setCurrentStepIndex(0);
             setIsPlaying(false);
             setShowCompletionToast(false);
-            setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
+            setSimulationError(runError instanceof Error
+                ? `${runError.message} Showing local mock steps for visual testing.`
+                : "Simulation trace is not available yet. Showing local mock steps for visual testing.");
         }
     }
 
@@ -595,6 +656,7 @@ export default function AlgorithmDetailPage() {
                             <AlgorithmVisualizer
                                 steps={steps}
                                 currentStepIndex={currentStepIndex}
+                                algorithmType={algorithmType}
                                 mode={mode}
                                 practiceArray={currentArray}
                                 selectedIndices={selectedIndices}
@@ -630,7 +692,7 @@ export default function AlgorithmDetailPage() {
                         className="fixed bottom-6 right-6 z-50 rounded-2xl border border-accent/20 bg-surface/95 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl"
                     >
                         <p className="text-sm font-semibold text-white">
-                            {mode === "practice" ? "Practice complete" : "Sorting is done"}
+                            {mode === "practice" ? "Practice complete" : "Search complete"}
                         </p>
                         <p className="mt-1 text-xs text-text-secondary">
                             {mode === "practice"
