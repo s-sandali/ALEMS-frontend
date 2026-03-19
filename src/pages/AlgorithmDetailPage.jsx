@@ -114,6 +114,14 @@ function getDiscardedIndicesForStep(steps, stepIndex) {
     return [];
 }
 
+function isTerminalSearchAction(actionLabel) {
+    const normalizedAction = actionLabel?.trim().toLowerCase() ?? "";
+    return normalizedAction === "found"
+        || normalizedAction === "not_found"
+        || normalizedAction === "target_found"
+        || normalizedAction === "target_not_found";
+}
+
 export default function AlgorithmDetailPage() {
     const playbackSpeeds = [0.5, 1, 2, 4];
     const basePlaybackIntervalMs = 1400;
@@ -327,8 +335,10 @@ export default function AlgorithmDetailPage() {
         const sessionStep = Array.isArray(session?.steps)
             ? session.steps[session.currentStepIndex]
             : null;
-        const isComplete = sessionStep?.actionLabel?.trim().toLowerCase() === "complete"
-            || sessionStep?.actionLabel?.trim().toLowerCase() === "early_exit";
+        const normalizedAction = sessionStep?.actionLabel?.trim().toLowerCase() ?? "";
+        const isComplete = normalizedAction === "complete"
+            || normalizedAction === "early_exit"
+            || isTerminalSearchAction(normalizedAction);
 
         setPracticeCompleted(isComplete);
         setHintMessage(isComplete
@@ -457,7 +467,8 @@ export default function AlgorithmDetailPage() {
                 return;
             }
 
-            const isComplete = nextExpectedAction === "complete";
+            const isComplete = nextExpectedAction === "complete"
+                || isTerminalSearchAction(nextExpectedAction);
             setCurrentArray(nextArrayState);
             setPracticeCompleted(isComplete);
             setCurrentStepIndex(
@@ -526,7 +537,8 @@ export default function AlgorithmDetailPage() {
                 return;
             }
 
-            const isComplete = nextExpectedAction === "complete";
+            const isComplete = nextExpectedAction === "complete"
+                || isTerminalSearchAction(nextExpectedAction);
             setCurrentArray(nextArrayState);
             setPracticeCompleted(isComplete);
             setCurrentStepIndex(
