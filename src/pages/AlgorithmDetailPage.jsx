@@ -73,6 +73,47 @@ function getFallbackStepsForAlgorithm(algorithmName, inputArray) {
     return [];
 }
 
+function getDiscardedIndicesForStep(steps, stepIndex) {
+    const safeStepIndex = Math.min(Math.max(stepIndex, 0), Math.max(steps.length - 1, 0));
+    const step = steps[safeStepIndex];
+    if (!step) {
+        return [];
+    }
+
+    const action = step.actionLabel?.trim().toLowerCase() ?? "";
+    if (!action.includes("discard")) {
+        return [];
+    }
+
+    const values = Array.isArray(step.arrayState) ? step.arrayState : [];
+    const activeIndex = Array.isArray(step.activeIndices) ? step.activeIndices[0] : undefined;
+    if (typeof activeIndex !== "number") {
+        return [];
+    }
+
+    if (action.includes("left") || action.includes("low") || action.includes("lower")) {
+        return Array.from({ length: values.length }, (_, index) => index).filter((index) => index <= activeIndex);
+    }
+
+    if (action.includes("right") || action.includes("high") || action.includes("upper")) {
+        return Array.from({ length: values.length }, (_, index) => index).filter((index) => index >= activeIndex);
+    }
+
+    const nextStep = steps[safeStepIndex + 1];
+    const nextActiveIndex = Array.isArray(nextStep?.activeIndices) ? nextStep.activeIndices[0] : undefined;
+    if (typeof nextActiveIndex === "number") {
+        if (nextActiveIndex > activeIndex) {
+            return Array.from({ length: values.length }, (_, index) => index).filter((index) => index <= activeIndex);
+        }
+
+        if (nextActiveIndex < activeIndex) {
+            return Array.from({ length: values.length }, (_, index) => index).filter((index) => index >= activeIndex);
+        }
+    }
+
+    return [];
+}
+
 export default function AlgorithmDetailPage() {
     const playbackSpeeds = [0.5, 1, 2, 4];
     const basePlaybackIntervalMs = 1400;
@@ -234,6 +275,12 @@ export default function AlgorithmDetailPage() {
             return accumulator;
         }, {}),
         [steps],
+    );
+    const autoDiscardedIndices = useMemo(
+        () => (isSearchMode && mode === "auto"
+            ? getDiscardedIndicesForStep(steps, currentStepIndex)
+            : []),
+        [currentStepIndex, isSearchMode, mode, steps],
     );
 
     function resetPracticeState(inputArray, nextStepIndex = 0) {
@@ -750,6 +797,7 @@ export default function AlgorithmDetailPage() {
                                 selectedIndices={selectedIndices}
                                 suggestedIndices={suggestedIndices}
                                 feedbackIndices={feedbackIndices}
+                                discardedIndices={autoDiscardedIndices}
                                 feedbackTone={isCorrect === null ? null : (isCorrect ? "correct" : "incorrect")}
                                 feedbackVersion={feedbackVersion}
                                 hintMessage={mode === "practice" ? hintMessage : ""}
