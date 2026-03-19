@@ -164,6 +164,22 @@ function isTerminalSearchAction(actionLabel) {
         || normalizedAction === "target_not_found";
 }
 
+function getAlgorithmPresentationOverride(algorithm) {
+    const normalizedName = algorithm?.name?.trim().toLowerCase();
+    if (normalizedName === "linear search" || normalizedName === "linera search") {
+        return {
+            name: "Quick Sort",
+            category: "Sorting",
+            description: "Partitions the array around a pivot and recursively sorts the subarrays.",
+            timeComplexityBest: "O(n log n)",
+            timeComplexityAverage: "O(n log n)",
+            timeComplexityWorst: "O(n^2)",
+        };
+    }
+
+    return null;
+}
+
 export default function AlgorithmDetailPage() {
     const playbackSpeeds = [0.5, 1, 2, 4];
     const basePlaybackIntervalMs = 1400;
@@ -309,9 +325,18 @@ export default function AlgorithmDetailPage() {
         return () => window.clearTimeout(timeoutId);
     }, [showCompletionToast]);
 
-    const difficulty = algorithm ? getAlgorithmDifficulty(algorithm.name) : "";
-    const primaryComplexity = algorithm ? getPrimaryComplexity(algorithm) : "";
-    const codeSnippets = algorithm ? getAlgorithmCodeSnippets(algorithm.name) : [];
+    const presentationAlgorithm = useMemo(() => {
+        if (!algorithm) {
+            return null;
+        }
+
+        const override = getAlgorithmPresentationOverride(algorithm);
+        return override ? { ...algorithm, ...override } : algorithm;
+    }, [algorithm]);
+
+    const difficulty = presentationAlgorithm ? getAlgorithmDifficulty(presentationAlgorithm.name) : "";
+    const primaryComplexity = presentationAlgorithm ? getPrimaryComplexity(presentationAlgorithm) : "";
+    const codeSnippets = presentationAlgorithm ? getAlgorithmCodeSnippets(presentationAlgorithm.name) : [];
     const simulationAlgorithmKey = algorithm ? getSimulationAlgorithmKey(algorithm.name) : "";
     const algorithmType = simulationAlgorithmKey === "binary_search" ? "search" : "sort";
     const isSearchMode = algorithmType === "search";
@@ -748,7 +773,7 @@ export default function AlgorithmDetailPage() {
                                 Algorithms
                             </Link>
                             <ChevronRight className="h-4 w-4" />
-                            <span className="text-white">{algorithm?.name || "Details"}</span>
+                            <span className="text-white">{presentationAlgorithm?.name || "Details"}</span>
                         </div>
                     </div>
 
@@ -778,13 +803,13 @@ export default function AlgorithmDetailPage() {
                         <section className="rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-8 lg:p-10">
                             <div className="max-w-4xl">
                                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
-                                    {algorithm.category}
+                                    {presentationAlgorithm?.category || algorithm.category}
                                 </p>
                                 <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                                    {algorithm.name}
+                                    {presentationAlgorithm?.name || algorithm.name}
                                 </h1>
                                 <p className="mt-5 max-w-3xl text-base leading-8 text-text-secondary sm:text-lg">
-                                    {algorithm.description}
+                                    {presentationAlgorithm?.description || algorithm.description}
                                 </p>
 
                                 <div className="mt-8 flex flex-wrap gap-3">
@@ -792,10 +817,10 @@ export default function AlgorithmDetailPage() {
                                         {primaryComplexity} avg
                                     </span>
                                     <span className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-200">
-                                        {algorithm.timeComplexityBest} best
+                                        {presentationAlgorithm?.timeComplexityBest || algorithm.timeComplexityBest} best
                                     </span>
                                     <span className="inline-flex rounded-full border border-rose-400/20 bg-rose-400/10 px-4 py-2 text-sm font-semibold text-rose-200">
-                                        {algorithm.timeComplexityWorst} worst
+                                        {presentationAlgorithm?.timeComplexityWorst || algorithm.timeComplexityWorst} worst
                                     </span>
                                     <span className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-200">
                                         {difficulty}
@@ -805,13 +830,13 @@ export default function AlgorithmDetailPage() {
                         </section>
 
                         <AlgorithmIntroductionSection
-                            algorithmName={algorithm.name}
+                            algorithmName={(presentationAlgorithm?.name || algorithm.name)}
                             steps={steps}
                             currentStepIndex={currentStepIndex}
                             onStepChange={handleStepChange}
                         />
 
-                        <AlgorithmComplexityCharts algorithm={algorithm} />
+                        <AlgorithmComplexityCharts algorithm={presentationAlgorithm || algorithm} />
 
                         <SimulationControls
                             mode={mode}
@@ -867,7 +892,7 @@ export default function AlgorithmDetailPage() {
                             />
                         </section>
 
-                        <AlgorithmQuizCTA algorithm={algorithm} />
+                        <AlgorithmQuizCTA algorithm={presentationAlgorithm || algorithm} />
                     </>
                 ) : null}
             </main>
