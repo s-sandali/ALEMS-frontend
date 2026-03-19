@@ -95,8 +95,8 @@ export default function AlgorithmDetailPage() {
     const [currentArray, setCurrentArray] = useState([]);
     const [selectedIndices, setSelectedIndices] = useState([]);
     const [feedbackIndices, setFeedbackIndices] = useState([]);
-    const [feedbackMessage, setFeedbackMessage] = useState("Select two bars to attempt the next swap.");
-    const [hintMessage, setHintMessage] = useState("Each swap is validated by the backend before the array updates.");
+    const [feedbackMessage, setFeedbackMessage] = useState("Select one bar as the midpoint.");
+    const [hintMessage, setHintMessage] = useState("Each midpoint pick is validated by the backend before the search window updates.");
     const [isCorrect, setIsCorrect] = useState(null);
     const [suggestedIndices, setSuggestedIndices] = useState([]);
     const [isValidatingStep, setIsValidatingStep] = useState(false);
@@ -223,6 +223,7 @@ export default function AlgorithmDetailPage() {
     const codeSnippets = algorithm ? getAlgorithmCodeSnippets(algorithm.name) : [];
     const simulationAlgorithmKey = algorithm ? getSimulationAlgorithmKey(algorithm.name) : "";
     const algorithmType = simulationAlgorithmKey === "binary_search" ? "search" : "sort";
+    const isSearchMode = algorithmType === "search";
     const activeLine = steps[currentStepIndex]?.lineNumber ?? 0;
     const lineToStepIndexMap = useMemo(
         () => steps.reduce((accumulator, step, index) => {
@@ -240,8 +241,16 @@ export default function AlgorithmDetailPage() {
         setPracticeSessionId("");
         setSelectedIndices([]);
         setFeedbackIndices([]);
-        setFeedbackMessage("Select two bars to attempt the next swap.");
-        setHintMessage("Each swap is validated by the backend before the array updates.");
+        setFeedbackMessage(
+            isSearchMode
+                ? "Select one bar as the midpoint."
+                : "Select two bars to attempt the next swap.",
+        );
+        setHintMessage(
+            isSearchMode
+                ? "Each midpoint pick is validated by the backend before the search window updates."
+                : "Each swap is validated by the backend before the array updates.",
+        );
         setIsCorrect(null);
         setSuggestedIndices([]);
         setIsValidatingStep(false);
@@ -277,7 +286,9 @@ export default function AlgorithmDetailPage() {
         setPracticeCompleted(isComplete);
         setHintMessage(isComplete
             ? "No more actions are needed."
-            : "Each swap is validated by the backend before the array updates.");
+            : (isSearchMode
+                ? "Each midpoint pick is validated by the backend before the search window updates."
+                : "Each swap is validated by the backend before the array updates."));
 
         return session;
     }
@@ -424,6 +435,74 @@ export default function AlgorithmDetailPage() {
         }
     }
 
+    async function validatePracticeMidpoint(index) {
+        if (!algorithm || !practiceSessionId) {
+            return;
+        }
+
+        const indices = [index];
+
+        setIsPlaying(false);
+        setShowCompletionToast(false);
+        setSimulationError("");
+        setIsValidatingStep(true);
+        setSelectedIndices(indices);
+        setFeedbackIndices(indices);
+        setSuggestedIndices([]);
+
+        try {
+            const validationResponse = await SimulationService.validateStep(
+                practiceSessionId,
+                {
+                    type: "midpoint",
+                    indices,
+                },
+                getToken,
+            );
+
+            const nextArrayState = Array.isArray(validationResponse?.newArrayState)
+                ? validationResponse.newArrayState
+                : currentArray;
+            const nextSuggestedIndices = Array.isArray(validationResponse?.suggestedIndices)
+                ? validationResponse.suggestedIndices
+                : [];
+            const nextExpectedAction = validationResponse?.nextExpectedAction ?? "";
+            const wasCorrect = Boolean(validationResponse?.correct);
+
+            setIsCorrect(wasCorrect);
+            setFeedbackMessage(validationResponse?.message || (wasCorrect ? "Correct midpoint." : "Incorrect midpoint."));
+            setHintMessage(validationResponse?.hint || "");
+            setSuggestedIndices(nextSuggestedIndices);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+
+            if (!wasCorrect) {
+                return;
+            }
+
+            const isComplete = nextExpectedAction === "complete";
+            setCurrentArray(nextArrayState);
+            setPracticeCompleted(isComplete);
+            setCurrentStepIndex(
+                typeof validationResponse?.currentStepIndex === "number"
+                    ? validationResponse.currentStepIndex
+                    : currentStepIndex,
+            );
+
+            if (isComplete) {
+                setShowCompletionToast(true);
+            }
+        } catch (validationError) {
+            setIsCorrect(false);
+            setFeedbackMessage("We couldn't validate that midpoint right now.");
+            setHintMessage("Please try again once the backend validation endpoint is available.");
+            setSuggestedIndices([]);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setSimulationError(validationError instanceof Error ? validationError.message : "Failed to validate the practice step.");
+        } finally {
+            setIsValidatingStep(false);
+        }
+    }
+
     async function handlePracticeBarClick(index) {
         if (
             mode !== "practice"
@@ -432,6 +511,15 @@ export default function AlgorithmDetailPage() {
             || practiceCompleted
             || currentArray.length === 0
         ) {
+            return;
+        }
+
+        if (isSearchMode) {
+            setFeedbackIndices([]);
+            setIsCorrect(null);
+            setFeedbackMessage("Validating midpoint selection...");
+            setHintMessage("The backend will confirm whether this midpoint is the next valid move.");
+            await validatePracticeMidpoint(index);
             return;
         }
 
