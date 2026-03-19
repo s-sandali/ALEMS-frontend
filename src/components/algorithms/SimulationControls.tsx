@@ -81,6 +81,7 @@ export default function SimulationControls({
     const canStepForward = totalSteps > 1 && currentStepIndex < totalSteps - 1 && mode === "auto";
     const canControlPlayback = totalSteps > 1 && mode === "auto";
     const isPracticeMode = mode === "practice";
+    const isPracticeBusy = isPracticeMode && isValidatingStep;
 
     return (
         <section
@@ -102,6 +103,16 @@ export default function SimulationControls({
                     </div>
 
                     <div className="flex flex-col gap-3">
+                        {isPracticeMode ? (
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                                {isValidatingStep ? (
+                                    <Badge variant="secondary">Validating step</Badge>
+                                ) : null}
+                                {practiceCompleted ? (
+                                    <Badge variant="secondary">Practice complete</Badge>
+                                ) : null}
+                            </div>
+                        ) : null}
                         
                         <div className="inline-flex rounded-full border border-white/10 bg-bg/60 p-1">
                             <Button
@@ -160,7 +171,7 @@ export default function SimulationControls({
                                 variant="outline"
                                 onClick={onReset}
                                 disabled={isPracticeMode
-                                    ? sampleInput.length === 0
+                                    ? sampleInput.length === 0 || isPracticeBusy
                                     : totalSteps === 0 || currentStepIndex === 0}
                             >
                                 <RotateCcw className="h-4 w-4" />
@@ -227,6 +238,7 @@ export default function SimulationControls({
                                                 variant="secondary"
                                                 onClick={onGenerateRandomArray}
                                                 className="w-full lg:w-auto"
+                                                disabled={isPracticeBusy}
                                             >
                                                 <Shuffle className="h-4 w-4" />
                                                 Random array
@@ -235,6 +247,7 @@ export default function SimulationControls({
                                                 variant="default"
                                                 onClick={onApplyInput}
                                                 className="w-full lg:w-auto"
+                                                disabled={isPracticeBusy}
                                             >
                                                 <WandSparkles className="h-4 w-4" />
                                                 Run trace
