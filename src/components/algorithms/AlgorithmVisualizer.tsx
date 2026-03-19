@@ -154,6 +154,10 @@ function getSearchActiveIndices(step: AlgorithmSimulationStep | undefined) {
     return step.activeIndices ?? [];
 }
 
+function getSearchState(step: AlgorithmSimulationStep | undefined) {
+    return (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
+}
+
 function reconcileBars(previousBars: VisualBar[], nextValues: number[], createBar: (value: number) => VisualBar) {
     const availableBars = new Map<number, VisualBar[]>();
 
@@ -210,6 +214,10 @@ function AlgorithmVisualizer({
         ? 0
         : Math.min(Math.max(currentStepIndex, 0), steps.length - 1);
     const currentStep = steps[safeIndex];
+    const searchState = getSearchState(currentStep);
+    const isSearchMidpoint = searchState === "midpoint_pick";
+    const isSearchFound = searchState === "found" || searchState === "target_found";
+    const isSearchNotFound = searchState === "not_found" || searchState === "target_not_found";
     const isPracticeMode = mode === "practice";
     const values = useMemo(
         () => (isPracticeMode ? practiceArray : (currentStep?.arrayState ?? [])),
@@ -403,6 +411,20 @@ function AlgorithmVisualizer({
                                 const isDiscarded = discardedIndexSet.has(index);
                                 const height = `${Math.max((bar.value / globalMax) * 100, 8)}%`;
                                 const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
+                                const shouldPulseMidpoint = !isPracticeMode && isSearchMidpoint && isActive && !shouldReduceMotion;
+                                const shouldEmphasizeFound = !isPracticeMode && isSearchFound && isActive && !shouldReduceMotion;
+                                const shouldEmphasizeNotFound = !isPracticeMode && isSearchNotFound && isActive && !shouldReduceMotion;
+                                const baseScale = isActive || isSelected ? 1.03 : 1;
+                                const scaleSequence = shouldPulseMidpoint
+                                    ? [baseScale, 1.08, baseScale]
+                                    : (shouldEmphasizeFound || shouldEmphasizeNotFound
+                                        ? [baseScale, 1.06, baseScale]
+                                        : baseScale);
+                                const pulseShadow = shouldEmphasizeFound
+                                    ? "0 0 28px rgba(52,211,153,0.35)"
+                                    : (shouldEmphasizeNotFound
+                                        ? "0 0 28px rgba(248,113,113,0.35)"
+                                        : undefined);
 
                                 return (
                                     <motion.div
@@ -456,11 +478,16 @@ function AlgorithmVisualizer({
                                                 animate={shouldReduceMotion ? { height } : {
                                                     height,
                                                     y: isActive || isSelected ? -6 : 0,
-                                                    scale: isActive || isSelected ? 1.03 : 1,
+                                                    scale: scaleSequence,
+                                                    boxShadow: pulseShadow,
                                                 }}
                                                 transition={shouldReduceMotion
                                                     ? reducedMotionTransition
-                                                    : activeBarTransition}
+                                                    : {
+                                                        ...activeBarTransition,
+                                                        scale: { duration: 0.6, ease: "easeInOut" },
+                                                        boxShadow: { duration: 0.4, ease: "easeOut" },
+                                                    }}
                                                 className={cn(
                                                     "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
                                                     isSorted && "border-emerald-400/40 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
