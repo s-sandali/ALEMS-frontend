@@ -19,6 +19,109 @@ import {
     getSimulationAlgorithmKey,
 } from "../lib/algorithmPresentation";
 
+function buildMockBinarySearchSteps(array) {
+    const values = Array.isArray(array) && array.length > 0
+        ? [...array].sort((left, right) => left - right)
+        : [3, 7, 12, 19, 25, 31, 44, 58];
+    const midIndex = Math.floor((values.length - 1) / 2);
+    const rightMidIndex = Math.floor((midIndex + 1 + (values.length - 1)) / 2);
+
+    return [
+        {
+            stepNumber: 1,
+            arrayState: values,
+            activeIndices: [midIndex],
+            lineNumber: 4,
+            actionLabel: "compare",
+        },
+        {
+            stepNumber: 2,
+            arrayState: values,
+            activeIndices: [midIndex],
+            lineNumber: 7,
+            actionLabel: "discard_left",
+        },
+        {
+            stepNumber: 3,
+            arrayState: values,
+            activeIndices: [rightMidIndex],
+            lineNumber: 4,
+            actionLabel: "compare",
+        },
+        {
+            stepNumber: 4,
+            arrayState: values,
+            activeIndices: [rightMidIndex],
+            lineNumber: 5,
+            actionLabel: "found",
+        },
+        {
+            stepNumber: 5,
+            arrayState: values,
+            activeIndices: [],
+            lineNumber: 8,
+            actionLabel: "not_found",
+        },
+    ];
+}
+
+function getFallbackStepsForAlgorithm(algorithmName, inputArray) {
+    if (algorithmName?.trim().toLowerCase() === "binary search") {
+        return buildMockBinarySearchSteps(inputArray);
+    }
+
+    return [];
+}
+
+function getDiscardedIndicesForStep(steps, stepIndex) {
+    const safeStepIndex = Math.min(Math.max(stepIndex, 0), Math.max(steps.length - 1, 0));
+    const step = steps[safeStepIndex];
+    if (!step) {
+        return [];
+    }
+
+    const action = step.actionLabel?.trim().toLowerCase() ?? "";
+    if (!action.includes("discard")) {
+        return [];
+    }
+
+    const values = Array.isArray(step.arrayState) ? step.arrayState : [];
+    const activeIndex = Array.isArray(step.activeIndices) ? step.activeIndices[0] : undefined;
+    if (typeof activeIndex !== "number") {
+        return [];
+    }
+
+    if (action.includes("left") || action.includes("low") || action.includes("lower")) {
+        return Array.from({ length: values.length }, (_, index) => index).filter((index) => index <= activeIndex);
+    }
+
+    if (action.includes("right") || action.includes("high") || action.includes("upper")) {
+        return Array.from({ length: values.length }, (_, index) => index).filter((index) => index >= activeIndex);
+    }
+
+    const nextStep = steps[safeStepIndex + 1];
+    const nextActiveIndex = Array.isArray(nextStep?.activeIndices) ? nextStep.activeIndices[0] : undefined;
+    if (typeof nextActiveIndex === "number") {
+        if (nextActiveIndex > activeIndex) {
+            return Array.from({ length: values.length }, (_, index) => index).filter((index) => index <= activeIndex);
+        }
+
+        if (nextActiveIndex < activeIndex) {
+            return Array.from({ length: values.length }, (_, index) => index).filter((index) => index >= activeIndex);
+        }
+    }
+
+    return [];
+}
+
+function isTerminalSearchAction(actionLabel) {
+    const normalizedAction = actionLabel?.trim().toLowerCase() ?? "";
+    return normalizedAction === "found"
+        || normalizedAction === "not_found"
+        || normalizedAction === "target_found"
+        || normalizedAction === "target_not_found";
+}
+
 export default function AlgorithmDetailPage() {
     const playbackSpeeds = [0.5, 1, 2, 4];
     const basePlaybackIntervalMs = 1400;
@@ -41,8 +144,8 @@ export default function AlgorithmDetailPage() {
     const [currentArray, setCurrentArray] = useState([]);
     const [selectedIndices, setSelectedIndices] = useState([]);
     const [feedbackIndices, setFeedbackIndices] = useState([]);
-    const [feedbackMessage, setFeedbackMessage] = useState("Select two bars to attempt the next swap.");
-    const [hintMessage, setHintMessage] = useState("Each swap is validated by the backend before the array updates.");
+    const [feedbackMessage, setFeedbackMessage] = useState("Select one bar as the midpoint.");
+    const [hintMessage, setHintMessage] = useState("Each midpoint pick is validated by the backend before the search window updates.");
     const [isCorrect, setIsCorrect] = useState(null);
     const [suggestedIndices, setSuggestedIndices] = useState([]);
     const [isValidatingStep, setIsValidatingStep] = useState(false);
@@ -106,10 +209,12 @@ export default function AlgorithmDetailPage() {
                     setSampleInput(fallbackInput);
                     setArraySize(fallbackInput.length);
                     setElementsText(fallbackInput.join(", "));
-                    setSteps([]);
+                    setSteps(getFallbackStepsForAlgorithm(algorithmRecord.name, fallbackInput));
                     setIsPlaying(false);
                     setShowCompletionToast(false);
-                    setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
+                    setSimulationError(runError instanceof Error
+                        ? `${runError.message} Showing local mock steps for visual testing.`
+                        : "Simulation trace is not available yet. Showing local mock steps for visual testing.");
                     resetPracticeState(fallbackInput, 0);
                 }
             } catch (loadError) {
@@ -166,6 +271,8 @@ export default function AlgorithmDetailPage() {
     const primaryComplexity = algorithm ? getPrimaryComplexity(algorithm) : "";
     const codeSnippets = algorithm ? getAlgorithmCodeSnippets(algorithm.name) : [];
     const simulationAlgorithmKey = algorithm ? getSimulationAlgorithmKey(algorithm.name) : "";
+    const algorithmType = simulationAlgorithmKey === "binary_search" ? "search" : "sort";
+    const isSearchMode = algorithmType === "search";
     const activeLine = steps[currentStepIndex]?.lineNumber ?? 0;
     const lineToStepIndexMap = useMemo(
         () => steps.reduce((accumulator, step, index) => {
@@ -177,14 +284,28 @@ export default function AlgorithmDetailPage() {
         }, {}),
         [steps],
     );
+    const autoDiscardedIndices = useMemo(
+        () => (isSearchMode && mode === "auto"
+            ? getDiscardedIndicesForStep(steps, currentStepIndex)
+            : []),
+        [currentStepIndex, isSearchMode, mode, steps],
+    );
 
     function resetPracticeState(inputArray, nextStepIndex = 0) {
         setCurrentArray(inputArray);
         setPracticeSessionId("");
         setSelectedIndices([]);
         setFeedbackIndices([]);
-        setFeedbackMessage("Select two bars to attempt the next swap.");
-        setHintMessage("Each swap is validated by the backend before the array updates.");
+        setFeedbackMessage(
+            isSearchMode
+                ? "Select one bar as the midpoint."
+                : "Select two bars to attempt the next swap.",
+        );
+        setHintMessage(
+            isSearchMode
+                ? "Each midpoint pick is validated by the backend before the search window updates."
+                : "Each swap is validated by the backend before the array updates.",
+        );
         setIsCorrect(null);
         setSuggestedIndices([]);
         setIsValidatingStep(false);
@@ -214,13 +335,17 @@ export default function AlgorithmDetailPage() {
         const sessionStep = Array.isArray(session?.steps)
             ? session.steps[session.currentStepIndex]
             : null;
-        const isComplete = sessionStep?.actionLabel?.trim().toLowerCase() === "complete"
-            || sessionStep?.actionLabel?.trim().toLowerCase() === "early_exit";
+        const normalizedAction = sessionStep?.actionLabel?.trim().toLowerCase() ?? "";
+        const isComplete = normalizedAction === "complete"
+            || normalizedAction === "early_exit"
+            || isTerminalSearchAction(normalizedAction);
 
         setPracticeCompleted(isComplete);
         setHintMessage(isComplete
             ? "No more actions are needed."
-            : "Each swap is validated by the backend before the array updates.");
+            : (isSearchMode
+                ? "Each midpoint pick is validated by the backend before the search window updates."
+                : "Each swap is validated by the backend before the array updates."));
 
         return session;
     }
@@ -342,7 +467,8 @@ export default function AlgorithmDetailPage() {
                 return;
             }
 
-            const isComplete = nextExpectedAction === "complete";
+            const isComplete = nextExpectedAction === "complete"
+                || isTerminalSearchAction(nextExpectedAction);
             setCurrentArray(nextArrayState);
             setPracticeCompleted(isComplete);
             setCurrentStepIndex(
@@ -367,6 +493,75 @@ export default function AlgorithmDetailPage() {
         }
     }
 
+    async function validatePracticeMidpoint(index) {
+        if (!algorithm || !practiceSessionId) {
+            return;
+        }
+
+        const indices = [index];
+
+        setIsPlaying(false);
+        setShowCompletionToast(false);
+        setSimulationError("");
+        setIsValidatingStep(true);
+        setSelectedIndices(indices);
+        setFeedbackIndices(indices);
+        setSuggestedIndices([]);
+
+        try {
+            const validationResponse = await SimulationService.validateStep(
+                practiceSessionId,
+                {
+                    type: "midpoint",
+                    indices,
+                },
+                getToken,
+            );
+
+            const nextArrayState = Array.isArray(validationResponse?.newArrayState)
+                ? validationResponse.newArrayState
+                : currentArray;
+            const nextSuggestedIndices = Array.isArray(validationResponse?.suggestedIndices)
+                ? validationResponse.suggestedIndices
+                : [];
+            const nextExpectedAction = validationResponse?.nextExpectedAction ?? "";
+            const wasCorrect = Boolean(validationResponse?.correct);
+
+            setIsCorrect(wasCorrect);
+            setFeedbackMessage(validationResponse?.message || (wasCorrect ? "Correct midpoint." : "Incorrect midpoint."));
+            setHintMessage(validationResponse?.hint || "");
+            setSuggestedIndices(nextSuggestedIndices);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+
+            if (!wasCorrect) {
+                return;
+            }
+
+            const isComplete = nextExpectedAction === "complete"
+                || isTerminalSearchAction(nextExpectedAction);
+            setCurrentArray(nextArrayState);
+            setPracticeCompleted(isComplete);
+            setCurrentStepIndex(
+                typeof validationResponse?.currentStepIndex === "number"
+                    ? validationResponse.currentStepIndex
+                    : currentStepIndex,
+            );
+
+            if (isComplete) {
+                setShowCompletionToast(true);
+            }
+        } catch (validationError) {
+            setIsCorrect(false);
+            setFeedbackMessage("We couldn't validate that midpoint right now.");
+            setHintMessage("Please try again once the backend validation endpoint is available.");
+            setSuggestedIndices([]);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setSimulationError(validationError instanceof Error ? validationError.message : "Failed to validate the practice step.");
+        } finally {
+            setIsValidatingStep(false);
+        }
+    }
+
     async function handlePracticeBarClick(index) {
         if (
             mode !== "practice"
@@ -375,6 +570,15 @@ export default function AlgorithmDetailPage() {
             || practiceCompleted
             || currentArray.length === 0
         ) {
+            return;
+        }
+
+        if (isSearchMode) {
+            setFeedbackIndices([]);
+            setIsCorrect(null);
+            setFeedbackMessage("Validating midpoint selection...");
+            setHintMessage("The backend will confirm whether this midpoint is the next valid move.");
+            await validatePracticeMidpoint(index);
             return;
         }
 
@@ -459,11 +663,13 @@ export default function AlgorithmDetailPage() {
         try {
             await runSimulationForInput(parsedValues);
         } catch (runError) {
-            setSteps([]);
+            setSteps(getFallbackStepsForAlgorithm(algorithm?.name, parsedValues));
             setCurrentStepIndex(0);
             setIsPlaying(false);
             setShowCompletionToast(false);
-            setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
+            setSimulationError(runError instanceof Error
+                ? `${runError.message} Showing local mock steps for visual testing.`
+                : "Simulation trace is not available yet. Showing local mock steps for visual testing.");
         }
     }
 
@@ -477,11 +683,13 @@ export default function AlgorithmDetailPage() {
         try {
             await runSimulationForInput(randomInput);
         } catch (runError) {
-            setSteps([]);
+            setSteps(getFallbackStepsForAlgorithm(algorithm?.name, randomInput));
             setCurrentStepIndex(0);
             setIsPlaying(false);
             setShowCompletionToast(false);
-            setSimulationError(runError instanceof Error ? runError.message : "Simulation trace is not available yet.");
+            setSimulationError(runError instanceof Error
+                ? `${runError.message} Showing local mock steps for visual testing.`
+                : "Simulation trace is not available yet. Showing local mock steps for visual testing.");
         }
     }
 
@@ -595,11 +803,13 @@ export default function AlgorithmDetailPage() {
                             <AlgorithmVisualizer
                                 steps={steps}
                                 currentStepIndex={currentStepIndex}
+                                algorithmType={algorithmType}
                                 mode={mode}
                                 practiceArray={currentArray}
                                 selectedIndices={selectedIndices}
                                 suggestedIndices={suggestedIndices}
                                 feedbackIndices={feedbackIndices}
+                                discardedIndices={autoDiscardedIndices}
                                 feedbackTone={isCorrect === null ? null : (isCorrect ? "correct" : "incorrect")}
                                 feedbackVersion={feedbackVersion}
                                 hintMessage={mode === "practice" ? hintMessage : ""}
@@ -630,7 +840,7 @@ export default function AlgorithmDetailPage() {
                         className="fixed bottom-6 right-6 z-50 rounded-2xl border border-accent/20 bg-surface/95 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl"
                     >
                         <p className="text-sm font-semibold text-white">
-                            {mode === "practice" ? "Practice complete" : "Sorting is done"}
+                            {mode === "practice" ? "Practice complete" : "Search complete"}
                         </p>
                         <p className="mt-1 text-xs text-text-secondary">
                             {mode === "practice"

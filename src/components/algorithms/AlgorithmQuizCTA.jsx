@@ -24,6 +24,9 @@ function QuizStat({ icon: Icon, value, label }) {
 export default function AlgorithmQuizCTA({ algorithm }) {
     const navigate = useNavigate();
     const quiz = getAlgorithmQuizMetadata(algorithm.name);
+    const isQuizAvailable = typeof algorithm?.quizAvailable === "boolean"
+        ? algorithm.quizAvailable
+        : quiz.available;
 
     return (
         <section className="rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-8 lg:p-10">
@@ -46,7 +49,7 @@ export default function AlgorithmQuizCTA({ algorithm }) {
                         <QuizStat icon={Clock3} value={`~${quiz.timeMinutes}`} label="Minutes" />
                     </div>
 
-                    {quiz.available ? (
+                    {isQuizAvailable ? (
                         <button
                             type="button"
                             onClick={() => navigate(`/quiz/${algorithm.algorithmId}`)}
@@ -62,7 +65,7 @@ export default function AlgorithmQuizCTA({ algorithm }) {
                     )}
 
                     <p className="mt-5 text-sm text-text-secondary">
-                        {quiz.available
+                        {isQuizAvailable
                             ? "Challenge route is ready for the quiz experience."
                             : "This quiz has not been published yet."}
                     </p>

@@ -239,6 +239,170 @@ int main() {
 }`,
         },
     ],
+    "binary search": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            // TODO: confirm exact lineNumber values from backend and update map
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 4,
+                5: 5,
+                6: 6,
+                7: 7,
+                8: 8,
+            },
+            code: `function binarySearch(arr, target)
+  low ← 0
+  high ← length(arr) - 1
+  while low ≤ high
+    mid ← floor((low + high) / 2)
+    if arr[mid] == target: return mid
+    else if arr[mid] < target: low ← mid + 1
+    else: high ← mid - 1
+  return -1`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Binary Search in JavaScript
+function binarySearch(arr, target) {
+  let low = 0;
+  let high = arr.length - 1;
+
+  while (low <= high) {
+    // Find the middle index
+    const mid = Math.floor((low + high) / 2);
+
+    if (arr[mid] === target) {
+      return mid; // Target found
+    } else if (arr[mid] < target) {
+      low = mid + 1; // Discard left half
+    } else {
+      high = mid - 1; // Discard right half
+    }
+  }
+
+  return -1; // Target not found
+}
+
+// Usage example (array must be sorted)
+const sortedArray = [3, 7, 12, 19, 25, 31, 44, 58];
+console.log("Array:", sortedArray);
+console.log("Search for 25:", binarySearch(sortedArray, 25)); // 4
+console.log("Search for 10:", binarySearch(sortedArray, 10)); // -1`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Binary Search in Python
+def binary_search(arr, target):
+    low = 0
+    high = len(arr) - 1
+
+    while low <= high:
+        # Find the middle index
+        mid = (low + high) // 2
+
+        if arr[mid] == target:
+            return mid  # Target found
+        elif arr[mid] < target:
+            low = mid + 1  # Discard left half
+        else:
+            high = mid - 1  # Discard right half
+
+    return -1  # Target not found
+
+
+# Usage example (array must be sorted)
+sorted_array = [3, 7, 12, 19, 25, 31, 44, 58]
+print("Array:", sorted_array)
+print("Search for 25:", binary_search(sorted_array, 25))  # 4
+print("Search for 10:", binary_search(sorted_array, 10))  # -1`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Binary Search in Java
+import java.util.Arrays;
+
+public class BinarySearchExample {
+    public static int binarySearch(int[] arr, int target) {
+        int low = 0;
+        int high = arr.length - 1;
+
+        while (low <= high) {
+            // Find the middle index
+            int mid = (low + high) / 2;
+
+            if (arr[mid] == target) {
+                return mid; // Target found
+            } else if (arr[mid] < target) {
+                low = mid + 1; // Discard left half
+            } else {
+                high = mid - 1; // Discard right half
+            }
+        }
+
+        return -1; // Target not found
+    }
+
+    public static void main(String[] args) {
+        int[] sortedArray = {3, 7, 12, 19, 25, 31, 44, 58};
+        System.out.println("Array: " + Arrays.toString(sortedArray));
+        System.out.println("Search for 25: " + binarySearch(sortedArray, 25)); // 4
+        System.out.println("Search for 10: " + binarySearch(sortedArray, 10)); // -1
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Binary Search in C++
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+int binarySearch(const vector<int>& arr, int target) {
+    int low = 0;
+    int high = static_cast<int>(arr.size()) - 1;
+
+    while (low <= high) {
+        // Find the middle index
+        int mid = (low + high) / 2;
+
+        if (arr[mid] == target) {
+            return mid; // Target found
+        } else if (arr[mid] < target) {
+            low = mid + 1; // Discard left half
+        } else {
+            high = mid - 1; // Discard right half
+        }
+    }
+
+    return -1; // Target not found
+}
+
+int main() {
+    vector<int> sortedArray = {3, 7, 12, 19, 25, 31, 44, 58};
+    cout << "Search for 25: " << binarySearch(sortedArray, 25) << endl; // 4
+    cout << "Search for 10: " << binarySearch(sortedArray, 10) << endl; // -1
+}`,
+        },
+    ],
 };
 
 const sampleSizes = [8, 16, 32, 64, 128, 256];
@@ -258,6 +422,9 @@ export function getAlgorithmSampleInput(name) {
     switch (name.trim().toLowerCase()) {
         case "bubble sort":
             return [8, 3, 5, 1, 9, 2];
+        case "binary search":
+            // Binary Search requires a pre-sorted array
+            return [3, 7, 12, 19, 25, 31, 44, 58];
         default:
             return [8, 3, 5, 1, 9, 2];
     }
@@ -415,6 +582,43 @@ export function getAlgorithmIntroduction(name) {
                     title: "Early exit check",
                     desc: "If a pass completes without swaps, the array is already sorted and the algorithm stops.",
                     matchAction: "complete",
+                },
+            ],
+        };
+    }
+
+    if (normalizedName === "binary search") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Binary Search work?",
+            paragraphs: [
+                "Binary Search works on sorted arrays by repeatedly halving the search space. Rather than checking every element, it eliminates half of the remaining candidates with each comparison.",
+                "Each step identifies the midpoint of the current window, compares it to the target, then discards the half that cannot contain the answer — making it O(log n) in time.",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Initialize pointers",
+                    desc: "Set low = 0 and high = last index to define the full search window.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Find the midpoint",
+                    desc: "Compute mid = floor((low + high) / 2) and compare arr[mid] to the target.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Discard half",
+                    desc: "Move low or high past mid to eliminate the half that cannot contain the target.",
+                    matchAction: "discard",
+                },
+                {
+                    num: "04",
+                    title: "Found or absent",
+                    desc: "Return the index if found, or -1 when the search window becomes empty.",
+                    matchAction: "found",
                 },
             ],
         };

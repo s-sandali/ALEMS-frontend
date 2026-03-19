@@ -56,6 +56,7 @@ export type AlgorithmSummary = {
     timeComplexityBest: string;
     timeComplexityAverage: string;
     timeComplexityWorst: string;
+    quizAvailable?: boolean;
     createdAt: string;
 };
 

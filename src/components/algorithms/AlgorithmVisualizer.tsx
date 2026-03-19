@@ -12,10 +12,12 @@ type AlgorithmVisualizerProps = {
     steps: AlgorithmSimulationStep[];
     currentStepIndex: number;
     mode?: LearningMode;
+    algorithmType?: "sort" | "search";
     practiceArray?: number[];
     selectedIndices?: number[];
     suggestedIndices?: number[];
     feedbackIndices?: number[];
+    discardedIndices?: number[];
     feedbackTone?: PracticeFeedbackTone;
     feedbackVersion?: number;
     hintMessage?: string;
@@ -62,6 +64,30 @@ function getStepTone(step: AlgorithmSimulationStep | undefined) {
             badgeClassName: "border-red-400/30 bg-red-400/10 text-red-200",
             activeBarClassName: "from-red-400 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.35)]",
             emphasisLabel: "Swapped",
+        };
+    }
+
+    if (action === "not_found" || action.includes("not_found") || action.includes("not found")) {
+        return {
+            badgeClassName: "border-red-400/30 bg-red-400/10 text-red-200",
+            activeBarClassName: "from-red-400 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.35)]",
+            emphasisLabel: "Not Found",
+        };
+    }
+
+    if (action === "found" || action.includes("found")) {
+        return {
+            badgeClassName: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
+            activeBarClassName: "from-emerald-400 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.3)]",
+            emphasisLabel: "Found",
+        };
+    }
+
+    if (action.includes("discard")) {
+        return {
+            badgeClassName: "border-slate-400/30 bg-slate-400/10 text-slate-300",
+            activeBarClassName: "from-slate-400 to-slate-500 shadow-[0_0_6px_rgba(148,163,184,0.2)]",
+            emphasisLabel: "Discarded",
         };
     }
 
@@ -151,10 +177,12 @@ function AlgorithmVisualizer({
     steps,
     currentStepIndex,
     mode = "auto",
+    algorithmType = "sort",
     practiceArray = [],
     selectedIndices = [],
     suggestedIndices = [],
     feedbackIndices = [],
+    discardedIndices = [],
     feedbackTone = null,
     feedbackVersion = 0,
     hintMessage = "",
@@ -171,9 +199,10 @@ function AlgorithmVisualizer({
         : Math.min(Math.max(currentStepIndex, 0), steps.length - 1);
     const currentStep = steps[safeIndex];
     const isPracticeMode = mode === "practice";
-    const values = isPracticeMode
-        ? practiceArray
-        : (currentStep?.arrayState ?? []);
+    const values = useMemo(
+        () => (isPracticeMode ? practiceArray : (currentStep?.arrayState ?? [])),
+        [isPracticeMode, practiceArray, currentStep],
+    );
     const globalMax = useMemo(() => {
         const sourceValues = isPracticeMode
             ? values
@@ -193,6 +222,10 @@ function AlgorithmVisualizer({
     const feedbackIndexSet = useMemo(
         () => new Set(feedbackIndices),
         [feedbackIndices],
+    );
+    const discardedIndexSet = useMemo(
+        () => new Set(discardedIndices),
+        [discardedIndices],
     );
     const activeIndices = useMemo(
         () => (isPracticeMode ? selectedIndexSet : new Set(currentStep?.activeIndices ?? [])),
@@ -276,7 +309,9 @@ function AlgorithmVisualizer({
                             </span>
                             {isPracticeMode ? (
                                 <span className="text-sm text-sky-100/80">
-                                    Click two bars to validate a swap
+                                    {algorithmType === "search"
+                                        ? "Click a bar to select it as the midpoint"
+                                        : "Click two bars to validate a swap"}
                                 </span>
                             ) : null}
                         </div>
@@ -287,14 +322,29 @@ function AlgorithmVisualizer({
                             <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-accent to-accent/70" />
                             Comparing
                         </span>
-                        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
-                            Swapped
-                        </span>
-                        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
-                            Sorted
-                        </span>
+                        {algorithmType === "search" ? (
+                            <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-slate-400 to-slate-500" />
+                                    Discarded
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                                    Found
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
+                                    Swapped
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                                    Sorted
+                                </span>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -336,8 +386,9 @@ function AlgorithmVisualizer({
                                 const isSelected = selectedIndexSet.has(index);
                                 const isSuggested = suggestedIndexSet.has(index);
                                 const isFeedbackTarget = feedbackIndexSet.has(index);
+                                const isDiscarded = discardedIndexSet.has(index);
                                 const height = `${Math.max((bar.value / globalMax) * 100, 8)}%`;
-                                const isInteractive = isPracticeMode && typeof onBarClick === "function";
+                                const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
 
                                 return (
                                     <motion.div
@@ -345,9 +396,10 @@ function AlgorithmVisualizer({
                                         layout
                                         transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
                                         className={cn(
-                                            "flex min-w-10 flex-1 flex-col items-center justify-end gap-2 sm:min-w-12",
+                                            "flex min-w-10 flex-1 flex-col items-center justify-end gap-2 sm:min-w-12 transition-[opacity,filter] duration-500",
                                             isInteractive && "cursor-pointer",
                                             isInteractionDisabled && "cursor-not-allowed opacity-70",
+                                            isDiscarded && "opacity-30 grayscale pointer-events-none",
                                         )}
                                         onClick={() => {
                                             if (isInteractive && !isInteractionDisabled) {
