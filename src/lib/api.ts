@@ -17,6 +17,18 @@ export type AlgorithmSimulationStep = {
     activeIndices: number[];
     lineNumber: number;
     actionLabel: string;
+    search?: SearchStepModel | null;
+};
+
+export type SearchStepModel = {
+    lowIndex: number;
+    highIndex: number;
+    midpointIndex?: number | null;
+    state: string;
+    discardedSide?: string | null;
+    discardStartIndex?: number | null;
+    discardEndIndex?: number | null;
+    discardedIndices?: number[];
 };
 
 export type AlgorithmSimulationResponse = {

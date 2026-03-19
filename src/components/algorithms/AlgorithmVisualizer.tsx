@@ -49,7 +49,7 @@ const activeBarTransition: Transition = {
 };
 
 function getStepTone(step: AlgorithmSimulationStep | undefined) {
-    const action = step?.actionLabel.trim().toLowerCase() ?? "";
+    const action = (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
 
     if (action.includes("sorted") || action.includes("complete")) {
         return {
@@ -142,6 +142,18 @@ function formatActionLabel(actionLabel: string) {
         .join(" ");
 }
 
+function getSearchActiveIndices(step: AlgorithmSimulationStep | undefined) {
+    if (!step?.search) {
+        return step?.activeIndices ?? [];
+    }
+
+    if (typeof step.search.midpointIndex === "number") {
+        return [step.search.midpointIndex];
+    }
+
+    return step.activeIndices ?? [];
+}
+
 function reconcileBars(previousBars: VisualBar[], nextValues: number[], createBar: (value: number) => VisualBar) {
     const availableBars = new Map<number, VisualBar[]>();
 
@@ -228,7 +240,9 @@ function AlgorithmVisualizer({
         [discardedIndices],
     );
     const activeIndices = useMemo(
-        () => (isPracticeMode ? selectedIndexSet : new Set(currentStep?.activeIndices ?? [])),
+        () => (isPracticeMode
+            ? selectedIndexSet
+            : new Set(getSearchActiveIndices(currentStep))),
         [currentStep, isPracticeMode, selectedIndexSet],
     );
     const sortedIndices = useMemo(
@@ -243,7 +257,7 @@ function AlgorithmVisualizer({
     const tone = isPracticeMode ? practiceTone : stepTone;
     const displayActionLabel = isPracticeMode
         ? practiceTone.actionLabel
-        : (currentStep?.actionLabel ?? "Waiting for steps");
+        : (currentStep?.search?.state ?? currentStep?.actionLabel ?? "Waiting for steps");
 
     const createBar = (value: number): VisualBar => ({
         id: `visual-bar-${nextBarIdRef.current++}`,
