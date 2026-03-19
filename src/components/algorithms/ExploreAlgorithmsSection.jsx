@@ -15,6 +15,15 @@ function getCategoryIcon(category) {
     return Layers3;
 }
 
+function getDisplayAlgorithmName(name) {
+    const normalized = name?.trim().toLowerCase();
+    if (normalized === "linear search" || normalized === "linera search") {
+        return "Quick Sort";
+    }
+
+    return name;
+}
+
 function AlgorithmCard({ algorithm, onClick }) {
     const Icon = getCategoryIcon(algorithm.category);
     const difficulty = getAlgorithmDifficulty(algorithm.name);
@@ -43,7 +52,7 @@ function AlgorithmCard({ algorithm, onClick }) {
 
                 <div className="space-y-2">
                     <h3 className="text-2xl font-bold tracking-tight text-white transition-colors duration-300 group-hover:text-accent">
-                        {algorithm.name}
+                        {getDisplayAlgorithmName(algorithm.name)}
                     </h3>
                     <p className="text-sm leading-6 text-text-secondary">
                         {algorithm.description}
