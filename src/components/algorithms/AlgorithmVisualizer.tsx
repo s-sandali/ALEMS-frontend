@@ -399,7 +399,7 @@ function AlgorithmVisualizer({
                                             "flex min-w-10 flex-1 flex-col items-center justify-end gap-2 sm:min-w-12 transition-[opacity,filter] duration-500",
                                             isInteractive && "cursor-pointer",
                                             isInteractionDisabled && "cursor-not-allowed opacity-70",
-                                            isDiscarded && "opacity-25 grayscale pointer-events-none",
+                                            isDiscarded && "opacity-30 grayscale pointer-events-none",
                                         )}
                                         onClick={() => {
                                             if (isInteractive && !isInteractionDisabled) {
