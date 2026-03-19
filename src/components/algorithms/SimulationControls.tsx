@@ -1,6 +1,5 @@
 import { Pause, Play, RotateCcw, Shuffle, SkipBack, SkipForward, WandSparkles } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -21,8 +20,6 @@ type SimulationControlsProps = {
     feedbackMessage: string;
     hintMessage: string;
     isCorrect: boolean | null;
-    isValidatingStep: boolean;
-    practiceCompleted: boolean;
     onModeChange: (mode: LearningMode) => void;
     onTogglePlayback: () => void;
     onStepBackward: () => void;
@@ -62,8 +59,6 @@ export default function SimulationControls({
     feedbackMessage,
     hintMessage,
     isCorrect,
-    isValidatingStep,
-    practiceCompleted,
     onModeChange,
     onTogglePlayback,
     onStepBackward,
