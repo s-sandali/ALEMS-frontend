@@ -25,6 +25,29 @@ function buildMockBinarySearchSteps(array) {
         : [3, 7, 12, 19, 25, 31, 44, 58];
     const midIndex = Math.floor((values.length - 1) / 2);
     const rightMidIndex = Math.floor((midIndex + 1 + (values.length - 1)) / 2);
+    const lastIndex = Math.max(values.length - 1, 0);
+
+    const buildSearchMock = (lowIndex, highIndex, midpointIndex, state, discardStartIndex, discardEndIndex) => {
+        const hasDiscard = typeof discardStartIndex === "number" && typeof discardEndIndex === "number";
+        const discardStart = hasDiscard ? discardStartIndex : null;
+        const discardEnd = hasDiscard ? discardEndIndex : null;
+        const discardedIndices = hasDiscard
+            ? Array.from({ length: discardEnd - discardStart + 1 }, (_, offset) => discardStart + offset)
+            : [];
+
+        return {
+            lowIndex,
+            highIndex,
+            midpointIndex,
+            state,
+            discardedSide: hasDiscard && midpointIndex !== null
+                ? (discardEndIndex === midpointIndex ? "left" : "right")
+                : null,
+            discardStartIndex: discardStart,
+            discardEndIndex: discardEnd,
+            discardedIndices,
+        };
+    };
 
     return [
         {
@@ -33,6 +56,7 @@ function buildMockBinarySearchSteps(array) {
             activeIndices: [midIndex],
             lineNumber: 4,
             actionLabel: "compare",
+            search: buildSearchMock(0, lastIndex, midIndex, "midpoint_pick"),
         },
         {
             stepNumber: 2,
@@ -40,6 +64,7 @@ function buildMockBinarySearchSteps(array) {
             activeIndices: [midIndex],
             lineNumber: 7,
             actionLabel: "discard_left",
+            search: buildSearchMock(0, lastIndex, midIndex, "discard_left", 0, midIndex),
         },
         {
             stepNumber: 3,
@@ -47,6 +72,7 @@ function buildMockBinarySearchSteps(array) {
             activeIndices: [rightMidIndex],
             lineNumber: 4,
             actionLabel: "compare",
+            search: buildSearchMock(midIndex + 1, lastIndex, rightMidIndex, "midpoint_pick"),
         },
         {
             stepNumber: 4,
@@ -54,6 +80,7 @@ function buildMockBinarySearchSteps(array) {
             activeIndices: [rightMidIndex],
             lineNumber: 5,
             actionLabel: "found",
+            search: buildSearchMock(midIndex + 1, lastIndex, rightMidIndex, "found"),
         },
         {
             stepNumber: 5,
@@ -61,6 +88,7 @@ function buildMockBinarySearchSteps(array) {
             activeIndices: [],
             lineNumber: 8,
             actionLabel: "not_found",
+            search: buildSearchMock(midIndex + 1, lastIndex, null, "not_found"),
         },
     ];
 }
@@ -80,7 +108,21 @@ function getDiscardedIndicesForStep(steps, stepIndex) {
         return [];
     }
 
-    const action = step.actionLabel?.trim().toLowerCase() ?? "";
+    if (step.search) {
+        if (Array.isArray(step.search.discardedIndices) && step.search.discardedIndices.length > 0) {
+            return step.search.discardedIndices;
+        }
+
+        if (typeof step.search.discardStartIndex === "number" && typeof step.search.discardEndIndex === "number") {
+            const start = step.search.discardStartIndex;
+            const end = step.search.discardEndIndex;
+            if (start <= end) {
+                return Array.from({ length: end - start + 1 }, (_, offset) => start + offset);
+            }
+        }
+    }
+
+    const action = (step.search?.state ?? step.actionLabel)?.trim().toLowerCase() ?? "";
     if (!action.includes("discard")) {
         return [];
     }
@@ -335,7 +377,7 @@ export default function AlgorithmDetailPage() {
         const sessionStep = Array.isArray(session?.steps)
             ? session.steps[session.currentStepIndex]
             : null;
-        const normalizedAction = sessionStep?.actionLabel?.trim().toLowerCase() ?? "";
+        const normalizedAction = (sessionStep?.search?.state ?? sessionStep?.actionLabel ?? "").trim().toLowerCase();
         const isComplete = normalizedAction === "complete"
             || normalizedAction === "early_exit"
             || isTerminalSearchAction(normalizedAction);
