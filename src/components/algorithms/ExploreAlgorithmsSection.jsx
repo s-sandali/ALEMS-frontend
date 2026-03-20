@@ -15,19 +15,28 @@ function getCategoryIcon(category) {
     return Layers3;
 }
 
-function getDisplayAlgorithmName(name) {
-    const normalized = name?.trim().toLowerCase();
-    if (normalized === "linear search" || normalized === "linera search") {
-        return "Quick Sort";
+function getAlgorithmPresentation(algorithm) {
+    const normalizedName = algorithm?.name?.trim().toLowerCase();
+    if (normalizedName === "linear search" || normalizedName === "linera search") {
+        return {
+            ...algorithm,
+            name: "Quick Sort",
+            category: "Sorting",
+            description: "Partitions the array around a pivot and recursively sorts the subarrays.",
+            timeComplexityBest: "O(n log n)",
+            timeComplexityAverage: "O(n log n)",
+            timeComplexityWorst: "O(n^2)",
+        };
     }
 
-    return name;
+    return algorithm;
 }
 
 function AlgorithmCard({ algorithm, onClick }) {
-    const Icon = getCategoryIcon(algorithm.category);
-    const difficulty = getAlgorithmDifficulty(algorithm.name);
-    const complexity = getPrimaryComplexity(algorithm);
+    const presentation = getAlgorithmPresentation(algorithm);
+    const Icon = getCategoryIcon(presentation.category);
+    const difficulty = getAlgorithmDifficulty(presentation.name);
+    const complexity = getPrimaryComplexity(presentation);
 
     return (
         <button
@@ -46,16 +55,16 @@ function AlgorithmCard({ algorithm, onClick }) {
                         <Icon className="h-5 w-5" />
                     </div>
                     <span className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-text-secondary">
-                        {algorithm.category}
+                        {presentation.category}
                     </span>
                 </div>
 
                 <div className="space-y-2">
                     <h3 className="text-2xl font-bold tracking-tight text-white transition-colors duration-300 group-hover:text-accent">
-                        {getDisplayAlgorithmName(algorithm.name)}
+                        {presentation.name}
                     </h3>
                     <p className="text-sm leading-6 text-text-secondary">
-                        {algorithm.description}
+                        {presentation.description}
                     </p>
                 </div>
 
@@ -130,11 +139,16 @@ export default function ExploreAlgorithmsSection({
     }, [getToken]);
 
     const visibleAlgorithms = useMemo(() => {
+        const filteredAlgorithms = algorithms.filter((algorithm) => {
+            const normalizedName = algorithm?.name?.trim().toLowerCase();
+            return normalizedName !== "linear search" && normalizedName !== "linera search";
+        });
+
         if (!limit) {
-            return algorithms;
+            return filteredAlgorithms;
         }
 
-        return algorithms.slice(0, limit);
+        return filteredAlgorithms.slice(0, limit);
     }, [algorithms, limit]);
 
     return (
@@ -152,7 +166,7 @@ export default function ExploreAlgorithmsSection({
                     </p>
                 </div>
 
-                {showViewAll && algorithms.length > (limit || 0) && (
+                {showViewAll && visibleAlgorithms.length > (limit || 0) && (
                     <button
                         type="button"
                         onClick={() => navigate("/algorithms")}

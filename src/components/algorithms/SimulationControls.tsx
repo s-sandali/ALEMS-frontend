@@ -9,6 +9,7 @@ type LearningMode = "auto" | "practice";
 
 type SimulationControlsProps = {
     mode: LearningMode;
+    algorithmType?: "sort" | "search";
     isPlaying: boolean;
     speed: number;
     speeds: number[];
@@ -16,6 +17,7 @@ type SimulationControlsProps = {
     totalSteps: number;
     arraySize: number;
     elementsText: string;
+    targetValue: string;
     sampleInput: number[];
     simulationError: string;
     feedbackMessage: string;
@@ -31,6 +33,7 @@ type SimulationControlsProps = {
     onSpeedChange: (speed: number) => void;
     onArraySizeChange: (size: number) => void;
     onElementsChange: (value: string) => void;
+    onTargetChange: (value: string) => void;
     onApplyInput: () => void;
     onGenerateRandomArray: () => void;
     className?: string;
@@ -50,6 +53,7 @@ function getFeedbackClassName(isCorrect: boolean | null) {
 
 export default function SimulationControls({
     mode,
+    algorithmType = "sort",
     isPlaying,
     speed,
     speeds,
@@ -57,6 +61,7 @@ export default function SimulationControls({
     totalSteps,
     arraySize,
     elementsText,
+    targetValue,
     sampleInput,
     simulationError,
     feedbackMessage,
@@ -72,6 +77,7 @@ export default function SimulationControls({
     onSpeedChange,
     onArraySizeChange,
     onElementsChange,
+    onTargetChange,
     onApplyInput,
     onGenerateRandomArray,
     className,
@@ -210,7 +216,12 @@ export default function SimulationControls({
 
                         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
                             <div className="rounded-2xl border border-white/[0.06] bg-surface/60 p-4">
-                                <div className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)_auto]">
+                                <div className={cn(
+                                    "grid gap-4",
+                                    algorithmType === "search"
+                                        ? "lg:grid-cols-[100px_minmax(0,2.2fr)_100px_auto]"
+                                        : "lg:grid-cols-[100px_minmax(0,2fr)_auto]",
+                                )}>
                                     <label className="flex flex-col gap-2 text-sm">
                                         <span className="font-medium text-white">Array size</span>
                                         <input
@@ -222,15 +233,28 @@ export default function SimulationControls({
                                         />
                                     </label>
 
-                                    <label className="flex flex-col gap-2 text-sm">
+                                    <label className="flex min-w-0 flex-col gap-2 text-sm">
                                         <span className="font-medium text-white">Elements</span>
                                         <input
                                             type="text"
                                             value={elementsText}
                                             onChange={(event) => onElementsChange(event.target.value)}
                                             placeholder="8, 3, 5, 1, 9, 2"
+                                            className="w-full min-w-0"
                                         />
                                     </label>
+
+                                    {algorithmType === "search" ? (
+                                        <label className="flex flex-col gap-2 text-sm">
+                                            <span className="font-medium text-white">Target</span>
+                                            <input
+                                                type="number"
+                                                value={targetValue}
+                                                onChange={(event) => onTargetChange(event.target.value)}
+                                                placeholder="42"
+                                            />
+                                        </label>
+                                    ) : null}
 
                                     <div className="flex items-end">
                                         <div className="flex w-full flex-col gap-2 lg:w-auto">
@@ -280,8 +304,12 @@ export default function SimulationControls({
                                     </p>
                                     <p className="mt-2">
                                         {isPracticeMode
-                                            ? feedbackMessage || "Select two bars to attempt the next swap."
-                                            : "Watch as Auto Mode swaps the elements."}
+                                            ? feedbackMessage || (algorithmType === "search"
+                                                ? "Choose Go Left, Go Right, or Found based on the midpoint."
+                                                : "Select two bars to attempt the next swap.")
+                                            : (algorithmType === "search"
+                                                ? "Watch the search window shrink around the target."
+                                                : "Watch as Auto Mode swaps the elements.")}
                                     </p>
                                 </div>
 
@@ -289,7 +317,9 @@ export default function SimulationControls({
                                     <p className="font-semibold text-white">Current hint</p>
                                     <p className="mt-2">
                                         {isPracticeMode
-                                            ? hintMessage || "Select two bars and BigO will validate the swap."
+                                            ? hintMessage || (algorithmType === "search"
+                                                ? "Use a sorted list, compare the midpoint to the target, then choose which half to discard."
+                                                : "Select two bars and BigO will validate the swap.")
                                             : "Use the transport controls to inspect each step at your own pace."}
                                     </p>
                                 </div>

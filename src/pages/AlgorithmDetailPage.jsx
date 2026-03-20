@@ -164,10 +164,31 @@ function isTerminalSearchAction(actionLabel) {
         || normalizedAction === "target_not_found";
 }
 
-function getAlgorithmPresentationOverride(algorithm) {
+function getNextSearchDecision(steps, currentIndex) {
+    for (let index = currentIndex + 1; index < steps.length; index += 1) {
+        const state = (steps[index]?.search?.state ?? steps[index]?.actionLabel ?? "").trim().toLowerCase();
+
+        if (state.includes("discard_left")) {
+            return { decision: "right", index };
+        }
+
+        if (state.includes("discard_right")) {
+            return { decision: "left", index };
+        }
+
+        if (state === "found" || state === "target_found") {
+            return { decision: "found", index };
+        }
+    }
+
+    return null;
+}
+
+function getAlgorithmPresentation(algorithm) {
     const normalizedName = algorithm?.name?.trim().toLowerCase();
     if (normalizedName === "linear search" || normalizedName === "linera search") {
         return {
+            ...algorithm,
             name: "Quick Sort",
             category: "Sorting",
             description: "Partitions the array around a pivot and recursively sorts the subarrays.",
@@ -177,7 +198,7 @@ function getAlgorithmPresentationOverride(algorithm) {
         };
     }
 
-    return null;
+    return algorithm;
 }
 
 export default function AlgorithmDetailPage() {
@@ -197,13 +218,14 @@ export default function AlgorithmDetailPage() {
     const [sampleInput, setSampleInput] = useState([]);
     const [arraySize, setArraySize] = useState(0);
     const [elementsText, setElementsText] = useState("");
+    const [targetValue, setTargetValue] = useState("");
     const [mode, setMode] = useState("auto");
     const [practiceSessionId, setPracticeSessionId] = useState("");
     const [currentArray, setCurrentArray] = useState([]);
     const [selectedIndices, setSelectedIndices] = useState([]);
     const [feedbackIndices, setFeedbackIndices] = useState([]);
-    const [feedbackMessage, setFeedbackMessage] = useState("Select one bar as the midpoint.");
-    const [hintMessage, setHintMessage] = useState("Each midpoint pick is validated by the backend before the search window updates.");
+    const [feedbackMessage, setFeedbackMessage] = useState("Choose Go Left, Go Right, or Found based on the midpoint.");
+    const [hintMessage, setHintMessage] = useState("Use a sorted list, compare the midpoint to the target, then choose which half to discard.");
     const [isCorrect, setIsCorrect] = useState(null);
     const [suggestedIndices, setSuggestedIndices] = useState([]);
     const [isValidatingStep, setIsValidatingStep] = useState(false);
@@ -214,11 +236,12 @@ export default function AlgorithmDetailPage() {
     useEffect(() => {
         let isMounted = true;
 
-        async function runSimulationTrace(algorithmRecord, inputArray) {
+        async function runSimulationTrace(algorithmRecord, inputArray, targetNumber) {
             const simulationResponse = await SimulationService.runSimulation(
                 getSimulationAlgorithmKey(algorithmRecord.name),
                 inputArray,
                 getToken,
+                targetNumber,
             );
 
             if (!isMounted) {
@@ -229,11 +252,16 @@ export default function AlgorithmDetailPage() {
             setArraySize(inputArray.length);
             setElementsText(inputArray.join(", "));
             setSteps(Array.isArray(simulationResponse?.steps) ? simulationResponse.steps : []);
+            if (typeof simulationResponse?.targetValue === "number") {
+                setTargetValue(String(simulationResponse.targetValue));
+            } else if (simulationAlgorithmKey !== "binary_search") {
+                setTargetValue("");
+            }
             setIsPlaying(false);
             setShowCompletionToast(false);
             setSimulationError("");
             resetPracticeState(inputArray, 0);
-            await startPracticeSession(inputArray);
+            await startPracticeSession(inputArray, targetNumber);
         }
 
         async function loadAlgorithmDetails() {
@@ -257,7 +285,10 @@ export default function AlgorithmDetailPage() {
 
                 try {
                     const initialInput = getAlgorithmSampleInput(algorithmRecord.name);
-                    await runSimulationTrace(algorithmRecord, initialInput);
+                    const defaultTarget = simulationAlgorithmKey === "binary_search"
+                        ? initialInput[Math.floor(initialInput.length / 2)]
+                        : null;
+                    await runSimulationTrace(algorithmRecord, initialInput, defaultTarget);
                 } catch (runError) {
                     if (!isMounted) {
                         return;
@@ -273,6 +304,11 @@ export default function AlgorithmDetailPage() {
                     setSimulationError(runError instanceof Error
                         ? `${runError.message} Showing local mock steps for visual testing.`
                         : "Simulation trace is not available yet. Showing local mock steps for visual testing.");
+                    if (simulationAlgorithmKey === "binary_search") {
+                        setTargetValue(String(fallbackInput[Math.floor(fallbackInput.length / 2)]));
+                    } else {
+                        setTargetValue("");
+                    }
                     resetPracticeState(fallbackInput, 0);
                 }
             } catch (loadError) {
@@ -325,15 +361,10 @@ export default function AlgorithmDetailPage() {
         return () => window.clearTimeout(timeoutId);
     }, [showCompletionToast]);
 
-    const presentationAlgorithm = useMemo(() => {
-        if (!algorithm) {
-            return null;
-        }
-
-        const override = getAlgorithmPresentationOverride(algorithm);
-        return override ? { ...algorithm, ...override } : algorithm;
-    }, [algorithm]);
-
+    const presentationAlgorithm = useMemo(
+        () => (algorithm ? getAlgorithmPresentation(algorithm) : null),
+        [algorithm],
+    );
     const difficulty = presentationAlgorithm ? getAlgorithmDifficulty(presentationAlgorithm.name) : "";
     const primaryComplexity = presentationAlgorithm ? getPrimaryComplexity(presentationAlgorithm) : "";
     const codeSnippets = presentationAlgorithm ? getAlgorithmCodeSnippets(presentationAlgorithm.name) : [];
@@ -352,10 +383,10 @@ export default function AlgorithmDetailPage() {
         [steps],
     );
     const autoDiscardedIndices = useMemo(
-        () => (isSearchMode && mode === "auto"
+        () => (isSearchMode
             ? getDiscardedIndicesForStep(steps, currentStepIndex)
             : []),
-        [currentStepIndex, isSearchMode, mode, steps],
+        [currentStepIndex, isSearchMode, steps],
     );
 
     function resetPracticeState(inputArray, nextStepIndex = 0) {
@@ -365,12 +396,12 @@ export default function AlgorithmDetailPage() {
         setFeedbackIndices([]);
         setFeedbackMessage(
             isSearchMode
-                ? "Select one bar as the midpoint."
+                ? "Choose Go Left, Go Right, or Found based on the midpoint."
                 : "Select two bars to attempt the next swap.",
         );
         setHintMessage(
             isSearchMode
-                ? "Each midpoint pick is validated by the backend before the search window updates."
+                ? "Use a sorted list, compare the midpoint to the target, then choose which half to discard."
                 : "Each swap is validated by the backend before the array updates.",
         );
         setIsCorrect(null);
@@ -381,7 +412,7 @@ export default function AlgorithmDetailPage() {
         setCurrentStepIndex(nextStepIndex);
     }
 
-    async function startPracticeSession(inputArray) {
+    async function startPracticeSession(inputArray, targetNumber) {
         if (!algorithm) {
             return null;
         }
@@ -390,6 +421,7 @@ export default function AlgorithmDetailPage() {
             simulationAlgorithmKey,
             inputArray,
             getToken,
+            targetNumber,
         );
 
         setPracticeSessionId(session?.sessionId ?? "");
@@ -397,6 +429,10 @@ export default function AlgorithmDetailPage() {
 
         if (Array.isArray(session?.steps) && session.steps.length > 0) {
             setSteps(session.steps);
+        }
+
+        if (typeof session?.targetValue === "number") {
+            setTargetValue(String(session.targetValue));
         }
 
         const sessionStep = Array.isArray(session?.steps)
@@ -411,7 +447,7 @@ export default function AlgorithmDetailPage() {
         setHintMessage(isComplete
             ? "No more actions are needed."
             : (isSearchMode
-                ? "Each midpoint pick is validated by the backend before the search window updates."
+                ? "Use a sorted list, compare the midpoint to the target, then choose which half to discard."
                 : "Each swap is validated by the backend before the array updates."));
 
         return session;
@@ -465,7 +501,8 @@ export default function AlgorithmDetailPage() {
 
         if (mode === "practice") {
             resetPracticeState(sampleInput, 0);
-            void startPracticeSession(sampleInput);
+            const parsedTarget = parseTargetValue(targetValue);
+            void startPracticeSession(sampleInput, parsedTarget.value);
             return;
         }
 
@@ -479,7 +516,8 @@ export default function AlgorithmDetailPage() {
 
         if (nextMode === "practice") {
             resetPracticeState(sampleInput, 0);
-            void startPracticeSession(sampleInput);
+            const parsedTarget = parseTargetValue(targetValue);
+            void startPracticeSession(sampleInput, parsedTarget.value);
             return;
         }
 
@@ -689,7 +727,25 @@ export default function AlgorithmDetailPage() {
         });
     }
 
-    async function runSimulationForInput(inputArray) {
+    function parseTargetValue(value) {
+        if (!isSearchMode) {
+            return { value: null, valid: true };
+        }
+
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return { value: null, valid: false };
+        }
+
+        const parsed = Number(trimmed);
+        if (Number.isNaN(parsed)) {
+            return { value: null, valid: false };
+        }
+
+        return { value: parsed, valid: true };
+    }
+
+    async function runSimulationForInput(inputArray, targetNumber) {
         if (!algorithm) {
             return;
         }
@@ -698,17 +754,21 @@ export default function AlgorithmDetailPage() {
             simulationAlgorithmKey,
             inputArray,
             getToken,
+            targetNumber,
         );
 
         setSampleInput(inputArray);
         setArraySize(inputArray.length);
         setElementsText(inputArray.join(", "));
         setSteps(Array.isArray(simulationResponse?.steps) ? simulationResponse.steps : []);
+        if (typeof simulationResponse?.targetValue === "number") {
+            setTargetValue(String(simulationResponse.targetValue));
+        }
         setIsPlaying(false);
         setShowCompletionToast(false);
         setSimulationError("");
         resetPracticeState(inputArray, 0);
-        await startPracticeSession(inputArray);
+        await startPracticeSession(inputArray, targetNumber);
     }
 
     async function handleApplyInput() {
@@ -727,8 +787,14 @@ export default function AlgorithmDetailPage() {
             return;
         }
 
+        const parsedTarget = parseTargetValue(targetValue);
+        if (!parsedTarget.valid) {
+            setSimulationError("Enter a numeric target value for binary search.");
+            return;
+        }
+
         try {
-            await runSimulationForInput(parsedValues);
+            await runSimulationForInput(parsedValues, parsedTarget.value);
         } catch (runError) {
             setSteps(getFallbackStepsForAlgorithm(algorithm?.name, parsedValues));
             setCurrentStepIndex(0);
@@ -748,7 +814,8 @@ export default function AlgorithmDetailPage() {
         );
 
         try {
-            await runSimulationForInput(randomInput);
+            const parsedTarget = parseTargetValue(targetValue);
+            await runSimulationForInput(randomInput, parsedTarget.value);
         } catch (runError) {
             setSteps(getFallbackStepsForAlgorithm(algorithm?.name, randomInput));
             setCurrentStepIndex(0);
@@ -757,6 +824,46 @@ export default function AlgorithmDetailPage() {
             setSimulationError(runError instanceof Error
                 ? `${runError.message} Showing local mock steps for visual testing.`
                 : "Simulation trace is not available yet. Showing local mock steps for visual testing.");
+        }
+    }
+
+    function handleSearchDecision(decision) {
+        if (
+            mode !== "practice"
+            || !isSearchMode
+            || isValidatingStep
+            || practiceCompleted
+            || steps.length === 0
+        ) {
+            return;
+        }
+
+        const expected = getNextSearchDecision(steps, currentStepIndex);
+        if (!expected) {
+            setPracticeCompleted(true);
+            setFeedbackMessage("Practice complete.");
+            setHintMessage("No more actions are needed.");
+            setShowCompletionToast(true);
+            return;
+        }
+
+        const isCorrectDecision = expected.decision === decision;
+        setIsCorrect(isCorrectDecision);
+        setFeedbackVersion((previousValue) => previousValue + 1);
+
+        if (!isCorrectDecision) {
+            setFeedbackMessage("That would discard the wrong half.");
+            setHintMessage("Compare the midpoint to the target and try again.");
+            return;
+        }
+
+        setFeedbackMessage(decision === "found" ? "Target found." : "Correct. Narrow the search window.");
+        setHintMessage("Choose the next move based on the new midpoint.");
+        setCurrentStepIndex(expected.index);
+
+        if (decision === "found") {
+            setPracticeCompleted(true);
+            setShowCompletionToast(true);
         }
     }
 
@@ -773,7 +880,7 @@ export default function AlgorithmDetailPage() {
                                 Algorithms
                             </Link>
                             <ChevronRight className="h-4 w-4" />
-                            <span className="text-white">{presentationAlgorithm?.name || "Details"}</span>
+                            <span className="text-white">{presentationAlgorithm?.name || algorithm?.name || "Details"}</span>
                         </div>
                     </div>
 
@@ -817,10 +924,10 @@ export default function AlgorithmDetailPage() {
                                         {primaryComplexity} avg
                                     </span>
                                     <span className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-200">
-                                        {presentationAlgorithm?.timeComplexityBest || algorithm.timeComplexityBest} best
+                                        {(presentationAlgorithm?.timeComplexityBest || algorithm.timeComplexityBest)} best
                                     </span>
                                     <span className="inline-flex rounded-full border border-rose-400/20 bg-rose-400/10 px-4 py-2 text-sm font-semibold text-rose-200">
-                                        {presentationAlgorithm?.timeComplexityWorst || algorithm.timeComplexityWorst} worst
+                                        {(presentationAlgorithm?.timeComplexityWorst || algorithm.timeComplexityWorst)} worst
                                     </span>
                                     <span className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-200">
                                         {difficulty}
@@ -840,6 +947,7 @@ export default function AlgorithmDetailPage() {
 
                         <SimulationControls
                             mode={mode}
+                            algorithmType={algorithmType}
                             isPlaying={isPlaying}
                             speed={playbackSpeed}
                             speeds={playbackSpeeds}
@@ -847,6 +955,7 @@ export default function AlgorithmDetailPage() {
                             totalSteps={steps.length}
                             arraySize={arraySize}
                             elementsText={elementsText}
+                            targetValue={targetValue}
                             sampleInput={sampleInput}
                             simulationError={simulationError}
                             feedbackMessage={feedbackMessage}
@@ -862,6 +971,7 @@ export default function AlgorithmDetailPage() {
                             onSpeedChange={setPlaybackSpeed}
                             onArraySizeChange={handleArraySizeChange}
                             onElementsChange={setElementsText}
+                            onTargetChange={setTargetValue}
                             onApplyInput={handleApplyInput}
                             onGenerateRandomArray={handleGenerateRandomArray}
                         />
@@ -871,6 +981,9 @@ export default function AlgorithmDetailPage() {
                                 steps={steps}
                                 currentStepIndex={currentStepIndex}
                                 algorithmType={algorithmType}
+                                searchTargetValue={isSearchMode && targetValue.trim() !== ""
+                                    ? Number(targetValue)
+                                    : null}
                                 mode={mode}
                                 practiceArray={currentArray}
                                 selectedIndices={selectedIndices}
@@ -882,7 +995,8 @@ export default function AlgorithmDetailPage() {
                                 hintMessage={mode === "practice" ? hintMessage : ""}
                                 practiceCompleted={practiceCompleted}
                                 isInteractionDisabled={mode !== "practice" || isValidatingStep || practiceCompleted}
-                                onBarClick={handlePracticeBarClick}
+                                onBarClick={algorithmType === "search" ? undefined : handlePracticeBarClick}
+                                onSearchDecision={handleSearchDecision}
                             />
                             <CodePanel
                                 snippets={codeSnippets}
@@ -911,7 +1025,9 @@ export default function AlgorithmDetailPage() {
                         </p>
                         <p className="mt-1 text-xs text-text-secondary">
                             {mode === "practice"
-                                ? "The backend confirmed the array is sorted."
+                                ? (isSearchMode
+                                    ? "You completed the search decisions."
+                                    : "The backend confirmed the array is sorted.")
                                 : "The backend simulation finished all steps."}
                         </p>
                     </motion.div>
