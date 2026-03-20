@@ -35,6 +35,7 @@ export type AlgorithmSimulationResponse = {
     algorithmName: string;
     steps: AlgorithmSimulationStep[];
     totalSteps: number;
+    targetValue?: number | null;
 };
 
 export type SimulationValidationAction = {
@@ -46,6 +47,7 @@ export type SimulationSession = {
     sessionId: string;
     steps: AlgorithmSimulationStep[];
     currentStepIndex: number;
+    targetValue?: number | null;
 };
 
 export type SimulationValidationResponse = {
@@ -199,10 +201,10 @@ export const SimulationService = {
      * POST /simulation/run
      * Requests the backend-generated step trace for an algorithm/input pair.
      */
-    runSimulation: (algorithm: string, array: number[], getToken: GetTokenFn) =>
+    runSimulation: (algorithm: string, array: number[], getToken: GetTokenFn, targetValue?: number | null) =>
         apiFetch("/simulation/run", {
             method: "POST",
-            body: { algorithm, array },
+            body: { algorithm, array, target: targetValue ?? null },
             getToken,
         }) as Promise<AlgorithmSimulationResponse>,
 
@@ -210,10 +212,10 @@ export const SimulationService = {
      * POST /simulation/start
      * Starts a stateful practice-mode session backed by the auto-mode trace.
      */
-    startSession: (algorithm: string, array: number[], getToken: GetTokenFn) =>
+    startSession: (algorithm: string, array: number[], getToken: GetTokenFn, targetValue?: number | null) =>
         apiFetch("/simulation/start", {
             method: "POST",
-            body: { algorithm, array },
+            body: { algorithm, array, target: targetValue ?? null },
             getToken,
         }) as Promise<SimulationSession>,
 
