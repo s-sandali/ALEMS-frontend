@@ -2,17 +2,20 @@ import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
 
 type LearningMode = "auto" | "practice";
 type PracticeFeedbackTone = "correct" | "incorrect" | null;
+type SearchDecision = "left" | "right" | "found";
 
 type AlgorithmVisualizerProps = {
     steps: AlgorithmSimulationStep[];
     currentStepIndex: number;
     mode?: LearningMode;
     algorithmType?: "sort" | "search";
+    searchTargetValue?: number | null;
     practiceArray?: number[];
     selectedIndices?: number[];
     suggestedIndices?: number[];
@@ -24,6 +27,7 @@ type AlgorithmVisualizerProps = {
     practiceCompleted?: boolean;
     isInteractionDisabled?: boolean;
     onBarClick?: (index: number) => void;
+    onSearchDecision?: (decision: SearchDecision) => void;
     className?: string;
 };
 
@@ -158,6 +162,40 @@ function getSearchState(step: AlgorithmSimulationStep | undefined) {
     return (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
 }
 
+function getSearchWindow(step: AlgorithmSimulationStep | undefined, totalValues: number) {
+    if (totalValues <= 0) {
+        return { low: 0, high: -1, midpoint: null };
+    }
+
+    const low = typeof step?.search?.lowIndex === "number" ? step.search.lowIndex : 0;
+    const high = typeof step?.search?.highIndex === "number" ? step.search.highIndex : totalValues - 1;
+    const midpoint = typeof step?.search?.midpointIndex === "number"
+        ? step.search.midpointIndex
+        : Math.floor((low + high) / 2);
+
+    return { low, high, midpoint };
+}
+
+function getSearchTargetValue(steps: AlgorithmSimulationStep[]) {
+    const foundStep = steps.find((step) => {
+        const state = getSearchState(step);
+        return state === "found" || state === "target_found";
+    });
+
+    if (!foundStep) {
+        return null;
+    }
+
+    const midpointIndex = typeof foundStep.search?.midpointIndex === "number"
+        ? foundStep.search.midpointIndex
+        : foundStep.activeIndices?.[0];
+    if (typeof midpointIndex !== "number") {
+        return null;
+    }
+
+    return foundStep.arrayState?.[midpointIndex] ?? null;
+}
+
 function reconcileBars(previousBars: VisualBar[], nextValues: number[], createBar: (value: number) => VisualBar) {
     const availableBars = new Map<number, VisualBar[]>();
 
@@ -194,6 +232,7 @@ function AlgorithmVisualizer({
     currentStepIndex,
     mode = "auto",
     algorithmType = "sort",
+    searchTargetValue = null,
     practiceArray = [],
     selectedIndices = [],
     suggestedIndices = [],
@@ -205,6 +244,7 @@ function AlgorithmVisualizer({
     practiceCompleted = false,
     isInteractionDisabled = false,
     onBarClick,
+    onSearchDecision,
     className,
 }: AlgorithmVisualizerProps) {
     const shouldReduceMotion = useReducedMotion();
@@ -266,6 +306,27 @@ function AlgorithmVisualizer({
     const displayActionLabel = isPracticeMode
         ? practiceTone.actionLabel
         : (currentStep?.search?.state ?? currentStep?.actionLabel ?? "Waiting for steps");
+    const searchTarget = useMemo(
+        () => (typeof searchTargetValue === "number" ? searchTargetValue : getSearchTargetValue(steps)),
+        [searchTargetValue, steps],
+    );
+    const searchWindow = useMemo(
+        () => getSearchWindow(currentStep, values.length),
+        [currentStep, values.length],
+    );
+    const midpointValue = useMemo(() => {
+        if (typeof searchWindow.midpoint !== "number") {
+            return null;
+        }
+
+        return values[searchWindow.midpoint] ?? null;
+    }, [searchWindow.midpoint, values]);
+    const isTargetAtMidpoint = typeof searchTarget === "number"
+        && typeof midpointValue === "number"
+        && searchTarget === midpointValue;
+    const showSearchDecisionControls = algorithmType === "search"
+        && isPracticeMode
+        && typeof onSearchDecision === "function";
 
     const createBar = (value: number): VisualBar => ({
         id: `visual-bar-${nextBarIdRef.current++}`,
@@ -332,7 +393,7 @@ function AlgorithmVisualizer({
                             {isPracticeMode ? (
                                 <span className="text-sm text-sky-100/80">
                                     {algorithmType === "search"
-                                        ? "Click a bar to select it as the midpoint"
+                                        ? "Use Go Left, Go Right, or Found to decide the next move"
                                         : "Click two bars to validate a swap"}
                                 </span>
                             ) : null}
@@ -384,148 +445,239 @@ function AlgorithmVisualizer({
                         </div>
                     ) : null}
 
-                    <motion.div
-                        key={`bars-${mode}-${feedbackTone ?? "idle"}-${feedbackVersion}`}
-                        initial={shouldReduceMotion
-                            ? false
-                            : (feedbackTone === "incorrect"
-                                ? { x: 0 }
-                                : (feedbackTone === "correct" ? { scale: 0.995 } : false))}
-                        animate={shouldReduceMotion
-                            ? {}
-                            : (feedbackTone === "incorrect"
-                                ? { x: [0, -10, 10, -7, 7, 0] }
-                                : (feedbackTone === "correct"
-                                    ? { scale: [1, 1.015, 1] }
-                                    : { x: 0, scale: 1 }))}
-                        transition={{ duration: 0.38, ease: "easeOut" }}
-                        className="flex min-h-64 items-end gap-2 overflow-x-auto rounded-xl px-1 pb-1 pt-6 sm:min-h-72 sm:gap-3"
-                    >
-                        {visualBars.length > 0 ? (
-                            visualBars.map((bar, index) => {
-                                const isActive = activeIndices.has(index);
-                                const isSorted = sortedIndices.has(index);
-                                const isSelected = selectedIndexSet.has(index);
-                                const isSuggested = suggestedIndexSet.has(index);
-                                const isFeedbackTarget = feedbackIndexSet.has(index);
-                                const isDiscarded = discardedIndexSet.has(index);
-                                const height = `${Math.max((bar.value / globalMax) * 100, 8)}%`;
-                                const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
-                                const shouldPulseMidpoint = !isPracticeMode && isSearchMidpoint && isActive && !shouldReduceMotion;
-                                const shouldEmphasizeFound = !isPracticeMode && isSearchFound && isActive && !shouldReduceMotion;
-                                const shouldEmphasizeNotFound = !isPracticeMode && isSearchNotFound && isActive && !shouldReduceMotion;
-                                const baseScale = isActive || isSelected ? 1.03 : 1;
-                                const scaleSequence = shouldPulseMidpoint
-                                    ? [baseScale, 1.08, baseScale]
-                                    : (shouldEmphasizeFound || shouldEmphasizeNotFound
-                                        ? [baseScale, 1.06, baseScale]
-                                        : baseScale);
-                                const pulseShadow = shouldEmphasizeFound
-                                    ? "0 0 28px rgba(52,211,153,0.35)"
-                                    : (shouldEmphasizeNotFound
-                                        ? "0 0 28px rgba(248,113,113,0.35)"
-                                        : undefined);
-
-                                return (
-                                    <motion.div
-                                        key={bar.id}
-                                        layout
-                                        transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
-                                        className={cn(
-                                            "flex min-w-10 flex-1 flex-col items-center justify-end gap-2 sm:min-w-12 transition-[opacity,filter] duration-500",
-                                            isInteractive && "cursor-pointer",
-                                            isInteractionDisabled && "cursor-not-allowed opacity-70",
-                                            isDiscarded && "opacity-30 grayscale pointer-events-none",
-                                        )}
-                                        onClick={() => {
-                                            if (isInteractive && !isInteractionDisabled) {
-                                                onBarClick(index);
-                                            }
-                                        }}
-                                        onKeyDown={(event) => {
-                                            if (!isInteractive || isInteractionDisabled) {
-                                                return;
-                                            }
-
-                                            if (event.key === "Enter" || event.key === " ") {
-                                                event.preventDefault();
-                                                onBarClick(index);
-                                            }
-                                        }}
-                                        role={isInteractive ? "button" : undefined}
-                                        tabIndex={isInteractive && !isInteractionDisabled ? 0 : undefined}
-                                        aria-disabled={isInteractive ? isInteractionDisabled : undefined}
-                                        aria-pressed={isInteractive ? isSelected : undefined}
-                                    >
-                                        <motion.span
-                                            animate={shouldReduceMotion ? {} : { y: isActive || isSelected ? -2 : 0 }}
-                                            transition={{ duration: 0.2 }}
-                                            className={cn(
-                                                "text-xs font-medium text-text-secondary transition-colors duration-300",
-                                                isSorted && "text-emerald-200",
-                                                isSelected && "text-sky-50",
-                                                isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
-                                                isFeedbackTarget && feedbackTone === "incorrect" && "text-red-100",
-                                                isActive && !isPracticeMode && "text-text-primary",
-                                            )}
-                                        >
-                                            {bar.value}
-                                        </motion.span>
-
-                                        <div className="relative flex h-56 w-full items-end sm:h-60">
-                                            <motion.div
-                                                layout="position"
-                                                animate={shouldReduceMotion ? { height } : {
-                                                    height,
-                                                    y: isActive || isSelected ? -6 : 0,
-                                                    scale: scaleSequence,
-                                                    boxShadow: pulseShadow,
-                                                }}
-                                                transition={shouldReduceMotion
-                                                    ? reducedMotionTransition
-                                                    : {
-                                                        ...activeBarTransition,
-                                                        scale: { duration: 0.6, ease: "easeInOut" },
-                                                        boxShadow: { duration: 0.4, ease: "easeOut" },
-                                                    }}
-                                                className={cn(
-                                                    "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
-                                                    isSorted && "border-emerald-400/40 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
-                                                    !isPracticeMode && isActive && tone.activeBarClassName,
-                                                    !isPracticeMode && isActive && "border-transparent",
-                                                    isSuggested && isPracticeMode && "border-accent/50 from-accent/80 to-accent/50 shadow-[0_0_18px_rgba(213,255,64,0.25)]",
-                                                    isSelected && isPracticeMode && "border-sky-300/50 from-sky-400/90 to-sky-500 shadow-[0_0_18px_rgba(56,189,248,0.26)]",
-                                                    isFeedbackTarget && feedbackTone === "correct" && "border-emerald-400/50 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.26)]",
-                                                    isFeedbackTarget && feedbackTone === "incorrect" && "border-red-400/50 from-red-400/90 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.3)]",
-                                                )}
-                                                aria-label={`Index ${index}, value ${bar.value}`}
-                                                aria-current={isActive || isSelected ? "true" : undefined}
-                                            />
-                                        </div>
-
-                                        <motion.span
-                                            animate={shouldReduceMotion ? {} : { y: isActive || isSelected ? 2 : 0 }}
-                                            transition={{ duration: 0.2 }}
-                                            className={cn(
-                                                "text-[11px] text-text-secondary transition-colors duration-300",
-                                                isSorted && "text-emerald-200",
-                                                isSelected && "text-sky-50",
-                                                isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
-                                                isFeedbackTarget && feedbackTone === "incorrect" && "text-red-100",
-                                                isActive && !isPracticeMode && "text-text-primary",
-                                            )}
-                                        >
-                                            {index}
-                                        </motion.span>
-                                    </motion.div>
-                                );
-                            })
-                        ) : (
-                            <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-white/10 px-4 py-12 text-sm text-text-secondary">
-                                No backend simulation steps available yet.
+                    {algorithmType === "search" ? (
+                        <div className="flex flex-col gap-5">
+                            <div className="flex flex-wrap items-center gap-3 text-sm">
+                                <span className="text-text-secondary">Find:</span>
+                                <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-sm font-semibold text-accent">
+                                    {searchTarget ?? "--"}
+                                </span>
+                                <span className="text-text-secondary">
+                                    Window: {searchWindow.low} to {searchWindow.high}
+                                </span>
                             </div>
-                        )}
-                    </motion.div>
+
+                            {showSearchDecisionControls ? (
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => onSearchDecision?.("left")}
+                                        disabled={isInteractionDisabled || isTargetAtMidpoint}
+                                    >
+                                        Go Left
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => onSearchDecision?.("right")}
+                                        disabled={isInteractionDisabled || isTargetAtMidpoint}
+                                    >
+                                        Go Right
+                                    </Button>
+                                    <Button
+                                        variant="default"
+                                        onClick={() => onSearchDecision?.("found")}
+                                        disabled={isInteractionDisabled}
+                                    >
+                                        Found
+                                    </Button>
+                                </div>
+                            ) : null}
+
+                            {showSearchDecisionControls && isTargetAtMidpoint && !practiceCompleted ? (
+                                <p className="text-xs text-emerald-200">
+                                    Midpoint matches the target — click Found.
+                                </p>
+                            ) : null}
+
+                            <div className="flex flex-wrap items-end justify-center gap-3">
+                                {values.length > 0 ? (
+                                    values.map((value, index) => {
+                                        const isActive = activeIndices.has(index);
+                                        const isDiscarded = discardedIndexSet.has(index);
+                                        const isInRange = index >= searchWindow.low && index <= searchWindow.high;
+                                        const isMidpoint = typeof searchWindow.midpoint === "number" && index === searchWindow.midpoint;
+                                        const isFound = isSearchFound && isMidpoint;
+
+                                        return (
+                                            <motion.div
+                                                key={`search-box-${index}-${value}`}
+                                                layout
+                                                transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
+                                                className={cn(
+                                                    "flex flex-col items-center gap-2 transition-[opacity,filter] duration-500",
+                                                    isDiscarded && "opacity-30 grayscale",
+                                                )}
+                                            >
+                                                <motion.div
+                                                    animate={shouldReduceMotion ? {} : { scale: isMidpoint ? 1.12 : 1 }}
+                                                    transition={{ duration: 0.25 }}
+                                                    className={cn(
+                                                        "flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-lg font-semibold text-white",
+                                                        isInRange && "border-accent/40 bg-accent/10",
+                                                        isMidpoint && "border-accent/60 bg-accent/25 shadow-[0_0_20px_rgba(213,255,64,0.3)]",
+                                                        isActive && "ring-2 ring-accent/40",
+                                                        isFound && "border-emerald-400/60 bg-emerald-400/20 text-emerald-100 shadow-[0_0_22px_rgba(52,211,153,0.35)]",
+                                                    )}
+                                                >
+                                                    {value}
+                                                </motion.div>
+                                                <span className="text-[11px] text-text-secondary">
+                                                    {index}
+                                                </span>
+                                            </motion.div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-white/10 px-4 py-12 text-sm text-text-secondary">
+                                        No backend simulation steps available yet.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <motion.div
+                            key={`bars-${mode}-${feedbackTone ?? "idle"}-${feedbackVersion}`}
+                            initial={shouldReduceMotion
+                                ? false
+                                : (feedbackTone === "incorrect"
+                                    ? { x: 0 }
+                                    : (feedbackTone === "correct" ? { scale: 0.995 } : false))}
+                            animate={shouldReduceMotion
+                                ? {}
+                                : (feedbackTone === "incorrect"
+                                    ? { x: [0, -10, 10, -7, 7, 0] }
+                                    : (feedbackTone === "correct"
+                                        ? { scale: [1, 1.015, 1] }
+                                        : { x: 0, scale: 1 }))}
+                            transition={{ duration: 0.38, ease: "easeOut" }}
+                            className="flex min-h-64 items-end gap-2 overflow-x-auto rounded-xl px-1 pb-1 pt-6 sm:min-h-72 sm:gap-3"
+                        >
+                            {visualBars.length > 0 ? (
+                                visualBars.map((bar, index) => {
+                                    const isActive = activeIndices.has(index);
+                                    const isSorted = sortedIndices.has(index);
+                                    const isSelected = selectedIndexSet.has(index);
+                                    const isSuggested = suggestedIndexSet.has(index);
+                                    const isFeedbackTarget = feedbackIndexSet.has(index);
+                                    const isDiscarded = discardedIndexSet.has(index);
+                                    const height = `${Math.max((bar.value / globalMax) * 100, 8)}%`;
+                                    const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
+                                    const shouldPulseMidpoint = !isPracticeMode && isSearchMidpoint && isActive && !shouldReduceMotion;
+                                    const shouldEmphasizeFound = !isPracticeMode && isSearchFound && isActive && !shouldReduceMotion;
+                                    const shouldEmphasizeNotFound = !isPracticeMode && isSearchNotFound && isActive && !shouldReduceMotion;
+                                    const baseScale = isActive || isSelected ? 1.03 : 1;
+                                    const scaleSequence = shouldPulseMidpoint
+                                        ? [baseScale, 1.08, baseScale]
+                                        : (shouldEmphasizeFound || shouldEmphasizeNotFound
+                                            ? [baseScale, 1.06, baseScale]
+                                            : baseScale);
+                                    const pulseShadow = shouldEmphasizeFound
+                                        ? "0 0 28px rgba(52,211,153,0.35)"
+                                        : (shouldEmphasizeNotFound
+                                            ? "0 0 28px rgba(248,113,113,0.35)"
+                                            : undefined);
+
+                                    return (
+                                        <motion.div
+                                            key={bar.id}
+                                            layout
+                                            transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
+                                            className={cn(
+                                                "flex min-w-10 flex-1 flex-col items-center justify-end gap-2 sm:min-w-12 transition-[opacity,filter] duration-500",
+                                                isInteractive && "cursor-pointer",
+                                                isInteractionDisabled && "cursor-not-allowed opacity-70",
+                                                isDiscarded && "opacity-30 grayscale pointer-events-none",
+                                            )}
+                                            onClick={() => {
+                                                if (isInteractive && !isInteractionDisabled) {
+                                                    onBarClick(index);
+                                                }
+                                            }}
+                                            onKeyDown={(event) => {
+                                                if (!isInteractive || isInteractionDisabled) {
+                                                    return;
+                                                }
+
+                                                if (event.key === "Enter" || event.key === " ") {
+                                                    event.preventDefault();
+                                                    onBarClick(index);
+                                                }
+                                            }}
+                                            role={isInteractive ? "button" : undefined}
+                                            tabIndex={isInteractive && !isInteractionDisabled ? 0 : undefined}
+                                            aria-disabled={isInteractive ? isInteractionDisabled : undefined}
+                                            aria-pressed={isInteractive ? isSelected : undefined}
+                                        >
+                                            <motion.span
+                                                animate={shouldReduceMotion ? {} : { y: isActive || isSelected ? -2 : 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className={cn(
+                                                    "text-xs font-medium text-text-secondary transition-colors duration-300",
+                                                    isSorted && "text-emerald-200",
+                                                    isSelected && "text-sky-50",
+                                                    isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
+                                                    isFeedbackTarget && feedbackTone === "incorrect" && "text-red-100",
+                                                    isActive && !isPracticeMode && "text-text-primary",
+                                                )}
+                                            >
+                                                {bar.value}
+                                            </motion.span>
+
+                                            <div className="relative flex h-56 w-full items-end sm:h-60">
+                                                <motion.div
+                                                    layout="position"
+                                                    animate={shouldReduceMotion ? { height } : {
+                                                        height,
+                                                        y: isActive || isSelected ? -6 : 0,
+                                                        scale: scaleSequence,
+                                                        boxShadow: pulseShadow,
+                                                    }}
+                                                    transition={shouldReduceMotion
+                                                        ? reducedMotionTransition
+                                                        : {
+                                                            ...activeBarTransition,
+                                                            scale: { duration: 0.6, ease: "easeInOut" },
+                                                            boxShadow: { duration: 0.4, ease: "easeOut" },
+                                                        }}
+                                                    className={cn(
+                                                        "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
+                                                        isSorted && "border-emerald-400/40 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
+                                                        !isPracticeMode && isActive && tone.activeBarClassName,
+                                                        !isPracticeMode && isActive && "border-transparent",
+                                                        isSuggested && isPracticeMode && "border-accent/50 from-accent/80 to-accent/50 shadow-[0_0_18px_rgba(213,255,64,0.25)]",
+                                                        isSelected && isPracticeMode && "border-sky-300/50 from-sky-400/90 to-sky-500 shadow-[0_0_18px_rgba(56,189,248,0.26)]",
+                                                        isFeedbackTarget && feedbackTone === "correct" && "border-emerald-400/50 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.26)]",
+                                                        isFeedbackTarget && feedbackTone === "incorrect" && "border-red-400/50 from-red-400/90 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.3)]",
+                                                    )}
+                                                    aria-label={`Index ${index}, value ${bar.value}`}
+                                                    aria-current={isActive || isSelected ? "true" : undefined}
+                                                />
+                                            </div>
+
+                                            <motion.span
+                                                animate={shouldReduceMotion ? {} : { y: isActive || isSelected ? 2 : 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className={cn(
+                                                    "text-[11px] text-text-secondary transition-colors duration-300",
+                                                    isSorted && "text-emerald-200",
+                                                    isSelected && "text-sky-50",
+                                                    isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
+                                                    isFeedbackTarget && feedbackTone === "incorrect" && "text-red-100",
+                                                    isActive && !isPracticeMode && "text-text-primary",
+                                                )}
+                                            >
+                                                {index}
+                                            </motion.span>
+                                        </motion.div>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-white/10 px-4 py-12 text-sm text-text-secondary">
+                                    No backend simulation steps available yet.
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
                 </div>
             </div>
         </section>
