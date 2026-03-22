@@ -87,7 +87,7 @@ export default function SimulationControls({
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div className="max-w-2xl">
-                        <p className="text-s font-semibold uppercase tracking-[0.28em] text-accent">
+                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                             03- Simulation
                         </p>
                         <h2 className="mt-3 text-2xl font-bold tracking-tight text-white">
