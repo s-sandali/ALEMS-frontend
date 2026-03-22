@@ -29,7 +29,7 @@ function normalizeComplexityLabel(label) {
         .trim()
         .toLowerCase()
         .replace(/\s+/g, "")
-        .replace("Â²", "^2");
+        .replace("²", "^2");
 }
 
 function ChartTooltip({ active, payload, label, labelFormatter, colors }) {
