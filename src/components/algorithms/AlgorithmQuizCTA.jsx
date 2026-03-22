@@ -28,7 +28,7 @@ export default function AlgorithmQuizCTA({ algorithm }) {
     return (
         <section className="rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-8 lg:p-10">
             <div >
-                <p className="text-s font-semibold uppercase tracking-[0.3em] text-accent">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
                     05 - Challenge
                 </p>
 
