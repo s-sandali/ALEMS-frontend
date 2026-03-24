@@ -13,6 +13,31 @@
   --muted: #C0C2B8;
   --text-primary: #FFFFFF;
   --text-secondary: #A1A1A1;
+  /* Dashboard design system */
+  --lime: #c8ff3e;
+  --lime2: #a8e020;
+  --lime-dim: rgba(200,255,62,0.12);
+  --lime-border: rgba(200,255,62,0.25);
+  --lime-glow: rgba(200,255,62,0.06);
+  --blue: #4da6ff;
+  --blue-dim: rgba(77,166,255,0.12);
+  --amber: #ffb830;
+  --amber-dim: rgba(255,184,48,0.12);
+  --red: #ff5c5c;
+  --red-dim: rgba(255,92,92,0.12);
+  --green: #3ddc84;
+  --green-dim: rgba(61,220,132,0.12);
+  --purple: #b794f4;
+  --purple-dim: rgba(183,148,244,0.12);
+  --db-bg: #0d0e0f;
+  --db-bg2: #131415;
+  --db-bg3: #1a1b1d;
+  --db-bg4: #212224;
+  --db-border: #2a2b2e;
+  --db-border2: #353638;
+  --db-text: #e8e9ea;
+  --db-text2: #9a9b9e;
+  --db-text3: #5a5b5e;
 }
 
 /* ─── Reset ─────────────────────────────────────────────────────────────────── */

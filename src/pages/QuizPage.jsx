@@ -11,8 +11,12 @@ export default function QuizPage() {
             <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-bg/80 backdrop-blur-xl">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
                     <div className="flex items-center gap-3">
-                        <Link to="/dashboard" className="text-xl font-bold tracking-tight text-accent">
-                            BigO
+                        <Link to="/" className="flex items-center gap-2 group">
+                            <img
+                                src="/BIGO.png"
+                                alt="BIGO Logo"
+                                className="h-16 w-auto group-hover:scale-110 transition-transform"
+                            />
                         </Link>
                         <div className="hidden items-center gap-2 text-sm text-text-secondary sm:flex">
                             <Link to="/algorithms" className="transition hover:text-white">
