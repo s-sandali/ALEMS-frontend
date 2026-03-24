@@ -1,115 +1,182 @@
-import { useUser, UserButton } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
-import { Zap, BookOpen, Flame, ArrowRight } from "lucide-react";
-import StatsCard from "../components/dashboard/StatsCard";
-import ContributionGrid from "../components/dashboard/ContributionGrid";
-import BadgeSection from "../components/dashboard/BadgeSection";
-import ExploreAlgorithmsSection from "../components/algorithms/ExploreAlgorithmsSection";
-import { mockDashboardData } from "../data/dashboardMockData";
+import { motion } from 'motion/react'
+import {
+  MOCK_USER,
+  MOCK_ALGORITHMS,
+  MOCK_CONTINUE,
+  MOCK_BADGES,
+  MOCK_ACTIVITY,
+  MOCK_LEADERBOARD,
+  MOCK_NEXT_UNLOCKS,
+  MOCK_HEATMAP,
+} from '@/mock/dashboardMock'
+import DashboardNav from '@/components/dashboard/DashboardNav'
+import StatCards from '@/components/dashboard/StatCards'
+import ContinueLearningCard from '@/components/dashboard/ContinueLearningCard'
+import AlgorithmProgressList from '@/components/dashboard/AlgorithmProgressList'
+import ActivityHeatmap from '@/components/dashboard/ActivityHeatmap'
+import BadgesGrid from '@/components/dashboard/BadgesGrid'
+import RecentActivityFeed from '@/components/dashboard/RecentActivityFeed'
+import LeaderboardPanel from '@/components/dashboard/LeaderboardPanel'
+import NextToUnlockPanel from '@/components/dashboard/NextToUnlockPanel'
+import ExploreAlgorithmsSection from '@/components/algorithms/ExploreAlgorithmsSection'
 
 export default function Dashboard() {
-    const { user } = useUser();
-    const navigate = useNavigate();
-    const data = mockDashboardData;
+  return (
+    <div style={{ minHeight: '100vh', background: '#0d0e0f' }}>
+      <DashboardNav user={MOCK_USER} />
 
-    const firstName = user?.firstName || user?.username || "Learner";
-    const hasModules = data.modulesCompleted > 0;
+      <div
+        style={{
+          maxWidth: 1160,
+          margin: '0 auto',
+          padding: '28px 24px 60px',
+        }}
+      >
+        {/* Welcome header + XP level bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            marginBottom: 24,
+            gap: 20,
+            flexWrap: 'wrap',
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <p
+              style={{
+                fontSize: 11,
+                color: '#4a4b4e',
+                letterSpacing: '1.5px',
+                textTransform: 'uppercase',
+                fontFamily: "'JetBrains Mono', monospace",
+                marginBottom: 6,
+              }}
+            >
+              Dashboard
+            </p>
+            <h1
+              style={{
+                fontSize: 26,
+                fontWeight: 700,
+                letterSpacing: '-0.8px',
+                lineHeight: 1.1,
+                fontFamily: "'Space Grotesk', sans-serif",
+                color: '#e4e5e6',
+              }}
+            >
+              Welcome back,{' '}
+              <span style={{ color: '#c8ff3e' }}>{MOCK_USER.name}</span>
+            </h1>
+            <p style={{ color: '#8a8b8e', fontSize: 13, marginTop: 4 }}>
+              Here's your learning progress at a glance.
+            </p>
+          </motion.div>
 
-    return (
-        <div className="min-h-screen bg-bg">
-            {/* Top nav bar */}
-            <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-bg/80 backdrop-blur-xl">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <span className="text-xl font-bold text-accent tracking-tight">
-                            BigO
-                        </span>
-                        <span className="text-sm text-text-secondary hidden sm:inline">
-                            / Dashboard
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm text-text-secondary hidden md:inline">
-                            {user?.primaryEmailAddress?.emailAddress}
-                        </span>
-                        <UserButton afterSignOutUrl="/" />
-                    </div>
-                </div>
-            </header>
-
-            <main className="max-w-7xl mx-auto px-6 py-8">
-                {/* Welcome section */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-white tracking-tight">
-                        Welcome back,{" "}
-                        <span className="text-accent">{firstName}</span>
-                    </h1>
-                    <p className="text-text-secondary mt-1">
-                        Here&apos;s your learning progress at a glance.
-                    </p>
-                </div>
-
-                {/* Empty state */}
-                {!hasModules && (
-                    <div className="mb-8 rounded-xl border border-accent/20 bg-accent/5 p-8 text-center">
-                        <div className="mx-auto w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-4">
-                            <BookOpen className="w-8 h-8 text-accent" />
-                        </div>
-                        <h2 className="text-xl font-semibold text-white mb-2">
-                            You haven&apos;t started learning yet.
-                        </h2>
-                        <p className="text-text-secondary mb-6 max-w-md mx-auto">
-                            Begin your journey into algorithms and data structures.
-                            Track your progress and earn badges along the way!
-                        </p>
-                        <button
-                            onClick={() => navigate("/algorithms")}
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-accent text-bg font-semibold text-sm transition-all duration-300 hover:shadow-lg hover:shadow-accent/25 hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            Start Learning
-                            <ArrowRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                )}
-
-                {/* Stats cards row */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                    <StatsCard
-                        title="Total XP"
-                        value={data.xpTotal.toLocaleString()}
-                        icon={<Zap className="w-5 h-5" />}
-                        subtitle="Experience points earned"
-                    />
-                    <StatsCard
-                        title="Modules Completed"
-                        value={data.modulesCompleted}
-                        icon={<BookOpen className="w-5 h-5" />}
-                        subtitle={`${data.modulesCompleted} of 12 modules`}
-                    />
-                    <StatsCard
-                        title="Current Streak"
-                        value={`${data.streak} days`}
-                        icon={<Flame className="w-5 h-5" />}
-                        subtitle="Keep it going!"
-                    />
-                </div>
-
-                {/* Contribution heatmap */}
-                <div className="mb-8">
-                    <ContributionGrid contributions={data.contributions} />
-                </div>
-
-                {/* Badges section */}
-                <div className="mb-8">
-                    <BadgeSection badges={data.badges} />
-                </div>
-
-                <ExploreAlgorithmsSection
-                    limit={4}
-                    showViewAll
-                    description="Continue from your dashboard into the algorithm library. Each card highlights the name, average complexity, and difficulty before you open its dedicated route."
-                />
-            </main>
+          {/* XP level bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            style={{
+              background: '#131415',
+              border: '1px solid #252627',
+              borderRadius: 12,
+              padding: '14px 18px',
+              minWidth: 220,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: 6,
+              }}
+            >
+              <span style={{ fontSize: 12, color: '#8a8b8e' }}>
+                Level {MOCK_USER.level} — {MOCK_USER.levelLabel}
+              </span>
+              <span
+                style={{
+                  fontSize: 12,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  color: '#c8ff3e',
+                }}
+              >
+                {MOCK_USER.xp} / {MOCK_USER.xpForNextLevel} XP
+              </span>
+            </div>
+            <div
+              style={{
+                height: 5,
+                background: '#212224',
+                borderRadius: 3,
+                overflow: 'hidden',
+              }}
+            >
+              <motion.div
+                style={{ height: '100%', background: '#c8ff3e', borderRadius: 3 }}
+                initial={{ width: 0 }}
+                animate={{
+                  width: `${
+                    Math.round(
+                      ((MOCK_USER.xp - MOCK_USER.xpPrevLevel) /
+                        (MOCK_USER.xpForNextLevel - MOCK_USER.xpPrevLevel)) *
+                        100
+                    )
+                  }%`,
+                }}
+                transition={{ duration: 0.9, ease: 'easeOut', delay: 0.4 }}
+              />
+            </div>
+            <p style={{ fontSize: 11, color: '#4a4b4e', marginTop: 6 }}>
+              {MOCK_USER.xpForNextLevel - MOCK_USER.xp} XP to Level{' '}
+              {MOCK_USER.level + 1} — {MOCK_USER.nextLevelLabel}
+            </p>
+          </motion.div>
         </div>
-    );
+
+        {/* Stat cards */}
+        <StatCards user={MOCK_USER} />
+
+        {/* Continue learning */}
+        <div style={{ marginTop: 16 }}>
+          <ContinueLearningCard data={MOCK_CONTINUE} />
+        </div>
+
+        {/* Main 2-column grid */}
+        <div
+          className="grid grid-cols-1 lg:grid-cols-[1fr_320px]"
+          style={{ gap: 16, marginTop: 16, alignItems: 'start' }}
+        >
+          {/* Left column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <AlgorithmProgressList algorithms={MOCK_ALGORITHMS} />
+            <ActivityHeatmap heatmapData={MOCK_HEATMAP} />
+            <BadgesGrid badges={MOCK_BADGES} />
+          </div>
+
+          {/* Right column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <RecentActivityFeed activities={MOCK_ACTIVITY} />
+            <LeaderboardPanel entries={MOCK_LEADERBOARD} />
+            <NextToUnlockPanel items={MOCK_NEXT_UNLOCKS} />
+          </div>
+        </div>
+
+        {/* Explore algorithms — untouched, uses real API data */}
+        <div style={{ marginTop: 32 }}>
+          <ExploreAlgorithmsSection
+            limit={4}
+            showViewAll
+            description="Continue from your dashboard into the algorithm library. Each card highlights the name, average complexity, and difficulty before you open its dedicated route."
+          />
+        </div>
+      </div>
+    </div>
+  )
 }
