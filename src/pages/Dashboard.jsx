@@ -1,5 +1,5 @@
 import { useUser, UserButton } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Zap, BookOpen, Flame, ArrowRight } from "lucide-react";
 import StatsCard from "../components/dashboard/StatsCard";
 import ContributionGrid from "../components/dashboard/ContributionGrid";
@@ -21,9 +21,13 @@ export default function Dashboard() {
             <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-bg/80 backdrop-blur-xl">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <span className="text-xl font-bold text-accent tracking-tight">
-                            BigO
-                        </span>
+                        <Link to="/" className="flex items-center gap-2 group">
+                            <img
+                                src="/BIGO.png"
+                                alt="BIGO Logo"
+                                className="h-16 w-auto group-hover:scale-110 transition-transform"
+                            />
+                        </Link>
                         <span className="text-sm text-text-secondary hidden sm:inline">
                             / Dashboard
                         </span>
