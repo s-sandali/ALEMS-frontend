@@ -14,6 +14,11 @@ export default {
       },
       fontFamily: {
         poppins: ["Poppins", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
+        grotesk: ["Space Grotesk", "sans-serif"],
+      },
+      backdropBlur: {
+        nav: "16px",
       },
     },
   },
