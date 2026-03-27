@@ -4,7 +4,7 @@
 **Algorithm Learning & Evaluation Management System**
 React (Vite) + Clerk Authentication + REST API Integration
 
----
+
 
 ## 📌 Overview
 
@@ -204,5 +204,4 @@ Dockerfile
 vite.config.js
 ```
 
----
 
