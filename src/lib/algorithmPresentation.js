@@ -1,22 +1,41 @@
+import {
+    Activity,
+    Bubbles,
+    Cpu,
+    GitMerge,
+    Rewind,
+    Search,
+    Zap,
+} from "lucide-react";
+
 const difficultyByAlgorithm = {
     "bubble sort": "Beginner",
     "binary search": "Intermediate",
+    "insertion sort": "Beginner",
+    "selection sort": "Beginner",
     "merge sort": "Intermediate",
     "quick sort": "Advanced",
+    "heap sort": "Advanced",
 };
 
 const algorithmKeyByName = {
     "bubble sort": "bubble_sort",
     "binary search": "binary_search",
+    "insertion sort": "insertion_sort",
+    "selection sort": "selection_sort",
     "merge sort": "merge_sort",
     "quick sort": "quick_sort",
+    "heap sort": "heap_sort",
 };
 
 const spaceComplexityByAlgorithm = {
     "bubble sort": "O(1)",
     "binary search": "O(1)",
+    "insertion sort": "O(1)",
+    "selection sort": "O(1)",
     "merge sort": "O(n)",
     "quick sort": "O(log n)",
+    "heap sort": "O(1)",
 };
 
 const quizMetadataByAlgorithm = {
@@ -32,6 +51,18 @@ const quizMetadataByAlgorithm = {
         xpReward: 60,
         timeMinutes: 3,
     },
+    "insertion sort": {
+        available: false,
+        questionCount: 6,
+        xpReward: 65,
+        timeMinutes: 4,
+    },
+    "selection sort": {
+        available: false,
+        questionCount: 6,
+        xpReward: 65,
+        timeMinutes: 4,
+    },
     "merge sort": {
         available: false,
         questionCount: 6,
@@ -43,6 +74,12 @@ const quizMetadataByAlgorithm = {
         questionCount: 6,
         xpReward: 75,
         timeMinutes: 4,
+    },
+    "heap sort": {
+        available: false,
+        questionCount: 7,
+        xpReward: 80,
+        timeMinutes: 5,
     },
 };
 
@@ -63,6 +100,22 @@ const pseudocodeByAlgorithm = {
         "discard the half that cannot contain the target",
         "stop when the search interval is empty",
     ],
+    "insertion sort": [
+        "treat the first element as a sorted prefix",
+        "pick the next unsorted value as the key",
+        "shift larger sorted values one position right",
+        "insert the key into the opened position",
+        "grow the sorted prefix by one element",
+        "repeat until all values are inserted",
+    ],
+    "selection sort": [
+        "start at the first unsorted position",
+        "scan the remaining array for the minimum value",
+        "remember the index of the smallest value found",
+        "swap it into the current position",
+        "grow the sorted prefix by one element",
+        "repeat until the array is sorted",
+    ],
     "merge sort": [
         "return when the array has one element",
         "split the array into left and right halves",
@@ -78,6 +131,14 @@ const pseudocodeByAlgorithm = {
         "place the pivot in its final position",
         "recursively sort the left partition",
         "recursively sort the right partition",
+    ],
+    "heap sort": [
+        "build a max heap from the array",
+        "swap the root with the last unsorted element",
+        "shrink the heap boundary by one",
+        "heapify the root to restore heap order",
+        "repeat extraction until one element remains",
+        "return the sorted array",
     ],
 };
 
@@ -407,8 +468,22 @@ int main() {
 
 const sampleSizes = [8, 16, 32, 64, 128, 256];
 
+const algorithmIconByName = {
+    "bubble sort": Bubbles,
+    "binary search": Search,
+    "insertion sort": Rewind,
+    "selection sort": Activity,
+    "merge sort": GitMerge,
+    "quick sort": Zap,
+    "heap sort": Cpu,
+};
+
 export function getAlgorithmDifficulty(name) {
     return difficultyByAlgorithm[name.trim().toLowerCase()] || "Core";
+}
+
+export function getAlgorithmIcon(name) {
+    return algorithmIconByName[name.trim().toLowerCase()] || Activity;
 }
 
 export function getPrimaryComplexity(algorithm) {
@@ -421,6 +496,11 @@ export function getPrimaryComplexity(algorithm) {
 export function getAlgorithmSampleInput(name) {
     switch (name.trim().toLowerCase()) {
         case "bubble sort":
+        case "insertion sort":
+        case "selection sort":
+        case "merge sort":
+        case "quick sort":
+        case "heap sort":
             return [8, 3, 5, 1, 9, 2];
         case "binary search":
             // Binary Search requires a pre-sorted array
@@ -624,12 +704,197 @@ export function getAlgorithmIntroduction(name) {
         };
     }
 
+    if (normalizedName === "quick sort") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Quick Sort work?",
+            paragraphs: [
+                "Quick Sort is a divide-and-conquer sorting algorithm that selects a pivot, partitions the remaining values around that pivot, and then recursively sorts the two resulting partitions.",
+                "Its average-case performance is O(n log n), but the pivot choice matters: consistently poor pivots can degrade the runtime to O(n^2).",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Choose a pivot",
+                    desc: "Pick a pivot value that will be used to split smaller values from larger ones.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Partition around the pivot",
+                    desc: "Rearrange the range so values less than the pivot move left and larger values move right.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Place the pivot",
+                    desc: "Move the pivot into its final sorted position after partitioning finishes.",
+                    matchAction: "swap",
+                },
+                {
+                    num: "04",
+                    title: "Recurse on both sides",
+                    desc: "Apply the same process to the left and right partitions until each partition has size zero or one.",
+                    matchAction: "complete",
+                },
+            ],
+        };
+    }
+
+    if (normalizedName === "merge sort") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Merge Sort work?",
+            paragraphs: [
+                "Merge Sort repeatedly splits the array into halves until each subarray has one element, then merges those subarrays back together in sorted order.",
+                "Because each merge step combines already-sorted halves, Merge Sort guarantees O(n log n) time but needs extra memory to hold intermediate merged results.",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Split the array",
+                    desc: "Divide the input into left and right halves until single-element arrays remain.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Sort each half",
+                    desc: "Recursively process the left half and the right half independently.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Merge in order",
+                    desc: "Compare the front values of both halves and build one sorted output list.",
+                    matchAction: "swap",
+                },
+                {
+                    num: "04",
+                    title: "Repeat upward",
+                    desc: "Continue merging larger sorted halves until the full array is reconstructed.",
+                    matchAction: "complete",
+                },
+            ],
+        };
+    }
+
+    if (normalizedName === "insertion sort") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Insertion Sort work?",
+            paragraphs: [
+                "Insertion Sort grows a sorted prefix one item at a time. Each new value is compared against the sorted portion and inserted into the correct position.",
+                "It performs especially well on nearly sorted data because only a few shifts are needed when elements are already close to their final positions.",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Start with a sorted prefix",
+                    desc: "Treat the first element as already sorted and begin scanning from the second element.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Pick the key",
+                    desc: "Take the next unsorted value and hold it temporarily as the key to insert.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Shift larger values",
+                    desc: "Move larger values in the sorted prefix one position to the right until the correct slot opens.",
+                    matchAction: "swap",
+                },
+                {
+                    num: "04",
+                    title: "Insert and continue",
+                    desc: "Place the key into its correct position and repeat for the next unsorted value.",
+                    matchAction: "complete",
+                },
+            ],
+        };
+    }
+
+    if (normalizedName === "selection sort") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Selection Sort work?",
+            paragraphs: [
+                "Selection Sort repeatedly finds the minimum value in the unsorted region and swaps it into the next position of the sorted prefix.",
+                "It always performs the same number of comparisons for a given input size, making it easy to reason about but less adaptive than Insertion Sort.",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Mark the boundary",
+                    desc: "Treat everything before the current index as sorted and everything after it as unsorted.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Scan for the minimum",
+                    desc: "Search the unsorted region to find the index of its smallest value.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Swap into position",
+                    desc: "Exchange that minimum value with the first unsorted element.",
+                    matchAction: "swap",
+                },
+                {
+                    num: "04",
+                    title: "Advance the boundary",
+                    desc: "Grow the sorted prefix by one and repeat until no unsorted values remain.",
+                    matchAction: "complete",
+                },
+            ],
+        };
+    }
+
+    if (normalizedName === "heap sort") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Heap Sort work?",
+            paragraphs: [
+                "Heap Sort first arranges the array into a max heap so the largest value is always at the root, then repeatedly moves that root to the end of the array.",
+                "After each extraction, the heap is rebuilt at the root so the next largest value can be placed. This keeps the algorithm in-place with O(n log n) time.",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Build a max heap",
+                    desc: "Reorganize the array so every parent is greater than or equal to its children.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Move the root",
+                    desc: "Swap the largest value at the root with the last unsorted element.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Restore heap order",
+                    desc: "Heapify the root so the remaining unsorted region is again a valid max heap.",
+                    matchAction: "swap",
+                },
+                {
+                    num: "04",
+                    title: "Repeat extraction",
+                    desc: "Shrink the heap boundary and keep extracting until the array is fully sorted.",
+                    matchAction: "complete",
+                },
+            ],
+        };
+    }
+
     return {
         eyebrow: "01 - Introduction",
         title: `How does ${name} work?`,
         paragraphs: [
-            `${name} follows a structured sequence of comparisons and state changes that can be explored step by step through the backend simulation trace.`,
-            "Use the cards below to jump through the major phases and preview the related simulation state.",
+            `${name} follows a structured sequence of comparisons and state changes that can be broken down into a few core phases.`,
+            "Use the cards below to review the major phases and connect them to the complexity and code sections on the page.",
         ],
         steps: [
             {
