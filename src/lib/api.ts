@@ -510,6 +510,7 @@ export type CodeExecutionRequest = {
     sourceCode: string;
     languageId: number;
     stdin?: string | null;
+    expectedOutput?: string | null;
 };
 
 export type CodeExecutionResult = {
