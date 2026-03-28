@@ -118,7 +118,12 @@ export default function CodingChallengePage() {
 
         try {
             const res = await CodeExecutionApiService.execute(
-                { sourceCode, languageId: selectedLang, stdin: stdin || null },
+                {
+                    sourceCode,
+                    languageId: selectedLang,
+                    stdin: stdin || null,
+                    expectedOutput: question?.expectedOutput ?? null,
+                },
                 getToken,
             );
             if (!isMounted.current) return;
@@ -369,6 +374,7 @@ export default function CodingChallengePage() {
                                 viewState={execView}
                                 result={execResult}
                                 errorMessage={execError}
+                                expectedOutput={question.expectedOutput}
                             />
                         </div>
                     </div>
