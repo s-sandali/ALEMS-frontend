@@ -7,6 +7,7 @@ import AlgorithmDetailPage from "./pages/AlgorithmDetailPage";
 import QuizPage from "./pages/QuizPage";
 import QuizzesPage from "./pages/QuizzesPage";
 import AdminQuizListPage from "./pages/AdminQuizListPage";
+import AdminQuizFormPage from "./pages/AdminQuizFormPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -83,6 +84,24 @@ export default function App() {
                     element={
                         <ProtectedRoute>
                             <AdminQuizListPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/quizzes/new"
+                    element={
+                        <ProtectedRoute>
+                            <AdminQuizFormPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/quizzes/:id/edit"
+                    element={
+                        <ProtectedRoute>
+                            <AdminQuizFormPage />
                         </ProtectedRoute>
                     }
                 />
