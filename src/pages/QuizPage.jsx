@@ -27,7 +27,7 @@ function ProgressBar({ current, total }) {
         <div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 12, color: "#8a8b8e" }}>
                 <span>{current} of {total} answered</span>
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#c8ff3e" }}>{pct}%</span>
+                <span style={{ fontFamily: "'Poppins', sans-serif", color: "#c8ff3e" }}>{pct}%</span>
             </div>
             <div style={{ height: 4, background: "#1e1f20", borderRadius: 2, overflow: "hidden" }}>
                 <motion.div
@@ -77,7 +77,7 @@ function OptionButton({ label, text, selected, resultStyle, disabled, onSelect }
                 background: selected || resultStyle ? bgColor : "#1a1b1c",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 11, fontWeight: 700, color: labelColor,
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "'Poppins', sans-serif",
             }}>{label}</span>
             <span style={{ fontSize: 14, color: textColor, lineHeight: 1.5, paddingTop: 3, flex: 1 }}>{text}</span>
             {resultStyle === "correct" && <CheckCircle2 size={16} color="#c8ff3e" style={{ marginLeft: "auto", flexShrink: 0, marginTop: 3 }} />}
@@ -104,7 +104,7 @@ function QuestionCard({ question, index, total, selectedOption, onSelect, questi
             }}
         >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 11, color: "#4a4b4e", fontFamily: "'JetBrains Mono', monospace" }}>
+                <span style={{ fontSize: 11, color: "#4a4b4e", fontFamily: "'Poppins', sans-serif" }}>
                     Q{index + 1} / {total}
                 </span>
                 <div style={{
@@ -169,7 +169,7 @@ function ResultsSummary({ result, quiz, onRetry }) {
                 <Trophy size={32} color={passed ? "#c8ff3e" : "#ff5a5a"} style={{ margin: "0 auto 12px" }} />
                 <div style={{
                     fontSize: 56, fontWeight: 700, lineHeight: 1,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "'Poppins', sans-serif",
                     color: passed ? "#c8ff3e" : "#ff5a5a", marginBottom: 8,
                 }}>
                     {result.score}%
@@ -202,7 +202,7 @@ function ResultsSummary({ result, quiz, onRetry }) {
                                 <p style={{ fontSize: 12, color: "#8a8b8e", lineHeight: 1.5 }}>{qr.explanation}</p>
                             )}
                         </div>
-                        <span style={{ fontSize: 11, color: qr.isCorrect ? "#c8ff3e" : "#ff5a5a", fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
+                        <span style={{ fontSize: 11, color: qr.isCorrect ? "#c8ff3e" : "#ff5a5a", fontFamily: "'Poppins', sans-serif", flexShrink: 0 }}>
                             {qr.isCorrect ? "✓ Correct" : `✗ ${qr.selectedOption} → ${qr.correctOption}`}
                         </span>
                     </div>
@@ -364,10 +364,10 @@ export default function QuizPage() {
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                         {/* Quiz meta */}
                         <div>
-                            <p style={{ fontSize: 11, color: "#4a4b4e", textTransform: "uppercase", letterSpacing: "1.5px", fontFamily: "'JetBrains Mono', monospace", marginBottom: 6 }}>
+                            <p style={{ fontSize: 11, color: "#4a4b4e", textTransform: "uppercase", letterSpacing: "1.5px", fontFamily: "'Poppins', sans-serif", marginBottom: 6 }}>
                                 Quiz
                             </p>
-                            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#e4e5e6", fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "-0.3px", marginBottom: 6 }}>
+                            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#e4e5e6", fontFamily: "'Poppins', sans-serif", letterSpacing: "-0.3px", marginBottom: 6 }}>
                                 {quiz.title}
                             </h1>
                             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>

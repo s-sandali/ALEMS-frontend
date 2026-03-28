@@ -52,7 +52,7 @@ export default function ActivityHeatmap({ heatmapData }) {
               style={{
                 height: 11,
                 fontSize: 9,
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "'Poppins', sans-serif",
                 color: '#4a4b4e',
                 display: 'flex',
                 alignItems: 'center',
@@ -103,7 +103,7 @@ export default function ActivityHeatmap({ heatmapData }) {
         <span
           style={{
             fontSize: 10,
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "'Poppins', sans-serif",
             color: '#4a4b4e',
           }}
         >
@@ -123,7 +123,7 @@ export default function ActivityHeatmap({ heatmapData }) {
         <span
           style={{
             fontSize: 10,
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "'Poppins', sans-serif",
             color: '#4a4b4e',
           }}
         >

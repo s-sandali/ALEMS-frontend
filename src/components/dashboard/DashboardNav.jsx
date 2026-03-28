@@ -31,7 +31,7 @@ export default function DashboardNav({ user }) {
       <Link
         to="/"
         style={{
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "'Poppins', sans-serif",
           fontSize: 17,
           fontWeight: 700,
           color: '#c8ff3e',
@@ -117,7 +117,7 @@ export default function DashboardNav({ user }) {
             fontSize: 11,
             padding: '4px 10px',
             borderRadius: 20,
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "'Poppins', sans-serif",
           }}
         >
           <Zap size={10} />

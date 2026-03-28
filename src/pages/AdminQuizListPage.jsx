@@ -142,13 +142,13 @@ export default function AdminQuizListPage() {
                         <p style={{
                             fontSize: 11, color: "#4a4b4e",
                             letterSpacing: "1.5px", textTransform: "uppercase",
-                            fontFamily: "'JetBrains Mono', monospace", marginBottom: 8,
+                            fontFamily: "'Poppins', sans-serif", marginBottom: 8,
                         }}>
                             Admin Panel
                         </p>
                         <h1 style={{
                             fontSize: 28, fontWeight: 700, color: "#e4e5e6",
-                            fontFamily: "'Space Grotesk', sans-serif",
+                            fontFamily: "'Poppins', sans-serif",
                             letterSpacing: "-0.5px", lineHeight: 1.1, marginBottom: 8,
                         }}>
                             Quiz <span style={{ color: "#c8ff3e" }}>Management</span>
@@ -220,7 +220,7 @@ export default function AdminQuizListPage() {
                                 <span key={col} style={{
                                     fontSize: 11, fontWeight: 600, color: "#4a4b4e",
                                     textTransform: "uppercase", letterSpacing: "1.2px",
-                                    fontFamily: "'JetBrains Mono', monospace",
+                                    fontFamily: "'Poppins', sans-serif",
                                 }}>
                                     {col}
                                 </span>

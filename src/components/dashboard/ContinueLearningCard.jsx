@@ -101,7 +101,7 @@ export default function ContinueLearningCard({ data }) {
           alignItems: 'center',
           gap: 6,
           flexShrink: 0,
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "'Poppins', sans-serif",
         }}
       >
         Resume

@@ -63,7 +63,7 @@ export default function NextToUnlockPanel({ items }) {
               <span
                 style={{
                   fontSize: 10,
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "'Poppins', sans-serif",
                   color: item.progressColor,
                   flexShrink: 0,
                 }}

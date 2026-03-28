@@ -93,7 +93,7 @@ export default function AlgorithmsSection() {
 
                                     <div className="flex items-center justify-between">
                                         <span
-                                            className="font-mono text-sm font-bold"
+                                            className="text-sm font-bold"
                                             style={{ color: "#D5FF40" }}
                                         >
                                             {algo.complexity}

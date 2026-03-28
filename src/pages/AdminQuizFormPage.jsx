@@ -28,7 +28,7 @@ const LABEL = {
     color: "#8a8b8e",
     marginBottom: 6,
     display: "block",
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: "'Poppins', sans-serif",
     letterSpacing: "0.5px",
 };
 
@@ -128,7 +128,7 @@ function QuestionForm({ initial, onSave, onCancel, saving }) {
             gap: 16,
             marginTop: 12,
         }}>
-            <h3 style={{ fontSize: 13, fontWeight: 600, color: "#c8ff3e", margin: 0, fontFamily: "'JetBrains Mono', monospace" }}>
+            <h3 style={{ fontSize: 13, fontWeight: 600, color: "#c8ff3e", margin: 0, fontFamily: "'Poppins', sans-serif" }}>
                 {initial ? "Edit Question" : "New Question"}
             </h3>
 
@@ -541,13 +541,13 @@ export default function AdminQuizFormPage() {
                     <p style={{
                         fontSize: 11, color: "#4a4b4e",
                         letterSpacing: "1.5px", textTransform: "uppercase",
-                        fontFamily: "'JetBrains Mono', monospace", marginBottom: 8,
+                        fontFamily: "'Poppins', sans-serif", marginBottom: 8,
                     }}>
                         Admin Panel
                     </p>
                     <h1 style={{
                         fontSize: 28, fontWeight: 700, color: "#e4e5e6",
-                        fontFamily: "'Space Grotesk', sans-serif",
+                        fontFamily: "'Poppins', sans-serif",
                         letterSpacing: "-0.5px", lineHeight: 1.1,
                     }}>
                         {isEdit ? "Edit" : "New"}{" "}
@@ -742,7 +742,7 @@ export default function AdminQuizFormPage() {
                                         <span key={col} style={{
                                             fontSize: 11, fontWeight: 600, color: "#4a4b4e",
                                             textTransform: "uppercase", letterSpacing: "1.2px",
-                                            fontFamily: "'JetBrains Mono', monospace",
+                                            fontFamily: "'Poppins', sans-serif",
                                         }}>
                                             {col}
                                         </span>
@@ -794,7 +794,7 @@ export default function AdminQuizFormPage() {
                                             {/* Correct option */}
                                             <span style={{
                                                 fontSize: 12, fontWeight: 700, color: "#c8ff3e",
-                                                fontFamily: "'JetBrains Mono', monospace",
+                                                fontFamily: "'Poppins', sans-serif",
                                             }}>
                                                 {q.correctOption}
                                             </span>

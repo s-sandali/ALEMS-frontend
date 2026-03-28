@@ -64,7 +64,7 @@ export default function LeaderboardPanel({ entries }) {
                 <span
                   style={{
                     fontSize: 12,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "'Poppins', sans-serif",
                     fontWeight: 700,
                     width: 18,
                     color: '#c8ff3e',
@@ -84,7 +84,7 @@ export default function LeaderboardPanel({ entries }) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 10,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "'Poppins', sans-serif",
                     color: '#c8ff3e',
                     flexShrink: 0,
                   }}
@@ -104,7 +104,7 @@ export default function LeaderboardPanel({ entries }) {
                 <span
                   style={{
                     fontSize: 12,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "'Poppins', sans-serif",
                     color: '#8a8b8e',
                     flexShrink: 0,
                   }}
@@ -129,7 +129,7 @@ export default function LeaderboardPanel({ entries }) {
               <span
                 style={{
                   fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "'Poppins', sans-serif",
                   fontWeight: 700,
                   width: 18,
                   color: isTop3 ? '#c8ff3e' : '#4a4b4e',
@@ -148,7 +148,7 @@ export default function LeaderboardPanel({ entries }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: 10,
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "'Poppins', sans-serif",
                   color: '#8a8b8e',
                   flexShrink: 0,
                 }}
@@ -161,7 +161,7 @@ export default function LeaderboardPanel({ entries }) {
               <span
                 style={{
                   fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "'Poppins', sans-serif",
                   color: '#8a8b8e',
                   flexShrink: 0,
                 }}
