@@ -196,6 +196,243 @@ export const AlgorithmService = {
         }) as Promise<{ status: string; data: AlgorithmSummary }>,
 };
 
+// ── Quiz types ────────────────────────────────────────────────────────────────
+
+export type QuizSummary = {
+    quizId: number;
+    algorithmId: number;
+    createdBy: number;
+    title: string;
+    description: string | null;
+    timeLimitMins: number | null;
+    passScore: number;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type CreateQuizPayload = {
+    algorithmId: number;
+    title: string;
+    description?: string | null;
+    timeLimitMins?: number | null;
+    passScore?: number;
+};
+
+export type UpdateQuizPayload = {
+    title: string;
+    description?: string | null;
+    timeLimitMins?: number | null;
+    passScore: number;
+    isActive: boolean;
+};
+
+// ── Quiz question types ────────────────────────────────────────────────────────
+
+export type QuizQuestion = {
+    questionId: number;
+    quizId: number;
+    questionType: "MCQ" | "PREDICT_STEP";
+    questionText: string;
+    optionA: string;
+    optionB: string;
+    optionC: string;
+    optionD: string;
+    correctOption: "A" | "B" | "C" | "D";
+    difficulty: "easy" | "medium" | "hard";
+    explanation: string | null;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: string;
+};
+
+export type CreateQuizQuestionPayload = {
+    questionType: "MCQ" | "PREDICT_STEP";
+    questionText: string;
+    optionA: string;
+    optionB: string;
+    optionC: string;
+    optionD: string;
+    correctOption: "A" | "B" | "C" | "D";
+    difficulty: "easy" | "medium" | "hard";
+    explanation?: string | null;
+    orderIndex?: number;
+};
+
+export type UpdateQuizQuestionPayload = CreateQuizQuestionPayload & {
+    isActive: boolean;
+};
+
+// ── Quiz service ───────────────────────────────────────────────────────────────
+
+export const QuizService = {
+    /**
+     * GET /quizzes
+     * Admin only. Retrieves all quizzes (active and inactive).
+     */
+    getAll: (getToken: GetTokenFn) =>
+        apiFetch("/quizzes", { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizSummary[] }>,
+
+    /**
+     * GET /quizzes/{id}
+     * Admin only. Retrieves a single quiz by ID.
+     */
+    getById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizSummary }>,
+
+    /**
+     * POST /quizzes
+     * Admin only. Creates a new quiz.
+     * `created_by` is resolved server-side from the Clerk JWT.
+     */
+    create: (payload: CreateQuizPayload, getToken: GetTokenFn) =>
+        apiFetch("/quizzes", { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: QuizSummary }>,
+
+    /**
+     * PUT /quizzes/{id}
+     * Admin only. Updates an existing quiz (full replace of mutable fields).
+     */
+    update: (id: number, payload: UpdateQuizPayload, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${id}`, { method: "PUT", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: QuizSummary }>,
+
+    /**
+     * DELETE /quizzes/{id}
+     * Admin only. Soft-deletes a quiz (sets is_active = false).
+     * Returns null on success (204 No Content).
+     */
+    delete: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${id}`, { method: "DELETE", getToken }) as
+            Promise<null>,
+};
+
+// ── Quiz question service ──────────────────────────────────────────────────────
+
+export const QuizQuestionService = {
+    /**
+     * GET /quizzes/{quizId}/questions
+     * Admin only. Retrieves all active questions for a quiz, ordered by order_index.
+     */
+    getByQuiz: (quizId: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${quizId}/questions`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizQuestion[] }>,
+
+    /**
+     * GET /quizzes/{quizId}/questions/{id}
+     * Admin only. Retrieves a single question by ID.
+     */
+    getById: (quizId: number, id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${quizId}/questions/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizQuestion }>,
+
+    /**
+     * POST /quizzes/{quizId}/questions
+     * Admin only. Adds a new question to a quiz.
+     * Set questionType to "PREDICT_STEP" for algorithm-step prediction questions.
+     */
+    create: (quizId: number, payload: CreateQuizQuestionPayload, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${quizId}/questions`, { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: QuizQuestion }>,
+
+    /**
+     * PUT /quizzes/{quizId}/questions/{id}
+     * Admin only. Updates an existing question (full replace of all fields).
+     */
+    update: (quizId: number, id: number, payload: UpdateQuizQuestionPayload, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${quizId}/questions/${id}`, { method: "PUT", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: QuizQuestion }>,
+
+    /**
+     * DELETE /quizzes/{quizId}/questions/{id}
+     * Admin only. Soft-deletes a question (sets is_active = false).
+     * Returns null on success (204 No Content).
+     */
+    delete: (quizId: number, id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${quizId}/questions/${id}`, { method: "DELETE", getToken }) as
+            Promise<null>,
+};
+
+// ── Student quiz types ─────────────────────────────────────────────────────────
+
+/** Question returned to students — correctOption and explanation are intentionally absent. */
+export type StudentQuestion = {
+    questionId: number;
+    questionType: "MCQ" | "PREDICT_STEP";
+    questionText: string;
+    optionA: string;
+    optionB: string;
+    optionC: string;
+    optionD: string;
+    difficulty: "easy" | "medium" | "hard";
+    orderIndex: number;
+};
+
+export type QuizAttemptAnswer = {
+    questionId: number;
+    selectedOption: "A" | "B" | "C" | "D";
+};
+
+export type QuizAttemptPayload = {
+    answers: QuizAttemptAnswer[];
+};
+
+export type QuizAttemptQuestionResult = {
+    questionId: number;
+    selectedOption: string;
+    correctOption: string;
+    isCorrect: boolean;
+    explanation: string | null;
+};
+
+export type QuizAttemptResult = {
+    attemptId: number;
+    quizId: number;
+    score: number;           // percentage 0–100
+    passed: boolean;
+    totalQuestions: number;
+    correctCount: number;
+    results: QuizAttemptQuestionResult[];
+};
+
+// ── Student quiz service ───────────────────────────────────────────────────────
+
+export const StudentQuizService = {
+    /**
+     * GET /student/quizzes
+     * Returns only active quizzes (is_active = true). Accessible to all authenticated users.
+     */
+    getActiveQuizzes: (getToken: GetTokenFn) =>
+        apiFetch("/student/quizzes", { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizSummary[] }>,
+
+    /**
+     * GET /student/quizzes/{id}
+     * Returns a single active quiz. Returns 404 if inactive or not found.
+     */
+    getActiveQuizById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/student/quizzes/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizSummary }>,
+
+    /**
+     * GET /student/quizzes/{quizId}/questions
+     * Returns active questions for a quiz WITHOUT correctOption or explanation.
+     */
+    getQuizQuestions: (quizId: number, getToken: GetTokenFn) =>
+        apiFetch(`/student/quizzes/${quizId}/questions`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentQuestion[] }>,
+
+    /**
+     * POST /student/quizzes/{quizId}/attempt
+     * Submits all answers and returns the graded result with explanations.
+     */
+    submitAttempt: (quizId: number, payload: QuizAttemptPayload, getToken: GetTokenFn) =>
+        apiFetch(`/student/quizzes/${quizId}/attempt`, { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; data: QuizAttemptResult }>,
+};
+
 export const SimulationService = {
     /**
      * POST /simulation/run

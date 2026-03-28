@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import AlgorithmsPage from "./pages/AlgorithmsPage";
 import AlgorithmDetailPage from "./pages/AlgorithmDetailPage";
 import QuizPage from "./pages/QuizPage";
+import QuizzesPage from "./pages/QuizzesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -59,7 +60,16 @@ export default function App() {
                 />
 
                 <Route
-                    path="/quiz/:algorithmId"
+                    path="/quizzes"
+                    element={
+                        <ProtectedRoute>
+                            <QuizzesPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/quiz/:quizId"
                     element={
                         <ProtectedRoute>
                             <QuizPage />
