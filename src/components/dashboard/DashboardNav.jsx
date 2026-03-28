@@ -1,131 +1,144 @@
-import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, List, BookOpen, Zap } from 'lucide-react'
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { UserButton } from "@clerk/clerk-react";
+import { BookOpen, LayoutDashboard, List, Menu, X, Zap } from "lucide-react";
 
 const navItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Algorithms', icon: List, path: '/algorithms' },
-  { label: 'Quizzes', icon: BookOpen, path: '/quizzes' },
-]
+  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+  { label: "Algorithms", icon: List, path: "/algorithms" },
+  { label: "Quizzes", icon: BookOpen, path: "/quizzes" },
+];
+
+function isActivePath(pathname, path) {
+  if (path === "/dashboard") {
+    return pathname === path;
+  }
+
+  if (path === "/algorithms") {
+    return pathname === path || pathname.startsWith("/algorithms/");
+  }
+
+  if (path === "/quizzes") {
+    return pathname === path
+      || pathname.startsWith("/quiz/")
+      || pathname.startsWith("/admin/quizzes");
+  }
+
+  return pathname === path;
+}
 
 export default function DashboardNav({ user }) {
-  const location = useLocation()
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const showXpBadge = typeof user?.xpTotal === "number";
+  const showAdminBadge = location.pathname.startsWith("/admin/");
+
+  function getLinkClasses(isActive) {
+    return [
+      "inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200",
+      isActive
+        ? "border-accent/30 bg-accent/10 text-accent shadow-[0_0_0_1px_rgba(213,255,64,0.05)]"
+        : "border-transparent text-text-secondary hover:border-white/10 hover:bg-white/[0.03] hover:text-white",
+    ].join(" ");
+  }
 
   return (
-    <header
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        height: 52,
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 24px',
-        gap: 8,
-        background: 'rgba(13,14,15,0.8)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-      }}
-    >
-      {/* Logo */}
-      <Link
-        to="/"
-        style={{
-          fontFamily: "'Poppins', sans-serif",
-          fontSize: 17,
-          fontWeight: 700,
-          color: '#c8ff3e',
-          textDecoration: 'none',
-          letterSpacing: '-0.3px',
-          flexShrink: 0,
-        }}
-      >
-        BigO
-      </Link>
+    <nav className="sticky top-0 z-50 nav-blur">
+      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
+        <Link to="/" className="flex items-center gap-2 group">
+          <img
+            src="/BIGO.png"
+            alt="BIGO Logo"
+            className="h-16 w-auto transition-transform group-hover:scale-110"
+          />
+        </Link>
 
-      {/* Separator */}
-      <div
-        style={{
-          width: 1,
-          height: 16,
-          background: '#2e2f30',
-          flexShrink: 0,
-          margin: '0 4px',
-        }}
-      />
+        <div className="hidden md:flex items-center gap-8">
+          {navItems.map(({ label, path }) => {
+            const isActive = isActivePath(location.pathname, path);
 
-      {/* Nav items */}
-      <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        {navItems.map(({ label, icon: Icon, path }) => {
-          const isActive = location.pathname === path
-          return (
-            <Link
-              key={path}
-              to={path}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 10px',
-                borderRadius: 7,
-                fontSize: 13,
-                textDecoration: 'none',
-                transition: 'background 0.15s, color 0.15s',
-                ...(isActive
-                  ? {
-                      background: 'rgba(200,255,62,0.1)',
-                      border: '1px solid rgba(200,255,62,0.25)',
-                      color: '#c8ff3e',
-                    }
-                  : {
-                      background: 'transparent',
-                      border: '1px solid transparent',
-                      color: '#8a8b8e',
-                    }),
-              }}
-              onMouseEnter={e => {
-                if (!isActive) {
-                  e.currentTarget.style.background = '#181919'
-                  e.currentTarget.style.color = '#e4e5e6'
-                }
-              }}
-              onMouseLeave={e => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent'
-                  e.currentTarget.style.color = '#8a8b8e'
-                }
-              }}
-            >
-              <Icon size={14} />
-              {label}
-            </Link>
-          )
-        })}
-      </nav>
-
-      {/* Right side */}
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* XP badge */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            background: 'rgba(200,255,62,0.1)',
-            border: '1px solid rgba(200,255,62,0.25)',
-            color: '#c8ff3e',
-            fontSize: 11,
-            padding: '4px 10px',
-            borderRadius: 20,
-            fontFamily: "'Poppins', sans-serif",
-          }}
-        >
-          <Zap size={10} />
-          {user.xpTotal ?? 0} XP
+            return (
+              <Link
+                key={path}
+                to={path}
+                className={getLinkClasses(isActive)}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </div>
 
+        <div className="hidden md:flex items-center gap-3">
+          {showAdminBadge ? (
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
+              Admin Panel
+            </div>
+          ) : null}
+          {showXpBadge ? (
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
+              <Zap className="h-4 w-4" />
+              {user.xpTotal} XP
+            </div>
+          ) : null}
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox: "w-9 h-9",
+              },
+            }}
+          />
+        </div>
 
+        <button
+          type="button"
+          className="text-text-secondary transition-colors hover:text-white md:hidden"
+          onClick={() => setMenuOpen((previousValue) => !previousValue)}
+          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+        >
+          {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
       </div>
-    </header>
-  )
+
+      {menuOpen ? (
+        <div className="glass mx-4 mb-4 rounded-xl p-4 md:hidden">
+          <div className="space-y-3">
+            {navItems.map(({ label, icon: Icon, path }) => {
+              const isActive = isActivePath(location.pathname, path);
+
+              return (
+                <Link
+                  key={path}
+                  to={path}
+                  className={getLinkClasses(isActive)}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+            <div className="flex flex-wrap items-center gap-2">
+              {showAdminBadge ? (
+                <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
+                  Admin Panel
+                </div>
+              ) : null}
+              {showXpBadge ? (
+                <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
+                  <Zap className="h-4 w-4" />
+                  {user.xpTotal} XP
+                </div>
+              ) : null}
+            </div>
+            <UserButton afterSignOutUrl="/" />
+          </div>
+        </div>
+      ) : null}
+    </nav>
+  );
 }
