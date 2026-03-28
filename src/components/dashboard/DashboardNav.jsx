@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { UserButton } from "@clerk/clerk-react";
-import { BookOpen, LayoutDashboard, List, Menu, X, Zap } from "lucide-react";
+import { BookOpen, Code2, LayoutDashboard, List, Menu, X, Zap } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Algorithms", icon: List, path: "/algorithms" },
   { label: "Quizzes", icon: BookOpen, path: "/quizzes" },
+  { label: "Code", icon: Code2, path: "/coding-challenges" },
 ];
 
 function isActivePath(pathname, path) {
@@ -22,6 +23,10 @@ function isActivePath(pathname, path) {
     return pathname === path
       || pathname.startsWith("/quiz/")
       || pathname.startsWith("/admin/quizzes");
+  }
+
+  if (path === "/coding-challenges") {
+    return pathname === path || pathname.startsWith("/coding-challenges/");
   }
 
   return pathname === path;

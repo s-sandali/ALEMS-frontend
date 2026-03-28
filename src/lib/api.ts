@@ -499,6 +499,70 @@ export const CodingQuestionService = {
             Promise<null>,
 };
 
+// ── Code execution types ───────────────────────────────────────────────────────
+
+export type SupportedLanguage = {
+    languageId: number;
+    name: string;
+};
+
+export type CodeExecutionRequest = {
+    sourceCode: string;
+    languageId: number;
+    stdin?: string | null;
+};
+
+export type CodeExecutionResult = {
+    stdout: string | null;
+    stderr: string | null;
+    compileOutput: string | null;
+    statusId: number;
+    statusDescription: string;
+    executionTime: string | null;
+    memoryUsed: number | null;
+};
+
+// ── Code execution service ────────────────────────────────────────────────────
+
+export const CodeExecutionApiService = {
+    /**
+     * GET /code/languages
+     * Returns the list of supported Judge0 language IDs and names.
+     */
+    getLanguages: (getToken: GetTokenFn) =>
+        apiFetch("/code/languages", { method: "GET", getToken }) as
+            Promise<{ status: string; data: SupportedLanguage[] }>,
+
+    /**
+     * POST /code/execute
+     * Submits source code to Judge0 (wait=true, synchronous).
+     * Returns the full execution result — check statusId for outcome.
+     */
+    execute: (payload: CodeExecutionRequest, getToken: GetTokenFn) =>
+        apiFetch("/code/execute", { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; data: CodeExecutionResult }>,
+};
+
+// ── Student coding question service ──────────────────────────────────────────
+
+export const StudentCodingQuestionService = {
+    /**
+     * GET /student/coding-questions
+     * Any authenticated user. Returns all coding questions.
+     */
+    getAll: (getToken: GetTokenFn) =>
+        apiFetch("/student/coding-questions", { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion[] }>,
+
+    /**
+     * GET /student/coding-questions/{id}
+     * Any authenticated user. Returns a single coding question by ID.
+     */
+    getById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/student/coding-questions/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion }>,
+};
+
 export const SimulationService = {
     /**
      * POST /simulation/run
