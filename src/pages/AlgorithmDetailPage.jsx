@@ -285,7 +285,8 @@ export default function AlgorithmDetailPage() {
 
                 try {
                     const initialInput = getAlgorithmSampleInput(algorithmRecord.name);
-                    const defaultTarget = simulationAlgorithmKey === "binary_search"
+                    const initialAlgorithmKey = getSimulationAlgorithmKey(algorithmRecord.name);
+                    const defaultTarget = initialAlgorithmKey === "binary_search"
                         ? initialInput[Math.floor(initialInput.length / 2)]
                         : null;
                     await runSimulationTrace(algorithmRecord, initialInput, defaultTarget);
