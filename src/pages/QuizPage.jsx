@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
-import { UserButton } from "@clerk/clerk-react";
 import { motion, AnimatePresence } from "motion/react";
 import {
     ChevronRight, ChevronLeft, Clock, Target, CheckCircle2,
     XCircle, LoaderCircle, Send, RotateCcw, Trophy,
 } from "lucide-react";
+import DashboardNav from "@/components/dashboard/DashboardNav";
 import { StudentQuizService } from "../lib/api";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -14,9 +14,16 @@ import { StudentQuizService } from "../lib/api";
 const OPTIONS = ["A", "B", "C", "D"];
 
 const DIFFICULTY_STYLE = {
-    easy:   { color: "#c8ff3e", bg: "rgba(200,255,62,0.08)", border: "rgba(200,255,62,0.2)" },
-    medium: { color: "#ffb830", bg: "rgba(255,184,48,0.08)", border: "rgba(255,184,48,0.2)" },
-    hard:   { color: "#ff5a5a", bg: "rgba(255,90,90,0.08)",  border: "rgba(255,90,90,0.2)"  },
+    easy:   { color: "var(--lime)", bg: "rgba(var(--lime-rgb), 0.08)", border: "rgba(var(--lime-rgb), 0.2)" },
+    medium: { color: "var(--amber)", bg: "var(--amber-dim)", border: "rgba(var(--lime-rgb), 0.0)" },
+    hard:   { color: "var(--red)",   bg: "var(--red-dim)",   border: "rgba(var(--lime-rgb), 0.0)"  },
+};
+
+// Fix medium/hard borders separately since they use their own colors
+const DIFFICULTY_BORDER = {
+    easy:   "rgba(var(--lime-rgb), 0.2)",
+    medium: "rgba(204, 136, 0, 0.2)",
+    hard:   "rgba(204, 0, 0, 0.2)",
 };
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -25,13 +32,13 @@ function ProgressBar({ current, total }) {
     const pct = total > 0 ? Math.round((current / total) * 100) : 0;
     return (
         <div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 12, color: "#8a8b8e" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 12, color: "var(--db-text2)" }}>
                 <span>{current} of {total} answered</span>
-                <span style={{ fontFamily: "'Poppins', sans-serif", color: "#c8ff3e" }}>{pct}%</span>
+                <span style={{ fontFamily: "'Poppins', sans-serif", color: "var(--lime)" }}>{pct}%</span>
             </div>
-            <div style={{ height: 4, background: "#1e1f20", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{ height: 4, background: "var(--db-bg3)", borderRadius: 2, overflow: "hidden" }}>
                 <motion.div
-                    style={{ height: "100%", background: "#c8ff3e", borderRadius: 2 }}
+                    style={{ height: "100%", background: "var(--lime)", borderRadius: 2 }}
                     animate={{ width: `${pct}%` }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
                 />
@@ -41,20 +48,20 @@ function ProgressBar({ current, total }) {
 }
 
 function OptionButton({ label, text, selected, resultStyle, disabled, onSelect }) {
-    let borderColor = "#2e2f30";
+    let borderColor = "var(--db-border2)";
     let bgColor     = "transparent";
-    let labelColor  = "#8a8b8e";
-    let textColor   = "#8a8b8e";
+    let labelColor  = "var(--db-text2)";
+    let textColor   = "var(--db-text2)";
 
     if (resultStyle === "correct") {
-        borderColor = "rgba(200,255,62,0.5)"; bgColor = "rgba(200,255,62,0.08)";
-        labelColor = "#c8ff3e"; textColor = "#e4e5e6";
+        borderColor = "rgba(var(--lime-rgb), 0.5)"; bgColor = "rgba(var(--lime-rgb), 0.08)";
+        labelColor = "var(--lime)"; textColor = "var(--db-text)";
     } else if (resultStyle === "wrong") {
-        borderColor = "rgba(255,90,90,0.5)"; bgColor = "rgba(255,90,90,0.06)";
-        labelColor = "#ff5a5a"; textColor = "#8a8b8e";
+        borderColor = "rgba(204,0,0,0.5)"; bgColor = "rgba(204,0,0,0.06)";
+        labelColor = "var(--red)"; textColor = "var(--db-text2)";
     } else if (selected) {
-        borderColor = "rgba(200,255,62,0.5)"; bgColor = "rgba(200,255,62,0.06)";
-        labelColor = "#c8ff3e"; textColor = "#e4e5e6";
+        borderColor = "rgba(var(--lime-rgb), 0.5)"; bgColor = "rgba(var(--lime-rgb), 0.06)";
+        labelColor = "var(--lime)"; textColor = "var(--db-text)";
     }
 
     return (
@@ -68,26 +75,28 @@ function OptionButton({ label, text, selected, resultStyle, disabled, onSelect }
                 cursor: disabled ? "default" : "pointer",
                 transition: "all 0.15s", textAlign: "left",
             }}
-            onMouseEnter={e => { if (!disabled && !selected && !resultStyle) e.currentTarget.style.borderColor = "rgba(200,255,62,0.25)"; }}
-            onMouseLeave={e => { if (!disabled && !selected && !resultStyle) e.currentTarget.style.borderColor = "#2e2f30"; }}
+            onMouseEnter={e => { if (!disabled && !selected && !resultStyle) e.currentTarget.style.borderColor = "rgba(var(--lime-rgb), 0.25)"; }}
+            onMouseLeave={e => { if (!disabled && !selected && !resultStyle) e.currentTarget.style.borderColor = "var(--db-border2)"; }}
         >
             <span style={{
                 flexShrink: 0, width: 24, height: 24, borderRadius: 6,
                 border: `1px solid ${borderColor}`,
-                background: selected || resultStyle ? bgColor : "#1a1b1c",
+                background: selected || resultStyle ? bgColor : "var(--db-bg3)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 11, fontWeight: 700, color: labelColor,
                 fontFamily: "'Poppins', sans-serif",
             }}>{label}</span>
             <span style={{ fontSize: 14, color: textColor, lineHeight: 1.5, paddingTop: 3, flex: 1 }}>{text}</span>
-            {resultStyle === "correct" && <CheckCircle2 size={16} color="#c8ff3e" style={{ marginLeft: "auto", flexShrink: 0, marginTop: 3 }} />}
-            {resultStyle === "wrong"   && <XCircle      size={16} color="#ff5a5a" style={{ marginLeft: "auto", flexShrink: 0, marginTop: 3 }} />}
+            {resultStyle === "correct" && <CheckCircle2 size={16} color="var(--lime)" style={{ marginLeft: "auto", flexShrink: 0, marginTop: 3 }} />}
+            {resultStyle === "wrong"   && <XCircle      size={16} color="var(--red)"  style={{ marginLeft: "auto", flexShrink: 0, marginTop: 3 }} />}
         </button>
     );
 }
 
 function QuestionCard({ question, index, total, selectedOption, onSelect, questionResult, showResults }) {
-    const diffStyle = DIFFICULTY_STYLE[question.difficulty] ?? DIFFICULTY_STYLE.easy;
+    const diff = question.difficulty ?? "easy";
+    const diffStyle = DIFFICULTY_STYLE[diff] ?? DIFFICULTY_STYLE.easy;
+    const diffBorder = DIFFICULTY_BORDER[diff] ?? DIFFICULTY_BORDER.easy;
     const optionTexts = { A: question.optionA, B: question.optionB, C: question.optionC, D: question.optionD };
 
     return (
@@ -98,24 +107,24 @@ function QuestionCard({ question, index, total, selectedOption, onSelect, questi
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
             style={{
-                background: "#131415", border: "1px solid #252627",
+                background: "var(--db-bg2)", border: "1px solid var(--db-border)",
                 borderRadius: 16, padding: "28px",
                 display: "flex", flexDirection: "column", gap: 20,
             }}
         >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 11, color: "#4a4b4e", fontFamily: "'Poppins', sans-serif" }}>
+                <span style={{ fontSize: 11, color: "var(--db-text3)", fontFamily: "'Poppins', sans-serif" }}>
                     Q{index + 1} / {total}
                 </span>
                 <div style={{
                     fontSize: 11, padding: "3px 10px", borderRadius: 20,
-                    color: diffStyle.color, background: diffStyle.bg, border: `1px solid ${diffStyle.border}`,
+                    color: diffStyle.color, background: diffStyle.bg, border: `1px solid ${diffBorder}`,
                 }}>
                     {question.difficulty}
                 </div>
             </div>
 
-            <p style={{ fontSize: 16, color: "#e4e5e6", lineHeight: 1.65, fontWeight: 500 }}>
+            <p style={{ fontSize: 16, color: "var(--db-text)", lineHeight: 1.65, fontWeight: 500 }}>
                 {question.questionText}
             </p>
 
@@ -145,12 +154,12 @@ function QuestionCard({ question, index, total, selectedOption, onSelect, questi
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     style={{
-                        background: "rgba(77,166,255,0.06)", border: "1px solid rgba(77,166,255,0.2)",
+                        background: "var(--blue-dim)", border: "1px solid rgba(0,102,204,0.2)",
                         borderRadius: 10, padding: "12px 16px",
-                        fontSize: 13, color: "#b0d4ff", lineHeight: 1.6,
+                        fontSize: 13, color: "var(--db-text)", lineHeight: 1.6,
                     }}
                 >
-                    <span style={{ color: "#4da6ff", fontWeight: 600, marginRight: 6 }}>Explanation:</span>
+                    <span style={{ color: "var(--blue)", fontWeight: 600, marginRight: 6 }}>Explanation:</span>
                     {questionResult.explanation}
                 </motion.div>
             )}
@@ -163,46 +172,46 @@ function ResultsSummary({ result, quiz, onRetry }) {
     return (
         <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div style={{
-                background: "#131415", border: `1px solid ${passed ? "rgba(200,255,62,0.3)" : "rgba(255,90,90,0.3)"}`,
+                background: "var(--db-bg2)", border: `1px solid ${passed ? "rgba(var(--lime-rgb), 0.3)" : "rgba(204,0,0,0.3)"}`,
                 borderRadius: 16, padding: "32px 28px", textAlign: "center",
             }}>
-                <Trophy size={32} color={passed ? "#c8ff3e" : "#ff5a5a"} style={{ margin: "0 auto 12px" }} />
+                <Trophy size={32} color={passed ? "var(--lime)" : "var(--red)"} style={{ margin: "0 auto 12px" }} />
                 <div style={{
                     fontSize: 56, fontWeight: 700, lineHeight: 1,
                     fontFamily: "'Poppins', sans-serif",
-                    color: passed ? "#c8ff3e" : "#ff5a5a", marginBottom: 8,
+                    color: passed ? "var(--lime)" : "var(--red)", marginBottom: 8,
                 }}>
                     {result.score}%
                 </div>
-                <p style={{ fontSize: 16, color: "#e4e5e6", fontWeight: 600, marginBottom: 4 }}>
+                <p style={{ fontSize: 16, color: "var(--db-text)", fontWeight: 600, marginBottom: 4 }}>
                     {passed ? "Quiz Passed!" : "Quiz Failed"}
                 </p>
-                <p style={{ fontSize: 13, color: "#8a8b8e" }}>
+                <p style={{ fontSize: 13, color: "var(--db-text2)" }}>
                     {result.correctCount} / {result.totalQuestions} correct · Pass score: {quiz.passScore}%
                 </p>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <p style={{ fontSize: 12, color: "#4a4b4e", textTransform: "uppercase", letterSpacing: "1.2px" }}>
+                <p style={{ fontSize: 12, color: "var(--db-text3)", textTransform: "uppercase", letterSpacing: "1.2px" }}>
                     Question Breakdown
                 </p>
                 {result.results.map((qr, i) => (
                     <div key={qr.questionId} style={{
-                        background: "#131415", border: "1px solid #252627",
+                        background: "var(--db-bg2)", border: "1px solid var(--db-border)",
                         borderRadius: 12, padding: "14px 16px",
                         display: "flex", alignItems: "center", gap: 12,
                     }}>
                         {qr.isCorrect
-                            ? <CheckCircle2 size={18} color="#c8ff3e" style={{ flexShrink: 0 }} />
-                            : <XCircle      size={18} color="#ff5a5a" style={{ flexShrink: 0 }} />
+                            ? <CheckCircle2 size={18} color="var(--lime)" style={{ flexShrink: 0 }} />
+                            : <XCircle      size={18} color="var(--red)"  style={{ flexShrink: 0 }} />
                         }
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: 13, color: "#e4e5e6", marginBottom: 2 }}>Question {i + 1}</p>
+                            <p style={{ fontSize: 13, color: "var(--db-text)", marginBottom: 2 }}>Question {i + 1}</p>
                             {qr.explanation && (
-                                <p style={{ fontSize: 12, color: "#8a8b8e", lineHeight: 1.5 }}>{qr.explanation}</p>
+                                <p style={{ fontSize: 12, color: "var(--db-text2)", lineHeight: 1.5 }}>{qr.explanation}</p>
                             )}
                         </div>
-                        <span style={{ fontSize: 11, color: qr.isCorrect ? "#c8ff3e" : "#ff5a5a", fontFamily: "'Poppins', sans-serif", flexShrink: 0 }}>
+                        <span style={{ fontSize: 11, color: qr.isCorrect ? "var(--lime)" : "var(--red)", fontFamily: "'Poppins', sans-serif", flexShrink: 0 }}>
                             {qr.isCorrect ? "✓ Correct" : `✗ ${qr.selectedOption} → ${qr.correctOption}`}
                         </span>
                     </div>
@@ -213,16 +222,16 @@ function ResultsSummary({ result, quiz, onRetry }) {
                 <button onClick={onRetry} style={{
                     display: "flex", alignItems: "center", gap: 6,
                     padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                    background: "rgba(200,255,62,0.1)", border: "1px solid rgba(200,255,62,0.25)",
-                    color: "#c8ff3e", cursor: "pointer",
+                    background: "rgba(var(--lime-rgb), 0.1)", border: "1px solid rgba(var(--lime-rgb), 0.25)",
+                    color: "var(--lime)", cursor: "pointer",
                 }}>
                     <RotateCcw size={14} /> Retry Quiz
                 </button>
                 <Link to="/quizzes" style={{
                     display: "flex", alignItems: "center", gap: 6,
                     padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                    background: "#1a1b1c", border: "1px solid #2e2f30",
-                    color: "#8a8b8e", textDecoration: "none",
+                    background: "var(--db-bg3)", border: "1px solid var(--db-border2)",
+                    color: "var(--db-text2)", textDecoration: "none",
                 }}>
                     All Quizzes
                 </Link>
@@ -298,34 +307,15 @@ export default function QuizPage() {
     const currentQ      = questions[currentIndex];
 
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
-            {/* Header */}
-            <header style={{
-                position: "sticky", top: 0, zIndex: 40, height: 56,
-                display: "flex", alignItems: "center", padding: "0 24px", gap: 8,
-                background: "rgba(13,14,15,0.85)", backdropFilter: "blur(16px)",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
-            }}>
-                <Link to="/" style={{ textDecoration: "none" }}>
-                    <img src="/BIGO.png" alt="BigO" style={{ height: 44, width: "auto" }} />
-                </Link>
-                <div style={{ width: 1, height: 16, background: "#2e2f30", margin: "0 4px" }} />
-                <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#8a8b8e" }}>
-                    <Link to="/quizzes" style={{ color: "#8a8b8e", textDecoration: "none" }}>Quizzes</Link>
-                    <ChevronRight size={14} />
-                    <span style={{ color: "#e4e5e6" }}>{quiz?.title ?? "Quiz"}</span>
-                </div>
-                <div style={{ marginLeft: "auto" }}>
-                    <UserButton afterSignOutUrl="/" />
-                </div>
-            </header>
+        <div style={{ minHeight: "100vh", background: "var(--db-bg)" }}>
+            <DashboardNav />
 
             <main style={{ maxWidth: 720, margin: "0 auto", padding: "36px 24px 60px" }}>
 
                 {/* Loading */}
                 {view === "loading" && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "#8a8b8e", fontSize: 14, minHeight: 240 }}>
-                        <LoaderCircle size={16} color="#c8ff3e" className="animate-spin" />
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "var(--db-text2)", fontSize: 14, minHeight: 240 }}>
+                        <LoaderCircle size={16} color="var(--lime)" className="animate-spin" />
                         Loading quiz…
                     </div>
                 )}
@@ -333,8 +323,8 @@ export default function QuizPage() {
                 {/* Load error */}
                 {view === "error" && (
                     <div style={{
-                        background: "rgba(255,90,90,0.06)", border: "1px solid rgba(255,90,90,0.2)",
-                        borderRadius: 12, padding: "16px 20px", color: "#ff9a9a", fontSize: 14,
+                        background: "var(--red-dim)", border: "1px solid rgba(204,0,0,0.2)",
+                        borderRadius: 12, padding: "16px 20px", color: "var(--red)", fontSize: 14,
                     }}>
                         {error}
                     </div>
@@ -344,14 +334,14 @@ export default function QuizPage() {
                 {view === "submit-error" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                         <div style={{
-                            background: "rgba(255,90,90,0.06)", border: "1px solid rgba(255,90,90,0.2)",
-                            borderRadius: 12, padding: "16px 20px", color: "#ff9a9a", fontSize: 14,
+                            background: "var(--red-dim)", border: "1px solid rgba(204,0,0,0.2)",
+                            borderRadius: 12, padding: "16px 20px", color: "var(--red)", fontSize: 14,
                         }}>
                             Submission failed — the grading endpoint is not yet available.
                         </div>
                         <button onClick={() => setView("quiz")} style={{
                             padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                            background: "#131415", border: "1px solid #2e2f30", color: "#8a8b8e",
+                            background: "var(--db-bg3)", border: "1px solid var(--db-border2)", color: "var(--db-text2)",
                             cursor: "pointer", alignSelf: "flex-start",
                         }}>
                             Back to Quiz
@@ -364,19 +354,19 @@ export default function QuizPage() {
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                         {/* Quiz meta */}
                         <div>
-                            <p style={{ fontSize: 11, color: "#4a4b4e", textTransform: "uppercase", letterSpacing: "1.5px", fontFamily: "'Poppins', sans-serif", marginBottom: 6 }}>
+                            <p style={{ fontSize: 11, color: "var(--db-text3)", textTransform: "uppercase", letterSpacing: "1.5px", fontFamily: "'Poppins', sans-serif", marginBottom: 6 }}>
                                 Quiz
                             </p>
-                            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#e4e5e6", fontFamily: "'Poppins', sans-serif", letterSpacing: "-0.3px", marginBottom: 6 }}>
+                            <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--db-text)", fontFamily: "'Poppins', sans-serif", letterSpacing: "-0.3px", marginBottom: 6 }}>
                                 {quiz.title}
                             </h1>
                             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                                 {quiz.timeLimitMins && (
-                                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#8a8b8e" }}>
+                                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--db-text2)" }}>
                                         <Clock size={12} /> {quiz.timeLimitMins} min
                                     </span>
                                 )}
-                                <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#8a8b8e" }}>
+                                <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--db-text2)" }}>
                                     <Target size={12} /> Pass: {quiz.passScore}%
                                 </span>
                             </div>
@@ -405,8 +395,8 @@ export default function QuizPage() {
                                 style={{
                                     display: "flex", alignItems: "center", gap: 6,
                                     padding: "10px 16px", borderRadius: 8, fontSize: 13,
-                                    background: "#131415", border: "1px solid #2e2f30",
-                                    color: currentIndex === 0 ? "#3a3b3c" : "#8a8b8e",
+                                    background: "var(--db-bg2)", border: "1px solid var(--db-border2)",
+                                    color: currentIndex === 0 ? "var(--db-border2)" : "var(--db-text2)",
                                     cursor: currentIndex === 0 ? "not-allowed" : "pointer",
                                 }}
                             >
@@ -418,7 +408,7 @@ export default function QuizPage() {
                                 {questions.map((q, i) => (
                                     <button key={q.questionId} onClick={() => setCurrentIndex(i)} style={{
                                         width: 8, height: 8, borderRadius: "50%", border: "none", cursor: "pointer",
-                                        background: i === currentIndex ? "#c8ff3e" : answers[q.questionId] ? "rgba(200,255,62,0.3)" : "#2e2f30",
+                                        background: i === currentIndex ? "var(--lime)" : answers[q.questionId] ? "rgba(var(--lime-rgb), 0.3)" : "var(--db-border2)",
                                     }} />
                                 ))}
                             </div>
@@ -427,8 +417,8 @@ export default function QuizPage() {
                                 <button onClick={() => setCurrentIndex(i => i + 1)} style={{
                                     display: "flex", alignItems: "center", gap: 6,
                                     padding: "10px 16px", borderRadius: 8, fontSize: 13,
-                                    background: "#131415", border: "1px solid #2e2f30",
-                                    color: "#8a8b8e", cursor: "pointer",
+                                    background: "var(--db-bg2)", border: "1px solid var(--db-border2)",
+                                    color: "var(--db-text2)", cursor: "pointer",
                                 }}>
                                     Next <ChevronRight size={14} />
                                 </button>
@@ -439,9 +429,9 @@ export default function QuizPage() {
                                     style={{
                                         display: "flex", alignItems: "center", gap: 6,
                                         padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                                        background: allAnswered ? "rgba(200,255,62,0.12)" : "#1a1b1c",
-                                        border: `1px solid ${allAnswered ? "rgba(200,255,62,0.35)" : "#2e2f30"}`,
-                                        color: allAnswered ? "#c8ff3e" : "#3a3b3c",
+                                        background: allAnswered ? "rgba(var(--lime-rgb), 0.12)" : "var(--db-bg3)",
+                                        border: `1px solid ${allAnswered ? "rgba(var(--lime-rgb), 0.35)" : "var(--db-border2)"}`,
+                                        color: allAnswered ? "var(--lime)" : "var(--db-border2)",
                                         cursor: allAnswered && view !== "submitting" ? "pointer" : "not-allowed",
                                     }}
                                 >
@@ -454,7 +444,7 @@ export default function QuizPage() {
                         </div>
 
                         {!allAnswered && (
-                            <p style={{ fontSize: 12, color: "#4a4b4e", textAlign: "center" }}>
+                            <p style={{ fontSize: 12, color: "var(--db-text3)", textAlign: "center" }}>
                                 Answer all {questions.length} questions to enable submit.
                             </p>
                         )}
