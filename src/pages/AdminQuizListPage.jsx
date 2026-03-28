@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
-import { UserButton } from "@clerk/clerk-react";
 import { motion } from "motion/react";
 import { BookOpen, LoaderCircle, ShieldAlert, Plus, Edit2, Trash2 } from "lucide-react";
+import DashboardNav from "@/components/dashboard/DashboardNav";
 import { QuizService, AlgorithmService } from "../lib/api";
 import { useRole } from "../context/RoleContext";
 
@@ -12,10 +12,10 @@ export default function AdminQuizListPage() {
     const role = useRole();
     const navigate = useNavigate();
 
-    const [quizzes, setQuizzes]       = useState([]);
-    const [algoMap, setAlgoMap]       = useState({});   // algorithmId → name
-    const [loading, setLoading]       = useState(true);
-    const [error, setError]           = useState("");
+    const [quizzes, setQuizzes] = useState([]);
+    const [algoMap, setAlgoMap] = useState({});   // algorithmId → name
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
     const [deletingId, setDeletingId] = useState(null);
 
     useEffect(() => {
@@ -90,48 +90,7 @@ export default function AdminQuizListPage() {
 
     return (
         <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
-            {/* Header */}
-            <header style={{
-                position: "sticky", top: 0, zIndex: 40,
-                height: 56, display: "flex", alignItems: "center",
-                padding: "0 24px", gap: 8,
-                background: "rgba(13,14,15,0.85)",
-                backdropFilter: "blur(16px)",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
-            }}>
-                <Link to="/" style={{ textDecoration: "none" }}>
-                    <img src="/BIGO.png" alt="BigO" style={{ height: 44, width: "auto" }} />
-                </Link>
-
-                <div style={{ width: 1, height: 16, background: "#2e2f30", margin: "0 4px" }} />
-
-                <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    {[
-                        { label: "Dashboard", path: "/dashboard" },
-                        { label: "Algorithms", path: "/algorithms" },
-                        { label: "Quizzes", path: "/quizzes" },
-                    ].map(({ label, path }) => (
-                        <Link key={path} to={path} style={{
-                            padding: "5px 10px", borderRadius: 7, fontSize: 13,
-                            color: "#8a8b8e", textDecoration: "none",
-                            border: "1px solid transparent",
-                        }}>
-                            {label}
-                        </Link>
-                    ))}
-                    <span style={{
-                        padding: "5px 10px", borderRadius: 7, fontSize: 13,
-                        color: "#c8ff3e", background: "rgba(200,255,62,0.1)",
-                        border: "1px solid rgba(200,255,62,0.25)",
-                    }}>
-                        Admin
-                    </span>
-                </nav>
-
-                <div style={{ marginLeft: "auto" }}>
-                    <UserButton afterSignOutUrl="/" />
-                </div>
-            </header>
+            <DashboardNav />
 
             {/* Main */}
             <main style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 24px 60px" }}>
@@ -282,12 +241,12 @@ export default function AdminQuizListPage() {
                                                 color: "#c8ff3e",
                                                 background: "rgba(200,255,62,0.08)",
                                                 border: "1px solid rgba(200,255,62,0.2)",
-                                              }
+                                            }
                                             : {
                                                 color: "#8a8b8e",
                                                 background: "rgba(255,255,255,0.04)",
                                                 border: "1px solid #2e2f30",
-                                              }),
+                                            }),
                                     }}>
                                         <span style={{
                                             width: 5, height: 5, borderRadius: "50%",

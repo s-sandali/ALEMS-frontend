@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth, useUser } from "@clerk/clerk-react";
-import { UserButton } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 import { motion } from "motion/react";
-import { ChevronRight, Clock, Target, PlayCircle, LoaderCircle, BookOpen } from "lucide-react";
+import { Clock, Target, PlayCircle, LoaderCircle, BookOpen } from "lucide-react";
+import DashboardNav from "@/components/dashboard/DashboardNav";
 import { StudentQuizService } from "../lib/api";
 
 const DIFFICULTY_COLORS = {
-    easy:   { color: "#c8ff3e", bg: "rgba(200,255,62,0.08)",  border: "rgba(200,255,62,0.2)"  },
-    medium: { color: "#ffb830", bg: "rgba(255,184,48,0.08)", border: "rgba(255,184,48,0.2)"  },
-    hard:   { color: "#ff5a5a", bg: "rgba(255,90,90,0.08)",  border: "rgba(255,90,90,0.2)"   },
+    easy: { color: "#c8ff3e", bg: "rgba(200,255,62,0.08)", border: "rgba(200,255,62,0.2)" },
+    medium: { color: "#ffb830", bg: "rgba(255,184,48,0.08)", border: "rgba(255,184,48,0.2)" },
+    hard: { color: "#ff5a5a", bg: "rgba(255,90,90,0.08)", border: "rgba(255,90,90,0.2)" },
 };
 
 function QuizCard({ quiz, onStart }) {
@@ -108,7 +108,6 @@ function QuizCard({ quiz, onStart }) {
 
 export default function QuizzesPage() {
     const { getToken } = useAuth();
-    const { user } = useUser();
     const navigate = useNavigate();
 
     const [quizzes, setQuizzes] = useState([]);
@@ -139,50 +138,7 @@ export default function QuizzesPage() {
 
     return (
         <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
-            {/* Header */}
-            <header style={{
-                position: "sticky", top: 0, zIndex: 40,
-                height: 56, display: "flex", alignItems: "center",
-                padding: "0 24px", gap: 8,
-                background: "rgba(13,14,15,0.85)",
-                backdropFilter: "blur(16px)",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
-            }}>
-                <Link to="/" style={{ textDecoration: "none" }}>
-                    <img src="/BIGO.png" alt="BigO" style={{ height: 44, width: "auto" }} />
-                </Link>
-
-                <div style={{ width: 1, height: 16, background: "#2e2f30", margin: "0 4px" }} />
-
-                <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    {[
-                        { label: "Dashboard", path: "/dashboard" },
-                        { label: "Algorithms", path: "/algorithms" },
-                    ].map(({ label, path }) => (
-                        <Link key={path} to={path} style={{
-                            padding: "5px 10px", borderRadius: 7, fontSize: 13,
-                            color: "#8a8b8e", textDecoration: "none",
-                            border: "1px solid transparent",
-                        }}>
-                            {label}
-                        </Link>
-                    ))}
-                    <span style={{
-                        padding: "5px 10px", borderRadius: 7, fontSize: 13,
-                        color: "#c8ff3e", background: "rgba(200,255,62,0.1)",
-                        border: "1px solid rgba(200,255,62,0.25)",
-                    }}>
-                        Quizzes
-                    </span>
-                </nav>
-
-                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 13, color: "#8a8b8e", display: "none" }}>
-                        {user?.primaryEmailAddress?.emailAddress}
-                    </span>
-                    <UserButton afterSignOutUrl="/" />
-                </div>
-            </header>
+            <DashboardNav />
 
             {/* Main */}
             <main style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 24px 60px" }}>

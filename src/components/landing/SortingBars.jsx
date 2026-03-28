@@ -36,7 +36,7 @@ export default function SortingBars() {
                 </div>
                 {/* Bars */}
                 <div className="flex items-end gap-3 justify-center h-32 rounded-xl px-4 pb-3 pt-2"
-                    style={{ background: "rgba(12,12,12,0.6)" }}
+                    style={{ background: "var(--code-surface)" }}
                 >
                     {BAR_COLORS.map((color, i) => (
                         <div
@@ -54,22 +54,21 @@ export default function SortingBars() {
                 </div>
                 {/* Code snippet below bars */}
                 <div className="mt-3 text-xs rounded px-3 py-2 space-y-1"
-                    style={{ background: "rgba(12,12,12,0.6)", color: "#A1A1A1" }}
+                    style={{ background: "var(--code-surface)", color: "var(--text-secondary)" }}
                 >
                     <div>
-                        <span style={{ color: "#D5FF40" }}>for</span>{" "}
+                        <span style={{ color: "var(--accent)" }}>for</span>{" "}
                         <span className="text-text-secondary">(i = 0; i &lt; n; i++)</span>
                     </div>
                     <div className="pl-4">
-                        <span style={{ color: "#D5FF40" }}>if</span>{" "}
-                        <span className="text-white/70">(arr[i] &gt; arr[i+1])</span>
+                        <span style={{ color: "var(--accent)" }}>if</span>{" "}
+                        <span className="text-text-primary opacity-70">(arr[i] &gt; arr[i+1])</span>
                     </div>
-                    <div className="pl-8" style={{ color: "#D5FF40" }}>swap(arr, i, i+1)</div>
+                    <div className="pl-8" style={{ color: "var(--accent)" }}>swap(arr, i, i+1)</div>
                 </div>
             </div>
             {/* Floating labels */}
             <div className="absolute -top-3 -right-3 badge-chip">O(n²) Time</div>
-
         </div>
     );
 }

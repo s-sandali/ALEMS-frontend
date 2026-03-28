@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { UserButton, useAuth, useUser } from "@clerk/clerk-react";
-import { ChevronRight, LoaderCircle } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
+import { LoaderCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import AlgorithmComplexityCharts from "../components/algorithms/AlgorithmComplexityCharts";
 import CodePanel from "../components/algorithms/CodePanel";
@@ -10,10 +10,12 @@ import AlgorithmIntroductionSection from "../components/algorithms/AlgorithmIntr
 import AlgorithmQuizCTA from "../components/algorithms/AlgorithmQuizCTA";
 import SimulationControls from "../components/algorithms/SimulationControls";
 import AlgorithmVisualizer from "../components/algorithms/AlgorithmVisualizer";
+import DashboardNav from "@/components/dashboard/DashboardNav";
 import { AlgorithmService, SimulationService } from "../lib/api";
 import {
     getAlgorithmCodeSnippets,
     getAlgorithmDifficulty,
+    getAlgorithmIcon,
     getAlgorithmSampleInput,
     getPrimaryComplexity,
     getSimulationAlgorithmKey,
@@ -184,29 +186,11 @@ function getNextSearchDecision(steps, currentIndex) {
     return null;
 }
 
-function getAlgorithmPresentation(algorithm) {
-    const normalizedName = algorithm?.name?.trim().toLowerCase();
-    if (normalizedName === "linear search" || normalizedName === "linera search") {
-        return {
-            ...algorithm,
-            name: "Quick Sort",
-            category: "Sorting",
-            description: "Partitions the array around a pivot and recursively sorts the subarrays.",
-            timeComplexityBest: "O(n log n)",
-            timeComplexityAverage: "O(n log n)",
-            timeComplexityWorst: "O(n^2)",
-        };
-    }
-
-    return algorithm;
-}
-
 export default function AlgorithmDetailPage() {
     const playbackSpeeds = [0.5, 1, 2, 4];
     const basePlaybackIntervalMs = 1400;
     const { id } = useParams();
     const { getToken } = useAuth();
-    const { user } = useUser();
     const [algorithm, setAlgorithm] = useState(null);
     const [steps, setSteps] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -362,11 +346,9 @@ export default function AlgorithmDetailPage() {
         return () => window.clearTimeout(timeoutId);
     }, [showCompletionToast]);
 
-    const presentationAlgorithm = useMemo(
-        () => (algorithm ? getAlgorithmPresentation(algorithm) : null),
-        [algorithm],
-    );
+    const presentationAlgorithm = useMemo(() => algorithm, [algorithm]);
     const difficulty = presentationAlgorithm ? getAlgorithmDifficulty(presentationAlgorithm.name) : "";
+    const AlgorithmIcon = presentationAlgorithm ? getAlgorithmIcon(presentationAlgorithm.name) : null;
     const primaryComplexity = presentationAlgorithm ? getPrimaryComplexity(presentationAlgorithm) : "";
     const codeSnippets = presentationAlgorithm ? getAlgorithmCodeSnippets(presentationAlgorithm.name) : [];
     const simulationAlgorithmKey = algorithm ? getSimulationAlgorithmKey(algorithm.name) : "";
@@ -870,54 +852,33 @@ export default function AlgorithmDetailPage() {
 
     return (
         <div className="min-h-screen bg-bg">
-            <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-bg/80 backdrop-blur-xl">
-                <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-                    <div className="flex items-center gap-3">
-                        <Link to="/" className="flex items-center gap-2 group">
-                            <img
-                                src="/BIGO.png"
-                                alt="BIGO Logo"
-                                className="h-16 w-auto group-hover:scale-110 transition-transform"
-                            />
-                        </Link>
-                        <div className="hidden items-center gap-2 text-sm text-text-secondary sm:flex">
-                            <Link to="/algorithms" className="transition hover:text-white">
-                                Algorithms
-                            </Link>
-                            <ChevronRight className="h-4 w-4" />
-                            <span className="text-white">{presentationAlgorithm?.name || algorithm?.name || "Details"}</span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <span className="hidden text-sm text-text-secondary md:inline">
-                            {user?.primaryEmailAddress?.emailAddress}
-                        </span>
-                        <UserButton afterSignOutUrl="/" />
-                    </div>
-                </div>
-            </header>
+            <DashboardNav />
 
             <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8 sm:py-10">
                 {loading ? (
-                    <div className="flex min-h-[50vh] items-center justify-center rounded-[2rem] border border-white/[0.06] bg-surface/60">
+                    <div className="flex min-h-[50vh] items-center justify-center rounded-[2rem] bg-surface/60" style={{ border: "1px solid var(--db-border)" }}>
                         <span className="inline-flex items-center gap-3 text-sm text-text-secondary">
                             <LoaderCircle className="h-4 w-4 animate-spin text-accent" />
                             Loading algorithm details
                         </span>
                     </div>
                 ) : error ? (
-                    <div className="rounded-[2rem] border border-red-400/20 bg-red-400/5 p-8 text-sm text-red-200">
+                    <div className="rounded-[2rem] p-8 text-sm" style={{ border: "1px solid var(--red-dim)", background: "var(--red-dim)", color: "var(--red)" }}>
                         {error}
                     </div>
                 ) : algorithm ? (
                     <>
-                        <section className="rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-8 lg:p-10">
+                        <section className="rounded-[2rem] bg-surface p-6 sm:p-8 lg:p-10" style={{ border: "1px solid var(--db-border)" }}>
                             <div className="max-w-4xl">
+                                {AlgorithmIcon ? (
+                                    <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/15 bg-accent/10 text-accent">
+                                        <AlgorithmIcon className="h-6 w-6" />
+                                    </div>
+                                ) : null}
                                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                                     {presentationAlgorithm?.category || algorithm.category}
                                 </p>
-                                <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+                                <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl lg:text-6xl">
                                     {presentationAlgorithm?.name || algorithm.name}
                                 </h1>
                                 <p className="mt-5 max-w-3xl text-base leading-8 text-text-secondary sm:text-lg">
@@ -925,16 +886,16 @@ export default function AlgorithmDetailPage() {
                                 </p>
 
                                 <div className="mt-8 flex flex-wrap gap-3">
-                                    <span className="inline-flex rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-200">
+                                    <span className="inline-flex rounded-full px-4 py-2 text-sm font-semibold" style={{ border: "1px solid var(--amber-dim)", background: "var(--amber-dim)", color: "var(--amber)" }}>
                                         {primaryComplexity} avg
                                     </span>
-                                    <span className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-200">
+                                    <span className="inline-flex rounded-full px-4 py-2 text-sm font-semibold" style={{ border: "1px solid var(--green-dim)", background: "var(--green-dim)", color: "var(--green)" }}>
                                         {(presentationAlgorithm?.timeComplexityBest || algorithm.timeComplexityBest)} best
                                     </span>
-                                    <span className="inline-flex rounded-full border border-rose-400/20 bg-rose-400/10 px-4 py-2 text-sm font-semibold text-rose-200">
+                                    <span className="inline-flex rounded-full px-4 py-2 text-sm font-semibold" style={{ border: "1px solid var(--red-dim)", background: "var(--red-dim)", color: "var(--red)" }}>
                                         {(presentationAlgorithm?.timeComplexityWorst || algorithm.timeComplexityWorst)} worst
                                     </span>
-                                    <span className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-200">
+                                    <span className="inline-flex rounded-full px-4 py-2 text-sm font-semibold" style={{ border: "1px solid var(--blue-dim)", background: "var(--blue-dim)", color: "var(--blue)" }}>
                                         {difficulty}
                                     </span>
                                 </div>
@@ -1025,7 +986,7 @@ export default function AlgorithmDetailPage() {
                         transition={{ duration: 0.22, ease: "easeOut" }}
                         className="fixed bottom-6 right-6 z-50 rounded-2xl border border-accent/20 bg-surface/95 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl"
                     >
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-sm font-semibold text-text-primary">
                             {mode === "practice" ? "Practice complete" : "Search complete"}
                         </p>
                         <p className="mt-1 text-xs text-text-secondary">
