@@ -48,7 +48,7 @@ export default function BadgesGrid({ badges }) {
               fontSize: 11,
               padding: '2px 8px',
               borderRadius: 20,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "'Poppins', sans-serif",
             }}
           >
             {earnedCount} / {badges.length} earned

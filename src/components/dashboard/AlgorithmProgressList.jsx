@@ -50,7 +50,7 @@ function ProgressRing({ percent, accentColor, locked, index }) {
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: 10,
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "'Poppins', sans-serif",
           color: locked ? '#4a4b4e' : accentColor,
           fontWeight: 600,
         }}
@@ -157,7 +157,7 @@ export default function AlgorithmProgressList({ algorithms }) {
                       key={c}
                       style={{
                         fontSize: 10,
-                        fontFamily: "'JetBrains Mono', monospace",
+                        fontFamily: "'Poppins', sans-serif",
                         padding: '2px 7px',
                         borderRadius: 4,
                         background: algo.accentDim,
@@ -192,7 +192,7 @@ export default function AlgorithmProgressList({ algorithms }) {
                   <p
                     style={{
                       fontSize: 13,
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontFamily: "'Poppins', sans-serif",
                       fontWeight: 600,
                       color: algo.accentColor,
                     }}

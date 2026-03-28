@@ -58,7 +58,7 @@ export default function RecentActivityFeed({ activities }) {
                 <p
                   style={{
                     fontSize: 11,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "'Poppins', sans-serif",
                     fontWeight: 600,
                     color: '#c8ff3e',
                     lineHeight: 1.4,
@@ -69,7 +69,7 @@ export default function RecentActivityFeed({ activities }) {
                 <p
                   style={{
                     fontSize: 11,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "'Poppins', sans-serif",
                     color: '#4a4b4e',
                     lineHeight: 1.4,
                   }}

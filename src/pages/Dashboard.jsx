@@ -52,7 +52,7 @@ function QuizCard({ quiz, onStart }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
         <h3 style={{
           fontSize: 16, fontWeight: 700, color: '#e4e5e6',
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "'Poppins', sans-serif",
           letterSpacing: '-0.3px', lineHeight: 1.2,
         }}>
           {quiz.title}
@@ -143,14 +143,14 @@ export default function Dashboard() {
           <p style={{
             fontSize: 11, color: '#4a4b4e',
             letterSpacing: '1.5px', textTransform: 'uppercase',
-            fontFamily: "'JetBrains Mono', monospace", marginBottom: 6,
+            fontFamily: "'Poppins', sans-serif", marginBottom: 6,
           }}>
             Dashboard
           </p>
           <h1 style={{
             fontSize: 26, fontWeight: 700,
             letterSpacing: '-0.8px', lineHeight: 1.1,
-            fontFamily: "'Space Grotesk', sans-serif", color: '#e4e5e6',
+            fontFamily: "'Poppins', sans-serif", color: '#e4e5e6',
           }}>
             Welcome back,{' '}
             <span style={{ color: '#c8ff3e' }}>{displayName}</span>
@@ -174,13 +174,13 @@ export default function Dashboard() {
               <p style={{
                 fontSize: 11, color: '#4a4b4e',
                 letterSpacing: '1.5px', textTransform: 'uppercase',
-                fontFamily: "'JetBrains Mono', monospace", marginBottom: 4,
+                fontFamily: "'Poppins', sans-serif", marginBottom: 4,
               }}>
                 Active
               </p>
               <h2 style={{
                 fontSize: 20, fontWeight: 700, color: '#e4e5e6',
-                fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.4px',
+                fontFamily: "'Poppins', sans-serif", letterSpacing: '-0.4px',
               }}>
                 Quizzes
               </h2>

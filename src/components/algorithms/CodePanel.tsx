@@ -160,7 +160,7 @@ export default function CodePanel({
             </div>
 
             <div className="relative bg-[linear-gradient(180deg,rgba(12,12,12,0.96),rgba(21,21,21,0.98))]">
-                <div className="max-h-[42rem] overflow-auto px-4 py-4 font-mono text-sm">
+                <div className="max-h-[42rem] overflow-auto px-4 py-4 text-sm">
                     <div className="space-y-[2px]">
                         {codeLines.map((line, index) => {
                             const lineNumber = index + 1;
