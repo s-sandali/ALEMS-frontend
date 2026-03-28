@@ -433,6 +433,137 @@ export const StudentQuizService = {
             Promise<{ status: string; data: QuizAttemptResult }>,
 };
 
+// ── Coding question types ──────────────────────────────────────────────────────
+
+export type CodingQuestion = {
+    id: number;
+    title: string;
+    description: string;
+    inputExample: string | null;
+    expectedOutput: string | null;
+    difficulty: "easy" | "medium" | "hard";
+};
+
+export type CreateCodingQuestionPayload = {
+    title: string;
+    description: string;
+    inputExample?: string | null;
+    expectedOutput?: string | null;
+    difficulty: "easy" | "medium" | "hard";
+};
+
+export type UpdateCodingQuestionPayload = CreateCodingQuestionPayload;
+
+// ── Coding question service ────────────────────────────────────────────────────
+
+export const CodingQuestionService = {
+    /**
+     * GET /coding-questions
+     * Admin only. Retrieves all coding questions.
+     */
+    getAll: (getToken: GetTokenFn) =>
+        apiFetch("/coding-questions", { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion[] }>,
+
+    /**
+     * GET /coding-questions/{id}
+     * Admin only. Retrieves a single coding question by ID.
+     */
+    getById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/coding-questions/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion }>,
+
+    /**
+     * POST /coding-questions
+     * Admin only. Creates a new coding question.
+     */
+    create: (payload: CreateCodingQuestionPayload, getToken: GetTokenFn) =>
+        apiFetch("/coding-questions", { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: CodingQuestion }>,
+
+    /**
+     * PUT /coding-questions/{id}
+     * Admin only. Updates an existing coding question.
+     */
+    update: (id: number, payload: UpdateCodingQuestionPayload, getToken: GetTokenFn) =>
+        apiFetch(`/coding-questions/${id}`, { method: "PUT", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: CodingQuestion }>,
+
+    /**
+     * DELETE /coding-questions/{id}
+     * Admin only. Deletes a coding question.
+     * Returns null on success (204 No Content).
+     */
+    delete: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/coding-questions/${id}`, { method: "DELETE", getToken }) as
+            Promise<null>,
+};
+
+// ── Code execution types ───────────────────────────────────────────────────────
+
+export type SupportedLanguage = {
+    languageId: number;
+    name: string;
+};
+
+export type CodeExecutionRequest = {
+    sourceCode: string;
+    languageId: number;
+    stdin?: string | null;
+    expectedOutput?: string | null;
+};
+
+export type CodeExecutionResult = {
+    stdout: string | null;
+    stderr: string | null;
+    compileOutput: string | null;
+    statusId: number;
+    statusDescription: string;
+    executionTime: string | null;
+    memoryUsed: number | null;
+};
+
+// ── Code execution service ────────────────────────────────────────────────────
+
+export const CodeExecutionApiService = {
+    /**
+     * GET /code/languages
+     * Returns the list of supported Judge0 language IDs and names.
+     */
+    getLanguages: (getToken: GetTokenFn) =>
+        apiFetch("/code/languages", { method: "GET", getToken }) as
+            Promise<{ status: string; data: SupportedLanguage[] }>,
+
+    /**
+     * POST /code/execute
+     * Submits source code to Judge0 (wait=true, synchronous).
+     * Returns the full execution result — check statusId for outcome.
+     */
+    execute: (payload: CodeExecutionRequest, getToken: GetTokenFn) =>
+        apiFetch("/code/execute", { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; data: CodeExecutionResult }>,
+};
+
+// ── Student coding question service ──────────────────────────────────────────
+
+export const StudentCodingQuestionService = {
+    /**
+     * GET /student/coding-questions
+     * Any authenticated user. Returns all coding questions.
+     */
+    getAll: (getToken: GetTokenFn) =>
+        apiFetch("/student/coding-questions", { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion[] }>,
+
+    /**
+     * GET /student/coding-questions/{id}
+     * Any authenticated user. Returns a single coding question by ID.
+     */
+    getById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/student/coding-questions/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion }>,
+};
+
 export const SimulationService = {
     /**
      * POST /simulation/run
