@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, List, Trophy, User, Zap, Flame } from 'lucide-react'
+import { LayoutDashboard, List, BookOpen, Zap } from 'lucide-react'
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Algorithms', icon: List, path: '/algorithms' },
-  { label: 'Leaderboard', icon: Trophy, path: '/leaderboard' },
+  { label: 'Quizzes', icon: BookOpen, path: '/quizzes' },
 ]
 
 export default function DashboardNav({ user }) {
@@ -121,29 +121,10 @@ export default function DashboardNav({ user }) {
           }}
         >
           <Zap size={10} />
-          {user.xp} XP
+          {user.xpTotal ?? 0} XP
         </div>
 
-        {/* Streak badge */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            background: 'rgba(255,184,48,0.1)',
-            border: '1px solid rgba(255,184,48,0.25)',
-            color: '#ffb830',
-            fontSize: 11,
-            padding: '4px 10px',
-            borderRadius: 20,
-            fontFamily: "'JetBrains Mono', monospace",
-          }}
-        >
-          <Flame size={10} />
-          {user.streakDays}d streak
-        </div>
 
-        
       </div>
     </header>
   )
