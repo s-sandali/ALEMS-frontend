@@ -433,6 +433,72 @@ export const StudentQuizService = {
             Promise<{ status: string; data: QuizAttemptResult }>,
 };
 
+// ── Coding question types ──────────────────────────────────────────────────────
+
+export type CodingQuestion = {
+    id: number;
+    title: string;
+    description: string;
+    inputExample: string | null;
+    expectedOutput: string | null;
+    difficulty: "easy" | "medium" | "hard";
+};
+
+export type CreateCodingQuestionPayload = {
+    title: string;
+    description: string;
+    inputExample?: string | null;
+    expectedOutput?: string | null;
+    difficulty: "easy" | "medium" | "hard";
+};
+
+export type UpdateCodingQuestionPayload = CreateCodingQuestionPayload;
+
+// ── Coding question service ────────────────────────────────────────────────────
+
+export const CodingQuestionService = {
+    /**
+     * GET /coding-questions
+     * Admin only. Retrieves all coding questions.
+     */
+    getAll: (getToken: GetTokenFn) =>
+        apiFetch("/coding-questions", { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion[] }>,
+
+    /**
+     * GET /coding-questions/{id}
+     * Admin only. Retrieves a single coding question by ID.
+     */
+    getById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/coding-questions/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion }>,
+
+    /**
+     * POST /coding-questions
+     * Admin only. Creates a new coding question.
+     */
+    create: (payload: CreateCodingQuestionPayload, getToken: GetTokenFn) =>
+        apiFetch("/coding-questions", { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: CodingQuestion }>,
+
+    /**
+     * PUT /coding-questions/{id}
+     * Admin only. Updates an existing coding question.
+     */
+    update: (id: number, payload: UpdateCodingQuestionPayload, getToken: GetTokenFn) =>
+        apiFetch(`/coding-questions/${id}`, { method: "PUT", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: CodingQuestion }>,
+
+    /**
+     * DELETE /coding-questions/{id}
+     * Admin only. Deletes a coding question.
+     * Returns null on success (204 No Content).
+     */
+    delete: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/coding-questions/${id}`, { method: "DELETE", getToken }) as
+            Promise<null>,
+};
+
 export const SimulationService = {
     /**
      * POST /simulation/run
