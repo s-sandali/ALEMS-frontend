@@ -6,6 +6,7 @@ import AlgorithmsPage from "./pages/AlgorithmsPage";
 import AlgorithmDetailPage from "./pages/AlgorithmDetailPage";
 import QuizPage from "./pages/QuizPage";
 import QuizzesPage from "./pages/QuizzesPage";
+import AdminQuizListPage from "./pages/AdminQuizListPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -73,6 +74,15 @@ export default function App() {
                     element={
                         <ProtectedRoute>
                             <QuizPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/quizzes"
+                    element={
+                        <ProtectedRoute>
+                            <AdminQuizListPage />
                         </ProtectedRoute>
                     }
                 />
