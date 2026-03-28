@@ -7,6 +7,7 @@ type Props = {
     viewState: ViewState;
     result: CodeExecutionResult | null;
     errorMessage: string;
+    expectedOutput?: string | null;
 };
 
 // Judge0 status ID reference:
@@ -55,7 +56,7 @@ function StatusBanner({ color, label, meta }: { color: string; label: string; me
     );
 }
 
-export default function ExecutionResultPanel({ viewState, result, errorMessage }: Props) {
+export default function ExecutionResultPanel({ viewState, result, errorMessage, expectedOutput }: Props) {
     if (viewState === "idle") return null;
 
     if (viewState === "running") {
@@ -89,6 +90,19 @@ export default function ExecutionResultPanel({ viewState, result, errorMessage }
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <StatusBanner color="var(--lime-rgb)" label="Accepted" meta={meta} />
                 <OutputBlock label="Output" content={stdout ?? ""} color="var(--lime)" />
+            </div>
+        );
+    }
+
+    if (statusId === 4) {
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <StatusBanner color="204,0,0" label="Wrong Answer" meta={meta} />
+                <OutputBlock label="Your Output" content={stdout ?? ""} />
+                {expectedOutput != null && (
+                    <OutputBlock label="Expected Output" content={expectedOutput} color="var(--amber)" />
+                )}
+                {stderr && <OutputBlock label="stderr" content={stderr} color="var(--red)" />}
             </div>
         );
     }
