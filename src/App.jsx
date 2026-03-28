@@ -10,6 +10,8 @@ import AdminQuizListPage from "./pages/AdminQuizListPage";
 import AdminQuizFormPage from "./pages/AdminQuizFormPage";
 import CodingChallengesPage from "./pages/CodingChallengesPage";
 import CodingChallengePage from "./pages/CodingChallengePage";
+import AdminCodingQuestionListPage from "./pages/AdminCodingQuestionListPage";
+import AdminCodingQuestionFormPage from "./pages/AdminCodingQuestionFormPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -104,6 +106,33 @@ export default function App() {
                     element={
                         <ProtectedRoute>
                             <AdminQuizFormPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/coding-questions"
+                    element={
+                        <ProtectedRoute>
+                            <AdminCodingQuestionListPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/coding-questions/new"
+                    element={
+                        <ProtectedRoute>
+                            <AdminCodingQuestionFormPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/coding-questions/:id/edit"
+                    element={
+                        <ProtectedRoute>
+                            <AdminCodingQuestionFormPage />
                         </ProtectedRoute>
                     }
                 />
