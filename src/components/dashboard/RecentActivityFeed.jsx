@@ -4,13 +4,13 @@ export default function RecentActivityFeed({ activities }) {
   return (
     <div
       style={{
-        background: '#131415',
-        border: '1px solid #252627',
+        background: 'var(--db-bg2)',
+        border: '1px solid var(--db-border)',
         borderRadius: 12,
         padding: 20,
       }}
     >
-      <p style={{ fontSize: 15, fontWeight: 600, color: '#e4e5e6', marginBottom: 12 }}>
+      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--db-text)', marginBottom: 12 }}>
         Recent activity
       </p>
 
@@ -30,7 +30,7 @@ export default function RecentActivityFeed({ activities }) {
                 alignItems: 'center',
                 gap: 12,
                 padding: '10px 0',
-                borderBottom: isLast ? 'none' : '1px solid #252627',
+                borderBottom: isLast ? 'none' : '1px solid var(--db-border)',
               }}
             >
               {/* Dot */}
@@ -45,9 +45,9 @@ export default function RecentActivityFeed({ activities }) {
               />
 
               {/* Label */}
-              <p style={{ fontSize: 13, color: '#8a8b8e', flex: 1, lineHeight: 1.4 }}>
+              <p style={{ fontSize: 13, color: 'var(--db-text2)', flex: 1, lineHeight: 1.4 }}>
                 {parts[0]}
-                <strong style={{ color: '#e4e5e6', fontWeight: 500 }}>
+                <strong style={{ color: 'var(--db-text)', fontWeight: 500 }}>
                   {entry.highlight}
                 </strong>
                 {parts[1]}
@@ -60,7 +60,7 @@ export default function RecentActivityFeed({ activities }) {
                     fontSize: 11,
                     fontFamily: "'Poppins', sans-serif",
                     fontWeight: 600,
-                    color: '#c8ff3e',
+                    color: 'var(--lime)',
                     lineHeight: 1.4,
                   }}
                 >
@@ -70,7 +70,7 @@ export default function RecentActivityFeed({ activities }) {
                   style={{
                     fontSize: 11,
                     fontFamily: "'Poppins', sans-serif",
-                    color: '#4a4b4e',
+                    color: 'var(--db-text3)',
                     lineHeight: 1.4,
                   }}
                 >
