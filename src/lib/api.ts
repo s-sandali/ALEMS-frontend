@@ -355,6 +355,84 @@ export const QuizQuestionService = {
             Promise<null>,
 };
 
+// ── Student quiz types ─────────────────────────────────────────────────────────
+
+/** Question returned to students — correctOption and explanation are intentionally absent. */
+export type StudentQuestion = {
+    questionId: number;
+    questionType: "MCQ" | "PREDICT_STEP";
+    questionText: string;
+    optionA: string;
+    optionB: string;
+    optionC: string;
+    optionD: string;
+    difficulty: "easy" | "medium" | "hard";
+    orderIndex: number;
+};
+
+export type QuizAttemptAnswer = {
+    questionId: number;
+    selectedOption: "A" | "B" | "C" | "D";
+};
+
+export type QuizAttemptPayload = {
+    answers: QuizAttemptAnswer[];
+};
+
+export type QuizAttemptQuestionResult = {
+    questionId: number;
+    selectedOption: string;
+    correctOption: string;
+    isCorrect: boolean;
+    explanation: string | null;
+};
+
+export type QuizAttemptResult = {
+    attemptId: number;
+    quizId: number;
+    score: number;           // percentage 0–100
+    passed: boolean;
+    totalQuestions: number;
+    correctCount: number;
+    results: QuizAttemptQuestionResult[];
+};
+
+// ── Student quiz service ───────────────────────────────────────────────────────
+
+export const StudentQuizService = {
+    /**
+     * GET /student/quizzes
+     * Returns only active quizzes (is_active = true). Accessible to all authenticated users.
+     */
+    getActiveQuizzes: (getToken: GetTokenFn) =>
+        apiFetch("/student/quizzes", { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizSummary[] }>,
+
+    /**
+     * GET /student/quizzes/{id}
+     * Returns a single active quiz. Returns 404 if inactive or not found.
+     */
+    getActiveQuizById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/student/quizzes/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizSummary }>,
+
+    /**
+     * GET /student/quizzes/{quizId}/questions
+     * Returns active questions for a quiz WITHOUT correctOption or explanation.
+     */
+    getQuizQuestions: (quizId: number, getToken: GetTokenFn) =>
+        apiFetch(`/student/quizzes/${quizId}/questions`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentQuestion[] }>,
+
+    /**
+     * POST /student/quizzes/{quizId}/attempt
+     * Submits all answers and returns the graded result with explanations.
+     */
+    submitAttempt: (quizId: number, payload: QuizAttemptPayload, getToken: GetTokenFn) =>
+        apiFetch(`/student/quizzes/${quizId}/attempt`, { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; data: QuizAttemptResult }>,
+};
+
 export const SimulationService = {
     /**
      * POST /simulation/run
