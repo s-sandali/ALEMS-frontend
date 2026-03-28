@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Binary, Layers3, LoaderCircle, Bubbles } from "lucide-react";
+import { ArrowRight, Binary, Layers3, LoaderCircle } from "lucide-react";
 
 import { AlgorithmService } from "../../lib/api";
 import { cn } from "../../lib/utils";

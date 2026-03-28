@@ -265,12 +265,20 @@ export default function AlgorithmDetailPage() {
         }
 
         async function loadAlgorithmDetails() {
+            const numericId = Number(id);
+            if (!Number.isFinite(numericId)) {
+                setError("Invalid algorithm id.");
+                setAlgorithm(null);
+                setLoading(false);
+                return;
+            }
+
             try {
                 setLoading(true);
                 setError("");
                 setSimulationError("");
 
-                const response = await AlgorithmService.getById(Number(id), getToken);
+                const response = await AlgorithmService.getById(numericId, getToken);
                 if (!isMounted) {
                     return;
                 }

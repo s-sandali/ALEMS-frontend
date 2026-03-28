@@ -367,7 +367,7 @@ function AlgorithmVisualizer({
             <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-4">
-                        <p className="text-s font-semibold uppercase tracking-[0.28em] text-accent">
+                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                             04- Visualization
                         </p>
 
