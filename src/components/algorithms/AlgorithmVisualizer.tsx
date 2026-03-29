@@ -253,8 +253,8 @@ function getHeapNodePosition(index: number) {
     const slotsInLevel = 2 ** level;
 
     return {
-        x: ((indexInLevel + 0.5) / slotsInLevel) * 100,
-        y: 12 + level * 22,
+        x: 6 + (((indexInLevel + 0.5) / slotsInLevel) * 88),
+        y: 10 + level * 16,
     };
 }
 
@@ -313,6 +313,30 @@ function getNodeClassName(state: HeapNodeState) {
     }
 
     return "border-white/15 bg-white/[0.04] text-white";
+}
+
+function getNodeAnimate(state: HeapNodeState, shouldReduceMotion: boolean) {
+    if (shouldReduceMotion) {
+        return {};
+    }
+
+    if (state === "active") {
+        return { scale: [1, 1.06, 1], y: [0, -2, 0] };
+    }
+
+    if (state === "comparing") {
+        return { scale: [1, 1.04, 1] };
+    }
+
+    if (state === "swapping") {
+        return { x: [0, -2, 2, -1, 1, 0], scale: [1, 1.03, 1] };
+    }
+
+    if (state === "removing") {
+        return { scale: [1, 1.08, 1], y: [0, -3, 0] };
+    }
+
+    return { scale: 1, y: 0, x: 0 };
 }
 
 function AlgorithmVisualizer({
@@ -415,6 +439,30 @@ function AlgorithmVisualizer({
     const sortedStartIndex = typeof explicitSortedIndex === "number"
         ? Math.min(Math.max(explicitSortedIndex, 0), Math.max(values.length - 1, 0))
         : fallbackSortedStart;
+    const normalizedHeapAction = (currentStep?.actionLabel ?? "").trim().toLowerCase();
+    const isHeapComplete = isHeapStep && (normalizedHeapAction === "complete" || currentStep?.heap?.phase === "complete");
+    const displayedHeapArrayValues = useMemo(
+        () => {
+            if (!isHeapStep) {
+                return [] as Array<number | null>;
+            }
+
+            if (values.length === 0) {
+                return [] as Array<number | null>;
+            }
+
+            if (isHeapComplete) {
+                return values.map((value) => value);
+            }
+
+            if (sortedStartIndex < 0 || sortedStartIndex >= values.length) {
+                return values.map(() => null);
+            }
+
+            return values.map((value, index) => (index >= sortedStartIndex ? value : null));
+        },
+        [isHeapComplete, isHeapStep, sortedStartIndex, values],
+    );
     const comparedIndexSet = useMemo(
         () => new Set(currentStep?.heap?.comparedIndices ?? []),
         [currentStep],
@@ -440,6 +488,7 @@ function AlgorithmVisualizer({
     const fallingTargetX = values.length > 0
         ? ((sortedStartIndex + 0.5) / values.length) * 100
         : 50;
+    const fallingTargetY = 86;
     const searchTarget = useMemo(
         () => (typeof searchTargetValue === "number" ? searchTargetValue : getSearchTargetValue(steps)),
         [searchTargetValue, steps],
@@ -709,124 +758,139 @@ function AlgorithmVisualizer({
                             </div>
                         </div>
                     ) : isHeapStep && !isPracticeMode ? (
-                        <div className="flex flex-col gap-4">
-                            <div className="relative rounded-2xl border border-white/10 bg-bg/70 p-4">
-                                <div className="mb-2 flex items-center justify-between text-xs text-text-secondary">
-                                    <span>Heap tree</span>
-                                    <span>
-                                        Boundary: 0 to {heapBoundaryEnd}
-                                    </span>
-                                </div>
+                        <div className="rounded-2xl border border-white/10 bg-bg/70 p-4">
+                            <div className="mb-3 flex items-center justify-between text-xs text-text-secondary">
+                                <span>{isHeapComplete ? "Sorted array" : "Heap tree + array"}</span>
+                                <span>
+                                    {isHeapComplete
+                                        ? "Heap complete"
+                                        : `Boundary: 0 to ${heapBoundaryEnd}`}
+                                </span>
+                            </div>
 
-                                <div className="relative h-64 w-full overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
-                                    <svg className="absolute inset-0 h-full w-full">
-                                        {heapNodes.map((node) => {
-                                            const leftIndex = (2 * node.index) + 1;
-                                            const rightIndex = (2 * node.index) + 2;
-                                            const left = heapNodes.find((candidate) => candidate.index === leftIndex);
-                                            const right = heapNodes.find((candidate) => candidate.index === rightIndex);
+                            <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+                                <div className="relative h-[26rem] w-full">
+                                    {!isHeapComplete ? (
+                                        <>
+                                            <svg className="absolute inset-x-0 top-0 h-[72%] w-full">
+                                                {heapNodes.map((node) => {
+                                                    const leftIndex = (2 * node.index) + 1;
+                                                    const rightIndex = (2 * node.index) + 2;
+                                                    const left = heapNodes.find((candidate) => candidate.index === leftIndex);
+                                                    const right = heapNodes.find((candidate) => candidate.index === rightIndex);
 
-                                            return (
-                                                <g key={`edge-${node.index}`}>
-                                                    {left ? (
-                                                        <line
-                                                            x1={`${node.x}%`}
-                                                            y1={`${node.y}%`}
-                                                            x2={`${left.x}%`}
-                                                            y2={`${left.y}%`}
-                                                            stroke="rgba(255,255,255,0.22)"
-                                                            strokeWidth="1.5"
-                                                        />
-                                                    ) : null}
-                                                    {right ? (
-                                                        <line
-                                                            x1={`${node.x}%`}
-                                                            y1={`${node.y}%`}
-                                                            x2={`${right.x}%`}
-                                                            y2={`${right.y}%`}
-                                                            stroke="rgba(255,255,255,0.22)"
-                                                            strokeWidth="1.5"
-                                                        />
-                                                    ) : null}
-                                                </g>
-                                            );
-                                        })}
-                                    </svg>
+                                                    return (
+                                                        <g key={`edge-${node.index}`}>
+                                                            {left ? (
+                                                                <line
+                                                                    x1={`${node.x}%`}
+                                                                    y1={`${node.y}%`}
+                                                                    x2={`${left.x}%`}
+                                                                    y2={`${left.y}%`}
+                                                                    stroke="rgba(255,255,255,0.34)"
+                                                                    strokeWidth="1.8"
+                                                                    strokeLinecap="round"
+                                                                />
+                                                            ) : null}
+                                                            {right ? (
+                                                                <line
+                                                                    x1={`${node.x}%`}
+                                                                    y1={`${node.y}%`}
+                                                                    x2={`${right.x}%`}
+                                                                    y2={`${right.y}%`}
+                                                                    stroke="rgba(255,255,255,0.34)"
+                                                                    strokeWidth="1.8"
+                                                                    strokeLinecap="round"
+                                                                />
+                                                            ) : null}
+                                                        </g>
+                                                    );
+                                                })}
+                                            </svg>
 
-                                    {heapNodes.map((node) => (
-                                        <motion.div
-                                            key={`heap-node-${node.index}-${node.value}`}
-                                            layout
-                                            transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
-                                            className="absolute -translate-x-1/2 -translate-y-1/2"
-                                            style={{
-                                                left: `${node.x}%`,
-                                                top: `${node.y}%`,
-                                            }}
-                                        >
-                                            <div className={cn(
-                                                "flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold",
-                                                getNodeClassName(node.state),
-                                            )}
-                                            >
-                                                {node.value}
-                                            </div>
-                                            <span className="mt-1 block text-center text-[10px] text-text-secondary">
-                                                i{node.index}
-                                            </span>
-                                        </motion.div>
-                                    ))}
+                                            {heapNodes.map((node) => (
+                                                <motion.div
+                                                    key={`heap-node-${node.index}-${node.value}`}
+                                                    layout
+                                                    transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
+                                                    animate={getNodeAnimate(node.state, Boolean(shouldReduceMotion))}
+                                                    className="absolute -translate-x-1/2 -translate-y-1/2"
+                                                    style={{
+                                                        left: `${node.x}%`,
+                                                        top: `${node.y}%`,
+                                                    }}
+                                                >
+                                                    <div className={cn(
+                                                        "flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold",
+                                                        getNodeClassName(node.state),
+                                                    )}
+                                                    >
+                                                        {node.value}
+                                                    </div>
+                                                    <span className="mt-1 block text-center text-[10px] text-text-secondary">
+                                                        i{node.index}
+                                                    </span>
+                                                </motion.div>
+                                            ))}
+                                        </>
+                                    ) : null}
+
+                                    <div className="absolute inset-x-0 bottom-0 px-3 pb-3">
+                                        <div className="mb-2 flex items-center justify-between text-xs text-text-secondary">
+                                            <span>Array view</span>
+                                            <span>{isHeapComplete ? "Sorted array" : "Sorted region grows from right"}</span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+                                            {displayedHeapArrayValues.map((value, index) => {
+                                                const isSortedCell = value !== null;
+                                                const isComparedCell = comparedIndexSet.has(index) && !isSortedCell;
+                                                const isRootCell = index === 0 && heapBoundaryEnd >= 0 && !isHeapComplete;
+                                                const isLandingCell = showFallingNode && index === sortedStartIndex;
+
+                                                return (
+                                                    <motion.div
+                                                        key={`heap-array-${index}-${value ?? "empty"}-${safeIndex}`}
+                                                        layout
+                                                        transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
+                                                        animate={shouldReduceMotion
+                                                            ? {}
+                                                            : (isLandingCell
+                                                                ? { scale: [0.84, 1.12, 1], y: [3, -2, 0] }
+                                                                : { scale: 1, y: 0 })}
+                                                        className={cn(
+                                                            "rounded-xl border px-2 py-3 text-center",
+                                                            isSortedCell
+                                                                ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-100"
+                                                                : "border-white/10 bg-white/[0.03] text-white/30",
+                                                            isComparedCell && "border-yellow-300/50 bg-yellow-300/15 text-yellow-100",
+                                                            isRootCell && "ring-1 ring-accent/50",
+                                                        )}
+                                                    >
+                                                        <div className="text-sm font-semibold">{value ?? ""}</div>
+                                                        <div className="text-[10px] text-text-secondary">idx {index}</div>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
 
                                     {showFallingNode && fallingValue !== null ? (
                                         <motion.div
                                             key={`fall-node-${currentStep?.stepNumber ?? safeIndex}`}
-                                            className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
-                                            style={{ left: `${fallingFromX}%`, top: "14%" }}
-                                            initial={{ left: `${fallingFromX}%`, top: "14%", opacity: 1, scale: 1 }}
-                                            animate={{ left: `${fallingTargetX}%`, top: "88%", opacity: 0.15, scale: 0.95 }}
+                                            className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2"
+                                            style={{ left: `${fallingFromX}%`, top: "22%" }}
+                                            initial={{ left: `${fallingFromX}%`, top: "22%", opacity: 1, scale: 1 }}
+                                            animate={{ left: `${fallingTargetX}%`, top: `${fallingTargetY}%`, opacity: 1, scale: [1, 1, 0.92] }}
                                             transition={shouldReduceMotion
                                                 ? { duration: 0 }
-                                                : { duration: 0.6, ease: "easeIn" }}
+                                                : { duration: 0.68, ease: "easeInOut" }}
                                         >
                                             <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-300/70 bg-emerald-400/25 text-sm font-semibold text-emerald-50 shadow-[0_0_18px_rgba(52,211,153,0.35)]">
                                                 {fallingValue}
                                             </div>
                                         </motion.div>
                                     ) : null}
-                                </div>
-                            </div>
-
-                            <div className="rounded-2xl border border-white/10 bg-bg/70 p-4">
-                                <div className="mb-2 flex items-center justify-between text-xs text-text-secondary">
-                                    <span>Array view</span>
-                                    <span>Sorted region grows from right</span>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
-                                    {values.map((value, index) => {
-                                        const isSortedCell = index >= sortedStartIndex && sortedStartIndex >= 0;
-                                        const isComparedCell = comparedIndexSet.has(index);
-                                        const isRootCell = index === 0 && heapBoundaryEnd >= 0;
-
-                                        return (
-                                            <motion.div
-                                                key={`heap-array-${index}-${value}-${safeIndex}`}
-                                                layout
-                                                transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
-                                                className={cn(
-                                                    "rounded-xl border px-2 py-3 text-center",
-                                                    isSortedCell
-                                                        ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-100"
-                                                        : "border-white/10 bg-white/[0.03] text-white",
-                                                    isComparedCell && "border-yellow-300/50 bg-yellow-300/15 text-yellow-100",
-                                                    isRootCell && "ring-1 ring-accent/50",
-                                                )}
-                                            >
-                                                <div className="text-sm font-semibold">{value}</div>
-                                                <div className="text-[10px] text-text-secondary">idx {index}</div>
-                                            </motion.div>
-                                        );
-                                    })}
                                 </div>
                             </div>
                         </div>
