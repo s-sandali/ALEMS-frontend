@@ -54,6 +54,14 @@ type HeapIdentityNode = {
     value: number;
 };
 
+type HeapVisualEdge = {
+    id: string;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+};
+
 const layoutTransition = {
     type: "spring" as const,
     stiffness: 360,
@@ -350,6 +358,38 @@ function buildHeapVisualNodes(
     return nodes;
 }
 
+function buildHeapVisualEdges(nodes: HeapVisualNode[]): HeapVisualEdge[] {
+    const byIndex = new Map(nodes.map((node) => [node.index, node]));
+    const edges: HeapVisualEdge[] = [];
+
+    nodes.forEach((node) => {
+        const left = byIndex.get((2 * node.index) + 1);
+        const right = byIndex.get((2 * node.index) + 2);
+
+        if (left) {
+            edges.push({
+                id: `${node.id}->${left.id}`,
+                x1: node.x,
+                y1: node.y,
+                x2: left.x,
+                y2: left.y,
+            });
+        }
+
+        if (right) {
+            edges.push({
+                id: `${node.id}->${right.id}`,
+                x1: node.x,
+                y1: node.y,
+                x2: right.x,
+                y2: right.y,
+            });
+        }
+    });
+
+    return edges;
+}
+
 function getNodeClassName(state: HeapNodeState) {
     if (state === "comparing") {
         return "border-yellow-300/70 bg-yellow-300/20 text-yellow-50";
@@ -376,7 +416,7 @@ function getNodeAnimate(state: HeapNodeState, shouldReduceMotion: boolean) {
     }
 
     if (state === "active") {
-        return { scale: [1, 1.06, 1], y: [0, -2, 0] };
+        return { scale: [1, 1.06, 1] };
     }
 
     if (state === "comparing") {
@@ -384,14 +424,14 @@ function getNodeAnimate(state: HeapNodeState, shouldReduceMotion: boolean) {
     }
 
     if (state === "swapping") {
-        return { y: [0, -5, 0], scale: [1, 1.06, 1] };
+        return { scale: [1, 1.08, 1] };
     }
 
     if (state === "removing") {
-        return { scale: [1, 1.08, 1], y: [0, -3, 0] };
+        return { scale: [1, 1.08, 1] };
     }
 
-    return { scale: 1, y: 0, x: 0 };
+    return { scale: 1 };
 }
 
 function buildTrajectoryPath(startX: number, startY: number, endX: number, endY: number) {
@@ -561,6 +601,10 @@ function AlgorithmVisualizer({
         () => new Map(heapNodes.map((node) => [node.index, node])),
         [heapNodes],
     );
+    const heapEdges = useMemo(
+        () => buildHeapVisualEdges(heapNodes),
+        [heapNodes],
+    );
     const heapBoundaryEnd = useMemo(
         () => (isHeapStep
             ? Math.min(Math.max(currentStep?.heap?.heapBoundaryEnd ?? -1, -1), Math.max(values.length - 1, -1))
@@ -595,10 +639,6 @@ function AlgorithmVisualizer({
             return values.map((value, index) => (index >= sortedStartIndex ? value : null));
         },
         [isHeapComplete, isHeapStep, sortedStartIndex, values],
-    );
-    const comparedIndexSet = useMemo(
-        () => new Set(currentStep?.heap?.comparedIndices ?? []),
-        [currentStep],
     );
     const showFallingNode = Boolean(
         isHeapStep
@@ -933,7 +973,7 @@ function AlgorithmVisualizer({
                             </div>
                         </div>
                     ) : isHeapStep && !isPracticeMode ? (
-                        <div className="rounded-2xl border border-white/10 bg-bg/70 p-4">
+                        <div>
                             <div className="mb-3 flex items-center justify-between text-xs text-text-secondary">
                                 <span>{isHeapComplete ? "Sorted array" : "Heap tree + array"}</span>
                                 <span>
@@ -948,39 +988,29 @@ function AlgorithmVisualizer({
                                     {!isHeapComplete ? (
                                         <>
                                             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                                {heapNodes.map((node) => {
-                                                    const leftIndex = (2 * node.index) + 1;
-                                                    const rightIndex = (2 * node.index) + 2;
-                                                    const left = heapNodeByIndex.get(leftIndex);
-                                                    const right = heapNodeByIndex.get(rightIndex);
-
-                                                    return (
-                                                        <g key={`edge-${node.index}`}>
-                                                            {left ? (
-                                                                <line
-                                                                    x1={node.x}
-                                                                    y1={node.y}
-                                                                    x2={left.x}
-                                                                    y2={left.y}
-                                                                    stroke="rgba(255,255,255,0.34)"
-                                                                    strokeWidth="1.1"
-                                                                    strokeLinecap="round"
-                                                                />
-                                                            ) : null}
-                                                            {right ? (
-                                                                <line
-                                                                    x1={node.x}
-                                                                    y1={node.y}
-                                                                    x2={right.x}
-                                                                    y2={right.y}
-                                                                    stroke="rgba(255,255,255,0.34)"
-                                                                    strokeWidth="1.1"
-                                                                    strokeLinecap="round"
-                                                                />
-                                                            ) : null}
-                                                        </g>
-                                                    );
-                                                })}
+                                                {heapEdges.map((edge) => (
+                                                    <motion.line
+                                                        key={edge.id}
+                                                        initial={false}
+                                                        animate={{
+                                                            x1: edge.x1,
+                                                            y1: edge.y1,
+                                                            x2: edge.x2,
+                                                            y2: edge.y2,
+                                                        }}
+                                                        transition={shouldReduceMotion
+                                                            ? reducedMotionTransition
+                                                            : {
+                                                                x1: { ...layoutTransition },
+                                                                y1: { ...layoutTransition },
+                                                                x2: { ...layoutTransition },
+                                                                y2: { ...layoutTransition },
+                                                            }}
+                                                        stroke="rgba(255,255,255,0.34)"
+                                                        strokeWidth="1.1"
+                                                        strokeLinecap="round"
+                                                    />
+                                                ))}
                                             </svg>
 
                                             {heapNodes.map((node) => {
@@ -1045,8 +1075,6 @@ function AlgorithmVisualizer({
                                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
                                             {displayedHeapArrayValues.map((value, index) => {
                                                 const isSortedCell = value !== null;
-                                                const isComparedCell = comparedIndexSet.has(index) && !isSortedCell;
-                                                const isRootCell = index === 0 && heapBoundaryEnd >= 0 && !isHeapComplete;
                                                 const isLandingCell = showFallingNode && index === sortedStartIndex;
 
                                                 return (
@@ -1067,8 +1095,6 @@ function AlgorithmVisualizer({
                                                             isSortedCell
                                                                 ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-100"
                                                                 : "border-white/10 bg-white/[0.03] text-white/30",
-                                                            isComparedCell && "border-yellow-300/50 bg-yellow-300/15 text-yellow-100",
-                                                            isRootCell && "ring-1 ring-accent/50",
                                                         )}
                                                     >
                                                         <div className="text-sm font-semibold">{value ?? ""}</div>
