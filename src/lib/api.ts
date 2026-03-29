@@ -18,6 +18,20 @@ export type AlgorithmSimulationStep = {
     lineNumber: number;
     actionLabel: string;
     search?: SearchStepModel | null;
+    heap?: HeapStepModel | null;
+};
+
+export type HeapStepModel = {
+    phase: string;
+    heapBoundaryEnd: number;
+    heapIndex?: number | null;
+    parentIndex?: number | null;
+    leftChildIndex?: number | null;
+    rightChildIndex?: number | null;
+    comparedParentIndex?: number | null;
+    comparedChildIndex?: number | null;
+    comparedIndices?: number[];
+    parentChildComparison?: string | null;
 };
 
 export type SearchStepModel = {
