@@ -339,6 +339,13 @@ function getNodeAnimate(state: HeapNodeState, shouldReduceMotion: boolean) {
     return { scale: 1, y: 0, x: 0 };
 }
 
+function buildTrajectoryPath(startX: number, startY: number, endX: number, endY: number) {
+    const controlX = (startX + endX) / 2 + ((endX - startX) * 0.18);
+    const controlY = ((startY + endY) / 2) - 14;
+
+    return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
+}
+
 function AlgorithmVisualizer({
     steps,
     currentStepIndex,
@@ -428,6 +435,10 @@ function AlgorithmVisualizer({
         () => buildHeapVisualNodes(currentStep),
         [currentStep],
     );
+    const heapNodeByIndex = useMemo(
+        () => new Map(heapNodes.map((node) => [node.index, node])),
+        [heapNodes],
+    );
     const heapBoundaryEnd = useMemo(
         () => (isHeapStep
             ? Math.min(Math.max(currentStep?.heap?.heapBoundaryEnd ?? -1, -1), Math.max(values.length - 1, -1))
@@ -481,14 +492,21 @@ function AlgorithmVisualizer({
             : values[sortedStartIndex])
         : null;
     const rootNodeX = heapNodes.find((node) => node.index === 0)?.x ?? 50;
+    const rootNodeY = heapNodes.find((node) => node.index === 0)?.y ?? 10;
     const explicitFromIndex = currentStep?.heap?.extractedFromIndex;
-    const fallingFromX = typeof explicitFromIndex === "number" && values.length > 0
-        ? ((Math.min(Math.max(explicitFromIndex, 0), values.length - 1) + 0.5) / values.length) * 100
-        : rootNodeX;
+    const fallingFromNode = typeof explicitFromIndex === "number"
+        ? heapNodeByIndex.get(Math.min(Math.max(explicitFromIndex, 0), values.length - 1))
+        : null;
+    const fallingFromX = fallingFromNode?.x ?? rootNodeX;
+    const fallingFromY = fallingFromNode?.y ?? rootNodeY;
     const fallingTargetX = values.length > 0
-        ? ((sortedStartIndex + 0.5) / values.length) * 100
+        ? 6 + (((sortedStartIndex + 0.5) / values.length) * 88)
         : 50;
-    const fallingTargetY = 86;
+    const fallingTargetY = 87;
+    const fallingTrajectoryPath = useMemo(
+        () => buildTrajectoryPath(fallingFromX, fallingFromY, fallingTargetX, fallingTargetY),
+        [fallingFromX, fallingFromY, fallingTargetX, fallingTargetY],
+    );
     const searchTarget = useMemo(
         () => (typeof searchTargetValue === "number" ? searchTargetValue : getSearchTargetValue(steps)),
         [searchTargetValue, steps],
@@ -769,24 +787,24 @@ function AlgorithmVisualizer({
                             </div>
 
                             <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
-                                <div className="relative h-[26rem] w-full">
+                                <div className="relative h-[30rem] w-full">
                                     {!isHeapComplete ? (
                                         <>
-                                            <svg className="absolute inset-x-0 top-0 h-[72%] w-full">
+                                            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                                                 {heapNodes.map((node) => {
                                                     const leftIndex = (2 * node.index) + 1;
                                                     const rightIndex = (2 * node.index) + 2;
-                                                    const left = heapNodes.find((candidate) => candidate.index === leftIndex);
-                                                    const right = heapNodes.find((candidate) => candidate.index === rightIndex);
+                                                    const left = heapNodeByIndex.get(leftIndex);
+                                                    const right = heapNodeByIndex.get(rightIndex);
 
                                                     return (
                                                         <g key={`edge-${node.index}`}>
                                                             {left ? (
                                                                 <line
-                                                                    x1={`${node.x}%`}
-                                                                    y1={`${node.y}%`}
-                                                                    x2={`${left.x}%`}
-                                                                    y2={`${left.y}%`}
+                                                                    x1={node.x}
+                                                                    y1={node.y}
+                                                                    x2={left.x}
+                                                                    y2={left.y}
                                                                     stroke="rgba(255,255,255,0.34)"
                                                                     strokeWidth="1.8"
                                                                     strokeLinecap="round"
@@ -794,10 +812,10 @@ function AlgorithmVisualizer({
                                                             ) : null}
                                                             {right ? (
                                                                 <line
-                                                                    x1={`${node.x}%`}
-                                                                    y1={`${node.y}%`}
-                                                                    x2={`${right.x}%`}
-                                                                    y2={`${right.y}%`}
+                                                                    x1={node.x}
+                                                                    y1={node.y}
+                                                                    x2={right.x}
+                                                                    y2={right.y}
                                                                     stroke="rgba(255,255,255,0.34)"
                                                                     strokeWidth="1.8"
                                                                     strokeLinecap="round"
@@ -876,20 +894,37 @@ function AlgorithmVisualizer({
                                     </div>
 
                                     {showFallingNode && fallingValue !== null ? (
-                                        <motion.div
-                                            key={`fall-node-${currentStep?.stepNumber ?? safeIndex}`}
-                                            className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2"
-                                            style={{ left: `${fallingFromX}%`, top: "22%" }}
-                                            initial={{ left: `${fallingFromX}%`, top: "22%", opacity: 1, scale: 1 }}
-                                            animate={{ left: `${fallingTargetX}%`, top: `${fallingTargetY}%`, opacity: 1, scale: [1, 1, 0.92] }}
-                                            transition={shouldReduceMotion
-                                                ? { duration: 0 }
-                                                : { duration: 0.68, ease: "easeInOut" }}
-                                        >
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-300/70 bg-emerald-400/25 text-sm font-semibold text-emerald-50 shadow-[0_0_18px_rgba(52,211,153,0.35)]">
-                                                {fallingValue}
-                                            </div>
-                                        </motion.div>
+                                        <>
+                                            <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                                <motion.path
+                                                    d={fallingTrajectoryPath}
+                                                    fill="none"
+                                                    stroke="rgba(52,211,153,0.6)"
+                                                    strokeWidth="0.8"
+                                                    strokeDasharray="2.2 1.6"
+                                                    initial={{ pathLength: 0, opacity: 0 }}
+                                                    animate={{ pathLength: 1, opacity: 1 }}
+                                                    transition={shouldReduceMotion
+                                                        ? { duration: 0 }
+                                                        : { duration: 0.5, ease: "easeOut" }}
+                                                />
+                                            </svg>
+
+                                            <motion.div
+                                                key={`fall-node-${currentStep?.stepNumber ?? safeIndex}`}
+                                                className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2"
+                                                style={{ left: `${fallingFromX}%`, top: `${fallingFromY}%` }}
+                                                initial={{ left: `${fallingFromX}%`, top: `${fallingFromY}%`, opacity: 1, scale: 1 }}
+                                                animate={{ left: `${fallingTargetX}%`, top: `${fallingTargetY}%`, opacity: [1, 1, 0], scale: [1, 1.03, 0.7] }}
+                                                transition={shouldReduceMotion
+                                                    ? { duration: 0 }
+                                                    : { duration: 0.68, ease: "easeInOut" }}
+                                            >
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-300/80 bg-emerald-400/30 text-sm font-semibold text-emerald-50 shadow-[0_0_20px_rgba(52,211,153,0.38)]">
+                                                    {fallingValue}
+                                                </div>
+                                            </motion.div>
+                                        </>
                                     ) : null}
                                 </div>
                             </div>
