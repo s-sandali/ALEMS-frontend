@@ -100,8 +100,8 @@ function ComplexityChartCard({
                 </p>
             </div>
 
-            <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[300px] w-full min-w-0 min-h-[260px]">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={260}>
                     <LineChart data={data} margin={{ top: 8, right: 12, left: -20, bottom: 8 }}>
                         <CartesianGrid stroke={colors.border} strokeDasharray="3 3" />
                         <XAxis
