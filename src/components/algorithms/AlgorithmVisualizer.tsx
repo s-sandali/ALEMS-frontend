@@ -227,6 +227,15 @@ function getSortedIndices(step: AlgorithmSimulationStep | undefined, totalValues
     return new Set<number>();
 }
 
+function formatHeapComparison(step: AlgorithmSimulationStep | undefined) {
+    const compared = step?.heap?.comparedIndices;
+    if (!compared || compared.length < 2) {
+        return "--";
+    }
+
+    return `${compared[0]} vs ${compared[1]}`;
+}
+
 function AlgorithmVisualizer({
     steps,
     currentStepIndex,
@@ -306,6 +315,11 @@ function AlgorithmVisualizer({
     const displayActionLabel = isPracticeMode
         ? practiceTone.actionLabel
         : (currentStep?.search?.state ?? currentStep?.actionLabel ?? "Waiting for steps");
+    const heapStepMeta = currentStep?.heap ?? null;
+    const heapComparison = useMemo(
+        () => formatHeapComparison(currentStep),
+        [currentStep],
+    );
     const searchTarget = useMemo(
         () => (typeof searchTargetValue === "number" ? searchTargetValue : getSearchTargetValue(steps)),
         [searchTargetValue, steps],
@@ -438,6 +452,23 @@ function AlgorithmVisualizer({
                             {values.length > 0 ? tone.emphasisLabel : "No active step"}
                         </span>
                     </div>
+
+                    {heapStepMeta ? (
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                            <span>
+                                Phase: <span className="text-text-primary">{formatActionLabel(heapStepMeta.phase || "--")}</span>
+                            </span>
+                            <span>
+                                Heap Boundary: <span className="text-text-primary">0 to {heapStepMeta.heapBoundaryEnd}</span>
+                            </span>
+                            <span>
+                                Heap Index: <span className="text-text-primary">{heapStepMeta.heapIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Parent/Child: <span className="text-text-primary">{heapComparison}</span>
+                            </span>
+                        </div>
+                    ) : null}
 
                     {isPracticeMode && hintMessage ? (
                         <div className="mb-4 rounded-2xl border border-sky-400/10 bg-sky-400/5 px-4 py-3 text-sm text-sky-50">
