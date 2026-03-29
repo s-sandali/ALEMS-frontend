@@ -39,11 +39,19 @@ type VisualBar = {
 type HeapNodeState = "normal" | "active" | "comparing" | "swapping" | "removing";
 
 type HeapVisualNode = {
+    id: string;
     index: number;
     value: number;
     x: number;
     y: number;
     state: HeapNodeState;
+    incomingToRoot: boolean;
+};
+
+type HeapIdentityNode = {
+    id: string;
+    index: number;
+    value: number;
 };
 
 const layoutTransition = {
@@ -64,6 +72,14 @@ const activeBarTransition: Transition = {
 
 function getStepTone(step: AlgorithmSimulationStep | undefined) {
     const action = (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
+
+    if (action.includes("compare")) {
+        return {
+            badgeClassName: "border-yellow-300/35 bg-yellow-300/10 text-yellow-100",
+            activeBarClassName: "from-yellow-300 to-yellow-400 shadow-[0_0_18px_rgba(250,204,21,0.3)]",
+            emphasisLabel: "Comparing",
+        };
+    }
 
     if (action.includes("sorted") || action.includes("complete")) {
         return {
@@ -251,14 +267,41 @@ function getHeapNodePosition(index: number) {
     const nodesBeforeLevel = (2 ** level) - 1;
     const indexInLevel = index - nodesBeforeLevel;
     const slotsInLevel = 2 ** level;
+    const horizontalPadding = 8;
+    const usableWidth = 100 - (horizontalPadding * 2);
 
     return {
-        x: 6 + (((indexInLevel + 0.5) / slotsInLevel) * 88),
-        y: 10 + level * 16,
+        x: horizontalPadding + (((indexInLevel + 0.5) / slotsInLevel) * usableWidth),
+        y: 12 + level * 17,
     };
 }
 
-function buildHeapVisualNodes(step: AlgorithmSimulationStep | undefined): HeapVisualNode[] {
+function reconcileHeapIdentityNodes(previousNodes: HeapIdentityNode[], nextValues: number[], createId: () => string) {
+    const availableByValue = new Map<number, HeapIdentityNode[]>();
+
+    previousNodes.forEach((node) => {
+        const queue = availableByValue.get(node.value) ?? [];
+        queue.push(node);
+        availableByValue.set(node.value, queue);
+    });
+
+    return nextValues.map((value, index) => {
+        const queue = availableByValue.get(value);
+        const reused = queue?.shift();
+
+        return {
+            id: reused?.id ?? createId(),
+            index,
+            value,
+        };
+    });
+}
+
+function buildHeapVisualNodes(
+    step: AlgorithmSimulationStep | undefined,
+    idsByIndex: Map<number, string>,
+    incomingRootNodeId: string | null,
+): HeapVisualNode[] {
     if (!step?.heap || !Array.isArray(step.arrayState)) {
         return [];
     }
@@ -272,23 +315,35 @@ function buildHeapVisualNodes(step: AlgorithmSimulationStep | undefined): HeapVi
     for (let index = 0; index <= boundaryEnd; index += 1) {
         const pos = getHeapNodePosition(index);
         let state: HeapNodeState = "normal";
+        const nodeId = idsByIndex.get(index) ?? `heap-fallback-${index}-${values[index]}`;
 
-        if (action.includes("swap") && compared.has(index)) {
-            state = "swapping";
-        } else if (compared.has(index)) {
+        if (compared.has(index)) {
+            state = action.includes("swap") ? "swapping" : "comparing";
+        } else if (index === 0 && !action.includes("complete")) {
+            // Keep root emphasis only when not explicitly in compare/swap state.
+            state = "active";
+        }
+
+        if (index === 0 && action.includes("swap") && !compared.has(index)) {
+            // Extraction root action keeps a clear removed/root emphasis.
+            state = "removing";
+        } else if (index === 0 && action.includes("extract") && !compared.has(index)) {
+            state = "active";
+        }
+
+        if (compared.has(index) && action.includes("compare")) {
+            // Ensure a single consistent compare color for all compare operations.
             state = "comparing";
         }
 
-        if (index === 0 && (action.includes("extract") || action.includes("swap"))) {
-            state = action.includes("swap") ? "removing" : "active";
-        }
-
         nodes.push({
+            id: nodeId,
             index,
             value: values[index],
             x: pos.x,
             y: pos.y,
             state,
+            incomingToRoot: incomingRootNodeId === nodeId,
         });
     }
 
@@ -329,7 +384,7 @@ function getNodeAnimate(state: HeapNodeState, shouldReduceMotion: boolean) {
     }
 
     if (state === "swapping") {
-        return { x: [0, -2, 2, -1, 1, 0], scale: [1, 1.03, 1] };
+        return { y: [0, -5, 0], scale: [1, 1.06, 1] };
     }
 
     if (state === "removing") {
@@ -340,8 +395,13 @@ function getNodeAnimate(state: HeapNodeState, shouldReduceMotion: boolean) {
 }
 
 function buildTrajectoryPath(startX: number, startY: number, endX: number, endY: number) {
-    const controlX = (startX + endX) / 2 + ((endX - startX) * 0.18);
-    const controlY = ((startY + endY) / 2) - 14;
+    const deltaX = endX - startX;
+    const direction = deltaX >= 0 ? 1 : -1;
+    const horizontalSpan = Math.abs(deltaX);
+
+    // Keep control point between start/end to avoid overshooting far right/left.
+    const controlX = startX + (deltaX * 0.58) - (direction * Math.min(3.5, horizontalSpan * 0.06));
+    const controlY = ((startY + endY) / 2) - Math.min(11, 5 + horizontalSpan * 0.06);
 
     return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
 }
@@ -368,6 +428,8 @@ function AlgorithmVisualizer({
 }: AlgorithmVisualizerProps) {
     const shouldReduceMotion = useReducedMotion();
     const nextBarIdRef = useRef(0);
+    const heapStageRef = useRef<HTMLDivElement | null>(null);
+    const heapArrayCellRefs = useRef<Array<HTMLDivElement | null>>([]);
 
     const safeIndex = steps.length === 0
         ? 0
@@ -431,9 +493,69 @@ function AlgorithmVisualizer({
         [currentStep],
     );
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
+    const heapIdentityData = useMemo(() => {
+        if (!isHeapStep || steps.length === 0) {
+            return {
+                idsByIndex: new Map<number, string>(),
+                incomingRootNodeId: null as string | null,
+            };
+        }
+
+        let nextId = 0;
+        const createId = () => `heap-entity-${nextId++}`;
+
+        let previousResolvedNodes: HeapIdentityNode[] = [];
+        let resolvedBeforeCurrent: HeapIdentityNode[] = [];
+        let resolvedAtCurrent: HeapIdentityNode[] = [];
+
+        for (let stepIndex = 0; stepIndex <= safeIndex && stepIndex < steps.length; stepIndex += 1) {
+            const step = steps[stepIndex];
+            if (!step?.heap || !Array.isArray(step.arrayState)) {
+                continue;
+            }
+
+            const boundaryEnd = Math.min(
+                Math.max(step.heap.heapBoundaryEnd ?? -1, -1),
+                step.arrayState.length - 1,
+            );
+            const inHeapValues = boundaryEnd >= 0
+                ? step.arrayState.slice(0, boundaryEnd + 1)
+                : [];
+
+            const resolvedNodes = reconcileHeapIdentityNodes(previousResolvedNodes, inHeapValues, createId);
+
+            if (stepIndex === safeIndex) {
+                resolvedBeforeCurrent = previousResolvedNodes;
+                resolvedAtCurrent = resolvedNodes;
+            }
+
+            previousResolvedNodes = resolvedNodes;
+        }
+
+        const idsByIndex = new Map<number, string>(
+            resolvedAtCurrent.map((node) => [node.index, node.id]),
+        );
+        const previousIndexById = new Map<string, number>(
+            resolvedBeforeCurrent.map((node) => [node.id, node.index]),
+        );
+
+        let incomingRootNodeId: string | null = null;
+        const rootNode = resolvedAtCurrent.find((node) => node.index === 0);
+        if (rootNode) {
+            const previousIndex = previousIndexById.get(rootNode.id);
+            if (typeof previousIndex === "number" && previousIndex > 0) {
+                incomingRootNodeId = rootNode.id;
+            }
+        }
+
+        return {
+            idsByIndex,
+            incomingRootNodeId,
+        };
+    }, [isHeapStep, safeIndex, steps]);
     const heapNodes = useMemo(
-        () => buildHeapVisualNodes(currentStep),
-        [currentStep],
+        () => buildHeapVisualNodes(currentStep, heapIdentityData.idsByIndex, heapIdentityData.incomingRootNodeId),
+        [currentStep, heapIdentityData.idsByIndex, heapIdentityData.incomingRootNodeId],
     );
     const heapNodeByIndex = useMemo(
         () => new Map(heapNodes.map((node) => [node.index, node])),
@@ -499,14 +621,45 @@ function AlgorithmVisualizer({
         : null;
     const fallingFromX = fallingFromNode?.x ?? rootNodeX;
     const fallingFromY = fallingFromNode?.y ?? rootNodeY;
-    const fallingTargetX = values.length > 0
+    const [measuredLandingTarget, setMeasuredLandingTarget] = useState<{ x: number; y: number } | null>(null);
+    const fallbackFallingTargetX = values.length > 0
         ? 6 + (((sortedStartIndex + 0.5) / values.length) * 88)
         : 50;
-    const fallingTargetY = 87;
+    const fallbackFallingTargetY = 87;
+    const fallingTargetX = measuredLandingTarget?.x ?? fallbackFallingTargetX;
+    const fallingTargetY = measuredLandingTarget?.y ?? fallbackFallingTargetY;
     const fallingTrajectoryPath = useMemo(
         () => buildTrajectoryPath(fallingFromX, fallingFromY, fallingTargetX, fallingTargetY),
         [fallingFromX, fallingFromY, fallingTargetX, fallingTargetY],
     );
+
+    useLayoutEffect(() => {
+        if (!isHeapStep || !showFallingNode) {
+            setMeasuredLandingTarget(null);
+            return;
+        }
+
+        const stage = heapStageRef.current;
+        const targetCell = heapArrayCellRefs.current[sortedStartIndex] ?? null;
+
+        if (!stage || !targetCell) {
+            setMeasuredLandingTarget(null);
+            return;
+        }
+
+        const stageRect = stage.getBoundingClientRect();
+        const targetRect = targetCell.getBoundingClientRect();
+
+        if (stageRect.width <= 0 || stageRect.height <= 0) {
+            setMeasuredLandingTarget(null);
+            return;
+        }
+
+        const x = ((targetRect.left + (targetRect.width / 2) - stageRect.left) / stageRect.width) * 100;
+        const y = ((targetRect.top + (targetRect.height / 2) - stageRect.top) / stageRect.height) * 100;
+
+        setMeasuredLandingTarget({ x, y });
+    }, [isHeapStep, showFallingNode, sortedStartIndex, safeIndex]);
     const searchTarget = useMemo(
         () => (typeof searchTargetValue === "number" ? searchTargetValue : getSearchTargetValue(steps)),
         [searchTargetValue, steps],
@@ -602,12 +755,12 @@ function AlgorithmVisualizer({
                     </div>
 
                     <div className="flex flex-wrap gap-2 text-xs text-text-secondary">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-accent to-accent/70" />
-                            Comparing
-                        </span>
                         {algorithmType === "search" ? (
                             <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    Comparing
+                                </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-slate-400 to-slate-500" />
                                     Discarded
@@ -642,6 +795,10 @@ function AlgorithmVisualizer({
                             </>
                         ) : (
                             <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    Comparing
+                                </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
                                     Swapped
@@ -787,7 +944,7 @@ function AlgorithmVisualizer({
                             </div>
 
                             <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
-                                <div className="relative h-[30rem] w-full">
+                                <div ref={heapStageRef} className="relative h-[30rem] w-full">
                                     {!isHeapComplete ? (
                                         <>
                                             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -806,7 +963,7 @@ function AlgorithmVisualizer({
                                                                     x2={left.x}
                                                                     y2={left.y}
                                                                     stroke="rgba(255,255,255,0.34)"
-                                                                    strokeWidth="1.8"
+                                                                    strokeWidth="1.1"
                                                                     strokeLinecap="round"
                                                                 />
                                                             ) : null}
@@ -817,7 +974,7 @@ function AlgorithmVisualizer({
                                                                     x2={right.x}
                                                                     y2={right.y}
                                                                     stroke="rgba(255,255,255,0.34)"
-                                                                    strokeWidth="1.8"
+                                                                    strokeWidth="1.1"
                                                                     strokeLinecap="round"
                                                                 />
                                                             ) : null}
@@ -826,30 +983,56 @@ function AlgorithmVisualizer({
                                                 })}
                                             </svg>
 
-                                            {heapNodes.map((node) => (
-                                                <motion.div
-                                                    key={`heap-node-${node.index}-${node.value}`}
-                                                    layout
-                                                    transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
-                                                    animate={getNodeAnimate(node.state, Boolean(shouldReduceMotion))}
-                                                    className="absolute -translate-x-1/2 -translate-y-1/2"
-                                                    style={{
-                                                        left: `${node.x}%`,
-                                                        top: `${node.y}%`,
-                                                    }}
-                                                >
-                                                    <div className={cn(
-                                                        "flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold",
-                                                        getNodeClassName(node.state),
-                                                    )}
+                                            {heapNodes.map((node) => {
+                                                const nodeMotion = getNodeAnimate(node.state, false);
+
+                                                return (
+                                                    <motion.div
+                                                        key={node.id}
+                                                        initial={false}
+                                                        transition={shouldReduceMotion
+                                                            ? reducedMotionTransition
+                                                            : {
+                                                                left: { ...layoutTransition },
+                                                                top: { ...layoutTransition },
+                                                                scale: { duration: node.incomingToRoot ? 0.44 : 0.28, ease: "easeOut" },
+                                                                x: { duration: 0.34, ease: "easeInOut" },
+                                                                y: { duration: 0.34, ease: "easeInOut" },
+                                                                boxShadow: { duration: 0.34, ease: "easeOut" },
+                                                            }}
+                                                        animate={shouldReduceMotion
+                                                            ? { left: `${node.x}%`, top: `${node.y}%`, scale: 1, x: 0, y: 0 }
+                                                            : {
+                                                                left: `${node.x}%`,
+                                                                top: `${node.y}%`,
+                                                                ...nodeMotion,
+                                                                scale: node.incomingToRoot ? [1, 1.16, 1] : nodeMotion.scale,
+                                                                boxShadow: node.incomingToRoot
+                                                                    ? [
+                                                                        "0 0 0 rgba(56,189,248,0)",
+                                                                        "0 0 24px rgba(56,189,248,0.45)",
+                                                                        "0 0 10px rgba(56,189,248,0.22)",
+                                                                    ]
+                                                                    : "0 0 0 rgba(0,0,0,0)",
+                                                            }}
+                                                        className="absolute -translate-x-1/2 -translate-y-1/2"
                                                     >
-                                                        {node.value}
-                                                    </div>
-                                                    <span className="mt-1 block text-center text-[10px] text-text-secondary">
-                                                        i{node.index}
-                                                    </span>
-                                                </motion.div>
-                                            ))}
+                                                        <div className="relative">
+                                                            <div className={cn(
+                                                                "flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold",
+                                                                getNodeClassName(node.state),
+                                                                node.incomingToRoot && "ring-2 ring-sky-300/70 shadow-[0_0_24px_rgba(56,189,248,0.35)]",
+                                                            )}
+                                                            >
+                                                                {node.value}
+                                                            </div>
+                                                            <span className="pointer-events-none absolute left-1/2 top-full -translate-x-1/2 pt-1 text-[10px] text-text-secondary">
+                                                                i{node.index}
+                                                            </span>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })}
                                         </>
                                     ) : null}
 
@@ -869,6 +1052,9 @@ function AlgorithmVisualizer({
                                                 return (
                                                     <motion.div
                                                         key={`heap-array-${index}-${value ?? "empty"}-${safeIndex}`}
+                                                        ref={(element) => {
+                                                            heapArrayCellRefs.current[index] = element;
+                                                        }}
                                                         layout
                                                         transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
                                                         animate={shouldReduceMotion
