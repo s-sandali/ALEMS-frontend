@@ -62,6 +62,9 @@ type HeapVisualEdge = {
     y2: number;
 };
 
+const HEAP_NODE_RADIUS_PX = 22;
+const FALLING_NODE_RADIUS_PX = 20;
+
 const layoutTransition = {
     type: "spring" as const,
     stiffness: 360,
@@ -1045,7 +1048,11 @@ function AlgorithmVisualizer({
                                                                     ]
                                                                     : "0 0 0 rgba(0,0,0,0)",
                                                             }}
-                                                        className="absolute -translate-x-1/2 -translate-y-1/2"
+                                                        className="absolute"
+                                                        style={{
+                                                            marginLeft: -HEAP_NODE_RADIUS_PX,
+                                                            marginTop: -HEAP_NODE_RADIUS_PX,
+                                                        }}
                                                     >
                                                         <div className="relative">
                                                             <div className={cn(
@@ -1124,8 +1131,13 @@ function AlgorithmVisualizer({
 
                                             <motion.div
                                                 key={`fall-node-${currentStep?.stepNumber ?? safeIndex}`}
-                                                className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2"
-                                                style={{ left: `${fallingFromX}%`, top: `${fallingFromY}%` }}
+                                                className="pointer-events-none absolute z-30"
+                                                style={{
+                                                    left: `${fallingFromX}%`,
+                                                    top: `${fallingFromY}%`,
+                                                    marginLeft: -FALLING_NODE_RADIUS_PX,
+                                                    marginTop: -FALLING_NODE_RADIUS_PX,
+                                                }}
                                                 initial={{ left: `${fallingFromX}%`, top: `${fallingFromY}%`, opacity: 1, scale: 1 }}
                                                 animate={{ left: `${fallingTargetX}%`, top: `${fallingTargetY}%`, opacity: [1, 1, 0], scale: [1, 1.03, 0.7] }}
                                                 transition={shouldReduceMotion
