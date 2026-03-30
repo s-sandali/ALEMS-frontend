@@ -310,23 +310,43 @@ function reconcileHeapIdentityNodes(previousNodes: HeapIdentityNode[], nextValue
 
 function buildHeapVisualNodes(
     step: AlgorithmSimulationStep | undefined,
+    currentValues: number[],
     idsByIndex: Map<number, string>,
     incomingRootNodeId: string | null,
+    isPracticeMode: boolean,
 ): HeapVisualNode[] {
-    if (!step?.heap || !Array.isArray(step.arrayState)) {
+    if (!step?.heap || currentValues.length === 0) {
         return [];
     }
 
-    const values = step.arrayState;
+    const values = currentValues;
     const boundaryEnd = Math.min(Math.max(step.heap.heapBoundaryEnd ?? -1, -1), values.length - 1);
+    const comparedIndices = step.heap.comparedIndices ?? [];
+    const comparedMaxIndex = comparedIndices.length > 0 ? Math.max(...comparedIndices) : -1;
+    const effectiveBoundaryEnd = isPracticeMode
+        ? Math.min(Math.max(boundaryEnd, comparedMaxIndex), values.length - 1)
+        : boundaryEnd;
     const action = (step.actionLabel ?? "").trim().toLowerCase();
-    const compared = new Set(step.heap.comparedIndices ?? []);
+    const compared = new Set(comparedIndices);
 
     const nodes: HeapVisualNode[] = [];
-    for (let index = 0; index <= boundaryEnd; index += 1) {
+    for (let index = 0; index <= effectiveBoundaryEnd; index += 1) {
         const pos = getHeapNodePosition(index);
         let state: HeapNodeState = "normal";
         const nodeId = idsByIndex.get(index) ?? `heap-fallback-${index}-${values[index]}`;
+
+        if (isPracticeMode) {
+            nodes.push({
+                id: nodeId,
+                index,
+                value: values[index],
+                x: pos.x,
+                y: pos.y,
+                state: "normal",
+                incomingToRoot: false,
+            });
+            continue;
+        }
 
         if (compared.has(index)) {
             state = action.includes("swap") ? "swapping" : "comparing";
@@ -561,9 +581,11 @@ function AlgorithmVisualizer({
                 Math.max(step.heap.heapBoundaryEnd ?? -1, -1),
                 step.arrayState.length - 1,
             );
-            const inHeapValues = boundaryEnd >= 0
-                ? step.arrayState.slice(0, boundaryEnd + 1)
-                : [];
+            const inHeapValues = isPracticeMode
+                ? step.arrayState
+                : (boundaryEnd >= 0
+                    ? step.arrayState.slice(0, boundaryEnd + 1)
+                    : []);
 
             const resolvedNodes = reconcileHeapIdentityNodes(previousResolvedNodes, inHeapValues, createId);
 
@@ -595,10 +617,10 @@ function AlgorithmVisualizer({
             idsByIndex,
             incomingRootNodeId,
         };
-    }, [isHeapStep, safeIndex, steps]);
+    }, [isHeapStep, isPracticeMode, safeIndex, steps]);
     const heapNodes = useMemo(
-        () => buildHeapVisualNodes(currentStep, heapIdentityData.idsByIndex, heapIdentityData.incomingRootNodeId),
-        [currentStep, heapIdentityData.idsByIndex, heapIdentityData.incomingRootNodeId],
+        () => buildHeapVisualNodes(currentStep, values, heapIdentityData.idsByIndex, heapIdentityData.incomingRootNodeId, isPracticeMode),
+        [currentStep, heapIdentityData.idsByIndex, heapIdentityData.incomingRootNodeId, isPracticeMode, values],
     );
     const heapNodeByIndex = useMemo(
         () => new Map(heapNodes.map((node) => [node.index, node])),
@@ -724,6 +746,9 @@ function AlgorithmVisualizer({
     const showSearchDecisionControls = algorithmType === "search"
         && isPracticeMode
         && typeof onSearchDecision === "function";
+    const isHeapPracticeInteractive = isHeapStep
+        && isPracticeMode
+        && typeof onBarClick === "function";
 
     const createBar = (value: number): VisualBar => ({
         id: `visual-bar-${nextBarIdRef.current++}`,
@@ -791,7 +816,9 @@ function AlgorithmVisualizer({
                                 <span className="text-sm text-sky-100/80">
                                     {algorithmType === "search"
                                         ? "Use Go Left, Go Right, or Found to decide the next move"
-                                        : "Click two bars to validate a swap"}
+                                        : (isHeapStep
+                                            ? "Click two heap nodes to validate a swap"
+                                            : "Click two bars to validate a swap")}
                                 </span>
                             ) : null}
                         </div>
@@ -975,7 +1002,7 @@ function AlgorithmVisualizer({
                                 )}
                             </div>
                         </div>
-                    ) : isHeapStep && !isPracticeMode ? (
+                    ) : isHeapStep ? (
                         <div>
                             <div className="mb-3 flex items-center justify-between text-xs text-text-secondary">
                                 <span>{isHeapComplete ? "Sorted array" : "Heap tree + array"}</span>
@@ -1018,6 +1045,11 @@ function AlgorithmVisualizer({
 
                                             {heapNodes.map((node) => {
                                                 const nodeMotion = getNodeAnimate(node.state, false);
+                                                const isSelectedNode = selectedIndexSet.has(node.index);
+                                                const isSuggestedNode = suggestedIndexSet.has(node.index);
+                                                const isFeedbackNode = feedbackIndexSet.has(node.index);
+                                                const isInteractiveNode = isHeapPracticeInteractive && !isInteractionDisabled;
+                                                const shouldShowSuggestionRing = isSuggestedNode && !isHeapPracticeInteractive;
 
                                                 return (
                                                     <motion.div
@@ -1048,17 +1080,44 @@ function AlgorithmVisualizer({
                                                                     ]
                                                                     : "0 0 0 rgba(0,0,0,0)",
                                                             }}
-                                                        className="absolute"
+                                                            className={cn(
+                                                                "absolute",
+                                                                isInteractiveNode && "cursor-pointer",
+                                                                isInteractionDisabled && "cursor-not-allowed opacity-80",
+                                                            )}
                                                         style={{
                                                             marginLeft: -HEAP_NODE_RADIUS_PX,
                                                             marginTop: -HEAP_NODE_RADIUS_PX,
                                                         }}
+                                                            onClick={() => {
+                                                                if (isInteractiveNode) {
+                                                                    onBarClick(node.index);
+                                                                }
+                                                            }}
+                                                            onKeyDown={(event) => {
+                                                                if (!isInteractiveNode) {
+                                                                    return;
+                                                                }
+
+                                                                if (event.key === "Enter" || event.key === " ") {
+                                                                    event.preventDefault();
+                                                                    onBarClick(node.index);
+                                                                }
+                                                            }}
+                                                            role={isInteractiveNode ? "button" : undefined}
+                                                            tabIndex={isInteractiveNode ? 0 : undefined}
+                                                            aria-disabled={isHeapPracticeInteractive ? isInteractionDisabled : undefined}
+                                                            aria-pressed={isInteractiveNode ? isSelectedNode : undefined}
                                                     >
                                                         <div className="relative">
                                                             <div className={cn(
                                                                 "flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold",
                                                                 getNodeClassName(node.state),
                                                                 node.incomingToRoot && "ring-2 ring-sky-300/70 shadow-[0_0_24px_rgba(56,189,248,0.35)]",
+                                                                shouldShowSuggestionRing && "ring-2 ring-accent/70",
+                                                                    isSelectedNode && "ring-2 ring-sky-300/80",
+                                                                    isFeedbackNode && feedbackTone === "correct" && "ring-2 ring-emerald-300/80",
+                                                                    isFeedbackNode && feedbackTone === "incorrect" && "ring-2 ring-red-300/80",
                                                             )}
                                                             >
                                                                 {node.value}
