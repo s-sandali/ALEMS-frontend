@@ -32,6 +32,9 @@ export type HeapStepModel = {
     comparedChildIndex?: number | null;
     comparedIndices?: number[];
     parentChildComparison?: string | null;
+    extractedValue?: number | null;
+    extractedFromIndex?: number | null;
+    sortedTargetIndex?: number | null;
 };
 
 export type SearchStepModel = {

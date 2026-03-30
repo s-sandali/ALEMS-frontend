@@ -244,8 +244,13 @@ export default function AlgorithmDetailPage() {
             setIsPlaying(false);
             setShowCompletionToast(false);
             setSimulationError("");
-            resetPracticeState(inputArray, 0);
-            await startPracticeSession(inputArray, targetNumber);
+
+            if (mode === "practice") {
+                resetPracticeState(inputArray, 0);
+                await startPracticeSession(inputArray, targetNumber);
+            } else {
+                setCurrentStepIndex(0);
+            }
         }
 
         async function loadAlgorithmDetails() {
@@ -750,8 +755,13 @@ export default function AlgorithmDetailPage() {
         setIsPlaying(false);
         setShowCompletionToast(false);
         setSimulationError("");
-        resetPracticeState(inputArray, 0);
-        await startPracticeSession(inputArray, targetNumber);
+
+        if (mode === "practice") {
+            resetPracticeState(inputArray, 0);
+            await startPracticeSession(inputArray, targetNumber);
+        } else {
+            setCurrentStepIndex(0);
+        }
     }
 
     async function handleApplyInput() {

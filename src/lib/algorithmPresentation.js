@@ -464,6 +464,263 @@ int main() {
 }`,
         },
     ],
+    "heap sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 4,
+                5: 5,
+                6: 6,
+                7: 7,
+                8: 8,
+                9: 9,
+                10: 10,
+                11: 11,
+            },
+            code: `function heapSort(arr)
+  buildMaxHeap(arr)
+  for i ← length(arr)-1 down to 1
+    swap arr[0], arr[i]
+    heapBoundary ← i - 1
+    siftDown(arr, root=0, heapBoundary)
+  end for
+  extractionPhaseComplete()
+  return arr
+
+function siftDown(arr, root, heapBoundary)
+  compare/swap root with larger child until heap property restored`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Heap Sort in JavaScript
+function heapSort(arr) {
+  const values = [...arr];
+  const n = values.length;
+
+  function siftDown(heapSize, root) {
+    let current = root;
+
+    while (true) {
+      const left = 2 * current + 1;
+      const right = left + 1;
+      let largest = current;
+
+      if (left < heapSize && values[left] > values[largest]) {
+        largest = left;
+      }
+
+      if (right < heapSize && values[right] > values[largest]) {
+        largest = right;
+      }
+
+      if (largest === current) {
+        break;
+      }
+
+      [values[current], values[largest]] = [values[largest], values[current]];
+      current = largest;
+    }
+  }
+
+  for (let parent = Math.floor(n / 2) - 1; parent >= 0; parent -= 1) {
+    siftDown(n, parent);
+  }
+
+  for (let end = n - 1; end > 0; end -= 1) {
+    [values[0], values[end]] = [values[end], values[0]];
+    siftDown(end, 0);
+  }
+
+  return values;
+}
+
+const unsorted = [8, 3, 5, 1, 9, 2];
+console.log("Unsorted:", unsorted);
+console.log("Sorted:", heapSort(unsorted));`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Heap Sort in Python
+def heap_sort(arr):
+    values = arr[:]
+    n = len(values)
+
+    def sift_down(heap_size, root):
+        current = root
+
+        while True:
+            left = 2 * current + 1
+            right = left + 1
+            largest = current
+
+            if left < heap_size and values[left] > values[largest]:
+                largest = left
+
+            if right < heap_size and values[right] > values[largest]:
+                largest = right
+
+            if largest == current:
+                break
+
+            values[current], values[largest] = values[largest], values[current]
+            current = largest
+
+    for parent in range((n // 2) - 1, -1, -1):
+        sift_down(n, parent)
+
+    for end in range(n - 1, 0, -1):
+        values[0], values[end] = values[end], values[0]
+        sift_down(end, 0)
+
+    return values
+
+
+unsorted = [8, 3, 5, 1, 9, 2]
+print("Unsorted:", unsorted)
+print("Sorted:", heap_sort(unsorted))`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Heap Sort in Java
+import java.util.Arrays;
+
+public class HeapSortExample {
+    public static int[] heapSort(int[] input) {
+        int[] values = input.clone();
+        int n = values.length;
+
+        for (int parent = (n / 2) - 1; parent >= 0; parent--) {
+            siftDown(values, n, parent);
+        }
+
+        for (int end = n - 1; end > 0; end--) {
+            int temp = values[0];
+            values[0] = values[end];
+            values[end] = temp;
+            siftDown(values, end, 0);
+        }
+
+        return values;
+    }
+
+    private static void siftDown(int[] values, int heapSize, int root) {
+        int current = root;
+
+        while (true) {
+            int left = 2 * current + 1;
+            int right = left + 1;
+            int largest = current;
+
+            if (left < heapSize && values[left] > values[largest]) {
+                largest = left;
+            }
+
+            if (right < heapSize && values[right] > values[largest]) {
+                largest = right;
+            }
+
+            if (largest == current) {
+                break;
+            }
+
+            int temp = values[current];
+            values[current] = values[largest];
+            values[largest] = temp;
+            current = largest;
+        }
+    }
+
+    public static void main(String[] args) {
+        int[] unsorted = {8, 3, 5, 1, 9, 2};
+        System.out.println("Unsorted: " + Arrays.toString(unsorted));
+        System.out.println("Sorted: " + Arrays.toString(heapSort(unsorted)));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Heap Sort in C++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+void siftDown(vector<int>& values, int heapSize, int root) {
+    int current = root;
+
+    while (true) {
+        int left = 2 * current + 1;
+        int right = left + 1;
+        int largest = current;
+
+        if (left < heapSize && values[left] > values[largest]) {
+            largest = left;
+        }
+
+        if (right < heapSize && values[right] > values[largest]) {
+            largest = right;
+        }
+
+        if (largest == current) {
+            break;
+        }
+
+        swap(values[current], values[largest]);
+        current = largest;
+    }
+}
+
+vector<int> heapSort(vector<int> input) {
+    vector<int> values = input;
+    int n = static_cast<int>(values.size());
+
+    for (int parent = (n / 2) - 1; parent >= 0; --parent) {
+        siftDown(values, n, parent);
+    }
+
+    for (int end = n - 1; end > 0; --end) {
+        swap(values[0], values[end]);
+        siftDown(values, end, 0);
+    }
+
+    return values;
+}
+
+int main() {
+    vector<int> unsorted = {8, 3, 5, 1, 9, 2};
+    vector<int> sorted = heapSort(unsorted);
+
+    cout << "Unsorted: ";
+    for (int v : unsorted) cout << v << " ";
+    cout << endl;
+
+    cout << "Sorted: ";
+    for (int v : sorted) cout << v << " ";
+    cout << endl;
+
+    return 0;
+}`,
+        },
+    ],
 };
 
 const sampleSizes = [8, 16, 32, 64, 128, 256];

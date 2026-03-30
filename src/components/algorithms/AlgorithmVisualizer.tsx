@@ -36,6 +36,35 @@ type VisualBar = {
     value: number;
 };
 
+type HeapNodeState = "normal" | "active" | "comparing" | "swapping" | "removing";
+
+type HeapVisualNode = {
+    id: string;
+    index: number;
+    value: number;
+    x: number;
+    y: number;
+    state: HeapNodeState;
+    incomingToRoot: boolean;
+};
+
+type HeapIdentityNode = {
+    id: string;
+    index: number;
+    value: number;
+};
+
+type HeapVisualEdge = {
+    id: string;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+};
+
+const HEAP_NODE_RADIUS_PX = 22;
+const FALLING_NODE_RADIUS_PX = 20;
+
 const layoutTransition = {
     type: "spring" as const,
     stiffness: 360,
@@ -54,6 +83,14 @@ const activeBarTransition: Transition = {
 
 function getStepTone(step: AlgorithmSimulationStep | undefined) {
     const action = (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
+
+    if (action.includes("compare")) {
+        return {
+            badgeClassName: "border-yellow-300/35 bg-yellow-300/10 text-yellow-100",
+            activeBarClassName: "from-yellow-300 to-yellow-400 shadow-[0_0_18px_rgba(250,204,21,0.3)]",
+            emphasisLabel: "Comparing",
+        };
+    }
 
     if (action.includes("sorted") || action.includes("complete")) {
         return {
@@ -236,6 +273,202 @@ function formatHeapComparison(step: AlgorithmSimulationStep | undefined) {
     return `${compared[0]} vs ${compared[1]}`;
 }
 
+function getHeapNodePosition(index: number) {
+    const level = Math.floor(Math.log2(index + 1));
+    const nodesBeforeLevel = (2 ** level) - 1;
+    const indexInLevel = index - nodesBeforeLevel;
+    const slotsInLevel = 2 ** level;
+    const horizontalPadding = 8;
+    const usableWidth = 100 - (horizontalPadding * 2);
+
+    return {
+        x: horizontalPadding + (((indexInLevel + 0.5) / slotsInLevel) * usableWidth),
+        y: 12 + level * 17,
+    };
+}
+
+function reconcileHeapIdentityNodes(previousNodes: HeapIdentityNode[], nextValues: number[], createId: () => string) {
+    const availableByValue = new Map<number, HeapIdentityNode[]>();
+
+    previousNodes.forEach((node) => {
+        const queue = availableByValue.get(node.value) ?? [];
+        queue.push(node);
+        availableByValue.set(node.value, queue);
+    });
+
+    return nextValues.map((value, index) => {
+        const queue = availableByValue.get(value);
+        const reused = queue?.shift();
+
+        return {
+            id: reused?.id ?? createId(),
+            index,
+            value,
+        };
+    });
+}
+
+function buildHeapVisualNodes(
+    step: AlgorithmSimulationStep | undefined,
+    currentValues: number[],
+    idsByIndex: Map<number, string>,
+    incomingRootNodeId: string | null,
+    isPracticeMode: boolean,
+): HeapVisualNode[] {
+    if (!step?.heap || currentValues.length === 0) {
+        return [];
+    }
+
+    const values = currentValues;
+    const boundaryEnd = Math.min(Math.max(step.heap.heapBoundaryEnd ?? -1, -1), values.length - 1);
+    const comparedIndices = step.heap.comparedIndices ?? [];
+    const comparedMaxIndex = comparedIndices.length > 0 ? Math.max(...comparedIndices) : -1;
+    const effectiveBoundaryEnd = isPracticeMode
+        ? Math.min(Math.max(boundaryEnd, comparedMaxIndex), values.length - 1)
+        : boundaryEnd;
+    const action = (step.actionLabel ?? "").trim().toLowerCase();
+    const compared = new Set(comparedIndices);
+
+    const nodes: HeapVisualNode[] = [];
+    for (let index = 0; index <= effectiveBoundaryEnd; index += 1) {
+        const pos = getHeapNodePosition(index);
+        let state: HeapNodeState = "normal";
+        const nodeId = idsByIndex.get(index) ?? `heap-fallback-${index}-${values[index]}`;
+
+        if (isPracticeMode) {
+            nodes.push({
+                id: nodeId,
+                index,
+                value: values[index],
+                x: pos.x,
+                y: pos.y,
+                state: "normal",
+                incomingToRoot: false,
+            });
+            continue;
+        }
+
+        if (compared.has(index)) {
+            state = action.includes("swap") ? "swapping" : "comparing";
+        } else if (index === 0 && !action.includes("complete")) {
+            // Keep root emphasis only when not explicitly in compare/swap state.
+            state = "active";
+        }
+
+        if (index === 0 && action.includes("swap") && !compared.has(index)) {
+            // Extraction root action keeps a clear removed/root emphasis.
+            state = "removing";
+        } else if (index === 0 && action.includes("extract") && !compared.has(index)) {
+            state = "active";
+        }
+
+        if (compared.has(index) && action.includes("compare")) {
+            // Ensure a single consistent compare color for all compare operations.
+            state = "comparing";
+        }
+
+        nodes.push({
+            id: nodeId,
+            index,
+            value: values[index],
+            x: pos.x,
+            y: pos.y,
+            state,
+            incomingToRoot: incomingRootNodeId === nodeId,
+        });
+    }
+
+    return nodes;
+}
+
+function buildHeapVisualEdges(nodes: HeapVisualNode[]): HeapVisualEdge[] {
+    const byIndex = new Map(nodes.map((node) => [node.index, node]));
+    const edges: HeapVisualEdge[] = [];
+
+    nodes.forEach((node) => {
+        const left = byIndex.get((2 * node.index) + 1);
+        const right = byIndex.get((2 * node.index) + 2);
+
+        if (left) {
+            edges.push({
+                id: `${node.id}->${left.id}`,
+                x1: node.x,
+                y1: node.y,
+                x2: left.x,
+                y2: left.y,
+            });
+        }
+
+        if (right) {
+            edges.push({
+                id: `${node.id}->${right.id}`,
+                x1: node.x,
+                y1: node.y,
+                x2: right.x,
+                y2: right.y,
+            });
+        }
+    });
+
+    return edges;
+}
+
+function getNodeClassName(state: HeapNodeState) {
+    if (state === "comparing") {
+        return "border-yellow-300/70 bg-yellow-300/20 text-yellow-50";
+    }
+
+    if (state === "swapping") {
+        return "border-red-300/70 bg-red-400/20 text-red-50";
+    }
+
+    if (state === "removing") {
+        return "border-emerald-300/70 bg-emerald-400/25 text-emerald-50 shadow-[0_0_20px_rgba(52,211,153,0.3)]";
+    }
+
+    if (state === "active") {
+        return "border-accent/70 bg-accent/20 text-accent";
+    }
+
+    return "border-white/15 bg-white/[0.04] text-white";
+}
+
+function getNodeAnimate(state: HeapNodeState, shouldReduceMotion: boolean) {
+    if (shouldReduceMotion) {
+        return {};
+    }
+
+    if (state === "active") {
+        return { scale: [1, 1.06, 1] };
+    }
+
+    if (state === "comparing") {
+        return { scale: [1, 1.04, 1] };
+    }
+
+    if (state === "swapping") {
+        return { scale: [1, 1.08, 1] };
+    }
+
+    if (state === "removing") {
+        return { scale: [1, 1.08, 1] };
+    }
+
+    return { scale: 1 };
+}
+
+function buildTrajectoryPath(startX: number, startY: number, endX: number, endY: number) {
+    const deltaX = endX - startX;
+    const direction = deltaX >= 0 ? 1 : -1;
+    const horizontalSpan = Math.abs(deltaX);
+
+    // Keep control point between start/end to avoid overshooting far right/left.
+    const controlX = startX + (deltaX * 0.58) - (direction * Math.min(3.5, horizontalSpan * 0.06));
+    const controlY = ((startY + endY) / 2) - Math.min(11, 5 + horizontalSpan * 0.06);
+
+    return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
+}
+
 function AlgorithmVisualizer({
     steps,
     currentStepIndex,
@@ -258,6 +491,8 @@ function AlgorithmVisualizer({
 }: AlgorithmVisualizerProps) {
     const shouldReduceMotion = useReducedMotion();
     const nextBarIdRef = useRef(0);
+    const heapStageRef = useRef<HTMLDivElement | null>(null);
+    const heapArrayCellRefs = useRef<Array<HTMLDivElement | null>>([]);
 
     const safeIndex = steps.length === 0
         ? 0
@@ -320,6 +555,176 @@ function AlgorithmVisualizer({
         () => formatHeapComparison(currentStep),
         [currentStep],
     );
+    const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
+    const heapIdentityData = useMemo(() => {
+        if (!isHeapStep || steps.length === 0) {
+            return {
+                idsByIndex: new Map<number, string>(),
+                incomingRootNodeId: null as string | null,
+            };
+        }
+
+        let nextId = 0;
+        const createId = () => `heap-entity-${nextId++}`;
+
+        let previousResolvedNodes: HeapIdentityNode[] = [];
+        let resolvedBeforeCurrent: HeapIdentityNode[] = [];
+        let resolvedAtCurrent: HeapIdentityNode[] = [];
+
+        for (let stepIndex = 0; stepIndex <= safeIndex && stepIndex < steps.length; stepIndex += 1) {
+            const step = steps[stepIndex];
+            if (!step?.heap || !Array.isArray(step.arrayState)) {
+                continue;
+            }
+
+            const boundaryEnd = Math.min(
+                Math.max(step.heap.heapBoundaryEnd ?? -1, -1),
+                step.arrayState.length - 1,
+            );
+            const inHeapValues = isPracticeMode
+                ? step.arrayState
+                : (boundaryEnd >= 0
+                    ? step.arrayState.slice(0, boundaryEnd + 1)
+                    : []);
+
+            const resolvedNodes = reconcileHeapIdentityNodes(previousResolvedNodes, inHeapValues, createId);
+
+            if (stepIndex === safeIndex) {
+                resolvedBeforeCurrent = previousResolvedNodes;
+                resolvedAtCurrent = resolvedNodes;
+            }
+
+            previousResolvedNodes = resolvedNodes;
+        }
+
+        const idsByIndex = new Map<number, string>(
+            resolvedAtCurrent.map((node) => [node.index, node.id]),
+        );
+        const previousIndexById = new Map<string, number>(
+            resolvedBeforeCurrent.map((node) => [node.id, node.index]),
+        );
+
+        let incomingRootNodeId: string | null = null;
+        const rootNode = resolvedAtCurrent.find((node) => node.index === 0);
+        if (rootNode) {
+            const previousIndex = previousIndexById.get(rootNode.id);
+            if (typeof previousIndex === "number" && previousIndex > 0) {
+                incomingRootNodeId = rootNode.id;
+            }
+        }
+
+        return {
+            idsByIndex,
+            incomingRootNodeId,
+        };
+    }, [isHeapStep, isPracticeMode, safeIndex, steps]);
+    const heapNodes = useMemo(
+        () => buildHeapVisualNodes(currentStep, values, heapIdentityData.idsByIndex, heapIdentityData.incomingRootNodeId, isPracticeMode),
+        [currentStep, heapIdentityData.idsByIndex, heapIdentityData.incomingRootNodeId, isPracticeMode, values],
+    );
+    const heapNodeByIndex = useMemo(
+        () => new Map(heapNodes.map((node) => [node.index, node])),
+        [heapNodes],
+    );
+    const heapEdges = useMemo(
+        () => buildHeapVisualEdges(heapNodes),
+        [heapNodes],
+    );
+    const heapBoundaryEnd = useMemo(
+        () => (isHeapStep
+            ? Math.min(Math.max(currentStep?.heap?.heapBoundaryEnd ?? -1, -1), Math.max(values.length - 1, -1))
+            : -1),
+        [currentStep, isHeapStep, values.length],
+    );
+    const fallbackSortedStart = heapBoundaryEnd + 1;
+    const explicitSortedIndex = currentStep?.heap?.sortedTargetIndex;
+    const sortedStartIndex = typeof explicitSortedIndex === "number"
+        ? Math.min(Math.max(explicitSortedIndex, 0), Math.max(values.length - 1, 0))
+        : fallbackSortedStart;
+    const normalizedHeapAction = (currentStep?.actionLabel ?? "").trim().toLowerCase();
+    const isHeapComplete = isHeapStep && (normalizedHeapAction === "complete" || currentStep?.heap?.phase === "complete");
+    const displayedHeapArrayValues = useMemo(
+        () => {
+            if (!isHeapStep) {
+                return [] as Array<number | null>;
+            }
+
+            if (values.length === 0) {
+                return [] as Array<number | null>;
+            }
+
+            if (isHeapComplete) {
+                return values.map((value) => value);
+            }
+
+            if (sortedStartIndex < 0 || sortedStartIndex >= values.length) {
+                return values.map(() => null);
+            }
+
+            return values.map((value, index) => (index >= sortedStartIndex ? value : null));
+        },
+        [isHeapComplete, isHeapStep, sortedStartIndex, values],
+    );
+    const showFallingNode = Boolean(
+        isHeapStep
+        && !isPracticeMode
+        && (currentStep?.heap?.parentChildComparison === "root_end_swap")
+        && (currentStep?.actionLabel ?? "").trim().toLowerCase().includes("swap")
+        && sortedStartIndex >= 0
+        && sortedStartIndex < values.length,
+    );
+    const fallingValue = showFallingNode
+        ? (typeof currentStep?.heap?.extractedValue === "number"
+            ? currentStep.heap.extractedValue
+            : values[sortedStartIndex])
+        : null;
+    const rootNodeX = heapNodes.find((node) => node.index === 0)?.x ?? 50;
+    const rootNodeY = heapNodes.find((node) => node.index === 0)?.y ?? 10;
+    const explicitFromIndex = currentStep?.heap?.extractedFromIndex;
+    const fallingFromNode = typeof explicitFromIndex === "number"
+        ? heapNodeByIndex.get(Math.min(Math.max(explicitFromIndex, 0), values.length - 1))
+        : null;
+    const fallingFromX = fallingFromNode?.x ?? rootNodeX;
+    const fallingFromY = fallingFromNode?.y ?? rootNodeY;
+    const [measuredLandingTarget, setMeasuredLandingTarget] = useState<{ x: number; y: number } | null>(null);
+    const fallbackFallingTargetX = values.length > 0
+        ? 6 + (((sortedStartIndex + 0.5) / values.length) * 88)
+        : 50;
+    const fallbackFallingTargetY = 87;
+    const fallingTargetX = measuredLandingTarget?.x ?? fallbackFallingTargetX;
+    const fallingTargetY = measuredLandingTarget?.y ?? fallbackFallingTargetY;
+    const fallingTrajectoryPath = useMemo(
+        () => buildTrajectoryPath(fallingFromX, fallingFromY, fallingTargetX, fallingTargetY),
+        [fallingFromX, fallingFromY, fallingTargetX, fallingTargetY],
+    );
+
+    useLayoutEffect(() => {
+        if (!isHeapStep || !showFallingNode) {
+            setMeasuredLandingTarget(null);
+            return;
+        }
+
+        const stage = heapStageRef.current;
+        const targetCell = heapArrayCellRefs.current[sortedStartIndex] ?? null;
+
+        if (!stage || !targetCell) {
+            setMeasuredLandingTarget(null);
+            return;
+        }
+
+        const stageRect = stage.getBoundingClientRect();
+        const targetRect = targetCell.getBoundingClientRect();
+
+        if (stageRect.width <= 0 || stageRect.height <= 0) {
+            setMeasuredLandingTarget(null);
+            return;
+        }
+
+        const x = ((targetRect.left + (targetRect.width / 2) - stageRect.left) / stageRect.width) * 100;
+        const y = ((targetRect.top + (targetRect.height / 2) - stageRect.top) / stageRect.height) * 100;
+
+        setMeasuredLandingTarget({ x, y });
+    }, [isHeapStep, showFallingNode, sortedStartIndex, safeIndex]);
     const searchTarget = useMemo(
         () => (typeof searchTargetValue === "number" ? searchTargetValue : getSearchTargetValue(steps)),
         [searchTargetValue, steps],
@@ -341,6 +746,9 @@ function AlgorithmVisualizer({
     const showSearchDecisionControls = algorithmType === "search"
         && isPracticeMode
         && typeof onSearchDecision === "function";
+    const isHeapPracticeInteractive = isHeapStep
+        && isPracticeMode
+        && typeof onBarClick === "function";
 
     const createBar = (value: number): VisualBar => ({
         id: `visual-bar-${nextBarIdRef.current++}`,
@@ -408,19 +816,21 @@ function AlgorithmVisualizer({
                                 <span className="text-sm text-sky-100/80">
                                     {algorithmType === "search"
                                         ? "Use Go Left, Go Right, or Found to decide the next move"
-                                        : "Click two bars to validate a swap"}
+                                        : (isHeapStep
+                                            ? "Click two heap nodes to validate a swap"
+                                            : "Click two bars to validate a swap")}
                                 </span>
                             ) : null}
                         </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 text-xs text-text-secondary">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-accent to-accent/70" />
-                            Comparing
-                        </span>
                         {algorithmType === "search" ? (
                             <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    Comparing
+                                </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-slate-400 to-slate-500" />
                                     Discarded
@@ -430,8 +840,35 @@ function AlgorithmVisualizer({
                                     Found
                                 </span>
                             </>
+                        ) : isHeapStep ? (
+                            <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-blue-400 to-blue-500" />
+                                    Heap Node
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    Comparing
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
+                                    Swapping
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                                    Extracted / Falling
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                                    Sorted Array
+                                </span>
+                            </>
                         ) : (
                             <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    Comparing
+                                </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
                                     Swapped
@@ -563,6 +1000,216 @@ function AlgorithmVisualizer({
                                         No backend simulation steps available yet.
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    ) : isHeapStep ? (
+                        <div>
+                            <div className="mb-3 flex items-center justify-between text-xs text-text-secondary">
+                                <span>{isHeapComplete ? "Sorted array" : "Heap tree + array"}</span>
+                                <span>
+                                    {isHeapComplete
+                                        ? "Heap complete"
+                                        : `Boundary: 0 to ${heapBoundaryEnd}`}
+                                </span>
+                            </div>
+
+                            <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+                                <div ref={heapStageRef} className="relative h-[30rem] w-full">
+                                    {!isHeapComplete ? (
+                                        <>
+                                            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                                {heapEdges.map((edge) => (
+                                                    <motion.line
+                                                        key={edge.id}
+                                                        initial={false}
+                                                        animate={{
+                                                            x1: edge.x1,
+                                                            y1: edge.y1,
+                                                            x2: edge.x2,
+                                                            y2: edge.y2,
+                                                        }}
+                                                        transition={shouldReduceMotion
+                                                            ? reducedMotionTransition
+                                                            : {
+                                                                x1: { ...layoutTransition },
+                                                                y1: { ...layoutTransition },
+                                                                x2: { ...layoutTransition },
+                                                                y2: { ...layoutTransition },
+                                                            }}
+                                                        stroke="rgba(255,255,255,0.34)"
+                                                        strokeWidth="1.1"
+                                                        strokeLinecap="round"
+                                                    />
+                                                ))}
+                                            </svg>
+
+                                            {heapNodes.map((node) => {
+                                                const nodeMotion = getNodeAnimate(node.state, false);
+                                                const isSelectedNode = selectedIndexSet.has(node.index);
+                                                const isSuggestedNode = suggestedIndexSet.has(node.index);
+                                                const isFeedbackNode = feedbackIndexSet.has(node.index);
+                                                const isInteractiveNode = isHeapPracticeInteractive && !isInteractionDisabled;
+                                                const shouldShowSuggestionRing = isSuggestedNode && !isHeapPracticeInteractive;
+
+                                                return (
+                                                    <motion.div
+                                                        key={node.id}
+                                                        initial={false}
+                                                        transition={shouldReduceMotion
+                                                            ? reducedMotionTransition
+                                                            : {
+                                                                left: { ...layoutTransition },
+                                                                top: { ...layoutTransition },
+                                                                scale: { duration: node.incomingToRoot ? 0.44 : 0.28, ease: "easeOut" },
+                                                                x: { duration: 0.34, ease: "easeInOut" },
+                                                                y: { duration: 0.34, ease: "easeInOut" },
+                                                                boxShadow: { duration: 0.34, ease: "easeOut" },
+                                                            }}
+                                                        animate={shouldReduceMotion
+                                                            ? { left: `${node.x}%`, top: `${node.y}%`, scale: 1, x: 0, y: 0 }
+                                                            : {
+                                                                left: `${node.x}%`,
+                                                                top: `${node.y}%`,
+                                                                ...nodeMotion,
+                                                                scale: node.incomingToRoot ? [1, 1.16, 1] : nodeMotion.scale,
+                                                                boxShadow: node.incomingToRoot
+                                                                    ? [
+                                                                        "0 0 0 rgba(56,189,248,0)",
+                                                                        "0 0 24px rgba(56,189,248,0.45)",
+                                                                        "0 0 10px rgba(56,189,248,0.22)",
+                                                                    ]
+                                                                    : "0 0 0 rgba(0,0,0,0)",
+                                                            }}
+                                                            className={cn(
+                                                                "absolute",
+                                                                isInteractiveNode && "cursor-pointer",
+                                                                isInteractionDisabled && "cursor-not-allowed opacity-80",
+                                                            )}
+                                                        style={{
+                                                            marginLeft: -HEAP_NODE_RADIUS_PX,
+                                                            marginTop: -HEAP_NODE_RADIUS_PX,
+                                                        }}
+                                                            onClick={() => {
+                                                                if (isInteractiveNode) {
+                                                                    onBarClick(node.index);
+                                                                }
+                                                            }}
+                                                            onKeyDown={(event) => {
+                                                                if (!isInteractiveNode) {
+                                                                    return;
+                                                                }
+
+                                                                if (event.key === "Enter" || event.key === " ") {
+                                                                    event.preventDefault();
+                                                                    onBarClick(node.index);
+                                                                }
+                                                            }}
+                                                            role={isInteractiveNode ? "button" : undefined}
+                                                            tabIndex={isInteractiveNode ? 0 : undefined}
+                                                            aria-disabled={isHeapPracticeInteractive ? isInteractionDisabled : undefined}
+                                                            aria-pressed={isInteractiveNode ? isSelectedNode : undefined}
+                                                    >
+                                                        <div className="relative">
+                                                            <div className={cn(
+                                                                "flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold",
+                                                                getNodeClassName(node.state),
+                                                                node.incomingToRoot && "ring-2 ring-sky-300/70 shadow-[0_0_24px_rgba(56,189,248,0.35)]",
+                                                                shouldShowSuggestionRing && "ring-2 ring-accent/70",
+                                                                    isSelectedNode && "ring-2 ring-sky-300/80",
+                                                                    isFeedbackNode && feedbackTone === "correct" && "ring-2 ring-emerald-300/80",
+                                                                    isFeedbackNode && feedbackTone === "incorrect" && "ring-2 ring-red-300/80",
+                                                            )}
+                                                            >
+                                                                {node.value}
+                                                            </div>
+                                                            <span className="pointer-events-none absolute left-1/2 top-full -translate-x-1/2 pt-1 text-[10px] text-text-secondary">
+                                                                i{node.index}
+                                                            </span>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </>
+                                    ) : null}
+
+                                    <div className="absolute inset-x-0 bottom-0 px-3 pb-3">
+                                        <div className="mb-2 flex items-center justify-between text-xs text-text-secondary">
+                                            <span>Array view</span>
+                                            <span>{isHeapComplete ? "Sorted array" : "Sorted region grows from right"}</span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+                                            {displayedHeapArrayValues.map((value, index) => {
+                                                const isSortedCell = value !== null;
+                                                const isLandingCell = showFallingNode && index === sortedStartIndex;
+
+                                                return (
+                                                    <motion.div
+                                                        key={`heap-array-${index}-${value ?? "empty"}-${safeIndex}`}
+                                                        ref={(element) => {
+                                                            heapArrayCellRefs.current[index] = element;
+                                                        }}
+                                                        layout
+                                                        transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
+                                                        animate={shouldReduceMotion
+                                                            ? {}
+                                                            : (isLandingCell
+                                                                ? { scale: [0.84, 1.12, 1], y: [3, -2, 0] }
+                                                                : { scale: 1, y: 0 })}
+                                                        className={cn(
+                                                            "rounded-xl border px-2 py-3 text-center",
+                                                            isSortedCell
+                                                                ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-100"
+                                                                : "border-white/10 bg-white/[0.03] text-white/30",
+                                                        )}
+                                                    >
+                                                        <div className="text-sm font-semibold">{value ?? ""}</div>
+                                                        <div className="text-[10px] text-text-secondary">idx {index}</div>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {showFallingNode && fallingValue !== null ? (
+                                        <>
+                                            <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                                <motion.path
+                                                    d={fallingTrajectoryPath}
+                                                    fill="none"
+                                                    stroke="rgba(52,211,153,0.6)"
+                                                    strokeWidth="0.8"
+                                                    strokeDasharray="2.2 1.6"
+                                                    initial={{ pathLength: 0, opacity: 0 }}
+                                                    animate={{ pathLength: 1, opacity: 1 }}
+                                                    transition={shouldReduceMotion
+                                                        ? { duration: 0 }
+                                                        : { duration: 0.5, ease: "easeOut" }}
+                                                />
+                                            </svg>
+
+                                            <motion.div
+                                                key={`fall-node-${currentStep?.stepNumber ?? safeIndex}`}
+                                                className="pointer-events-none absolute z-30"
+                                                style={{
+                                                    left: `${fallingFromX}%`,
+                                                    top: `${fallingFromY}%`,
+                                                    marginLeft: -FALLING_NODE_RADIUS_PX,
+                                                    marginTop: -FALLING_NODE_RADIUS_PX,
+                                                }}
+                                                initial={{ left: `${fallingFromX}%`, top: `${fallingFromY}%`, opacity: 1, scale: 1 }}
+                                                animate={{ left: `${fallingTargetX}%`, top: `${fallingTargetY}%`, opacity: [1, 1, 0], scale: [1, 1.03, 0.7] }}
+                                                transition={shouldReduceMotion
+                                                    ? { duration: 0 }
+                                                    : { duration: 0.68, ease: "easeInOut" }}
+                                            >
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-300/80 bg-emerald-400/30 text-sm font-semibold text-emerald-50 shadow-[0_0_20px_rgba(52,211,153,0.38)]">
+                                                    {fallingValue}
+                                                </div>
+                                            </motion.div>
+                                        </>
+                                    ) : null}
+                                </div>
                             </div>
                         </div>
                     ) : (
