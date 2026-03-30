@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
     CartesianGrid,
     Legend,
@@ -86,6 +86,41 @@ function ComplexityChartCard({
     footer,
     summaryRows,
 }) {
+    const chartContainerRef = useRef(null);
+    const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
+
+    useLayoutEffect(() => {
+        const element = chartContainerRef.current;
+        if (!element) {
+            return undefined;
+        }
+
+        const updateSize = () => {
+            const rect = element.getBoundingClientRect();
+            setChartSize((previous) => {
+                if (previous.width === rect.width && previous.height === rect.height) {
+                    return previous;
+                }
+
+                return { width: rect.width, height: rect.height };
+            });
+        };
+
+        updateSize();
+
+        if (typeof ResizeObserver === "undefined") {
+            window.addEventListener("resize", updateSize);
+            return () => window.removeEventListener("resize", updateSize);
+        }
+
+        const observer = new ResizeObserver(() => updateSize());
+        observer.observe(element);
+
+        return () => observer.disconnect();
+    }, []);
+
+    const canRenderChart = chartSize.width > 0 && chartSize.height > 0;
+
     return (
         <article className="rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-7">
             <div className="mb-6">
@@ -100,58 +135,60 @@ function ComplexityChartCard({
                 </p>
             </div>
 
-            <div className="h-[300px] w-full min-w-0 min-h-[260px]">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={260}>
-                    <LineChart data={data} margin={{ top: 8, right: 12, left: -20, bottom: 8 }}>
-                        <CartesianGrid stroke={colors.border} strokeDasharray="3 3" />
-                        <XAxis
-                            dataKey="n"
-                            label={{
-                                value: "n (input size)",
-                                position: "insideBottom",
-                                offset: -6,
-                                fill: colors.textSecondary,
-                                fontSize: 12,
-                            }}
-                            tick={{ fill: colors.textSecondary, fontSize: 12 }}
-                            axisLine={{ stroke: colors.border }}
-                            tickLine={{ stroke: colors.border }}
-                        />
-                        <YAxis
-                            label={{
-                                value: "operations",
-                                angle: -90,
-                                position: "insideLeft",
-                                fill: colors.textSecondary,
-                                fontSize: 12,
-                            }}
-                            tick={{ fill: colors.textSecondary, fontSize: 12 }}
-                            axisLine={{ stroke: colors.border }}
-                            tickLine={{ stroke: colors.border }}
-                        />
-                        <Tooltip content={<ChartTooltip colors={colors} labelFormatter={footer} />} />
-                        <Legend
-                            wrapperStyle={{
-                                color: colors.textSecondary,
-                                fontSize: "12px",
-                                paddingTop: "16px",
-                            }}
-                        />
-                        {lines.map((line) => (
-                            <Line
-                                key={line.dataKey}
-                                type="monotone"
-                                dataKey={line.dataKey}
-                                name={line.name}
-                                stroke={line.stroke}
-                                strokeWidth={2.5}
-                                strokeDasharray={line.strokeDasharray}
-                                dot={{ r: 3, strokeWidth: 0, fill: line.stroke }}
-                                activeDot={{ r: 5, strokeWidth: 0, fill: line.stroke }}
+            <div ref={chartContainerRef} className="h-[300px] w-full min-h-[300px] min-w-0">
+                {canRenderChart ? (
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
+                        <LineChart data={data} margin={{ top: 8, right: 12, left: -20, bottom: 8 }}>
+                            <CartesianGrid stroke={colors.border} strokeDasharray="3 3" />
+                            <XAxis
+                                dataKey="n"
+                                label={{
+                                    value: "n (input size)",
+                                    position: "insideBottom",
+                                    offset: -6,
+                                    fill: colors.textSecondary,
+                                    fontSize: 12,
+                                }}
+                                tick={{ fill: colors.textSecondary, fontSize: 12 }}
+                                axisLine={{ stroke: colors.border }}
+                                tickLine={{ stroke: colors.border }}
                             />
-                        ))}
-                    </LineChart>
-                </ResponsiveContainer>
+                            <YAxis
+                                label={{
+                                    value: "operations",
+                                    angle: -90,
+                                    position: "insideLeft",
+                                    fill: colors.textSecondary,
+                                    fontSize: 12,
+                                }}
+                                tick={{ fill: colors.textSecondary, fontSize: 12 }}
+                                axisLine={{ stroke: colors.border }}
+                                tickLine={{ stroke: colors.border }}
+                            />
+                            <Tooltip content={<ChartTooltip colors={colors} labelFormatter={footer} />} />
+                            <Legend
+                                wrapperStyle={{
+                                    color: colors.textSecondary,
+                                    fontSize: "12px",
+                                    paddingTop: "16px",
+                                }}
+                            />
+                            {lines.map((line) => (
+                                <Line
+                                    key={line.dataKey}
+                                    type="monotone"
+                                    dataKey={line.dataKey}
+                                    name={line.name}
+                                    stroke={line.stroke}
+                                    strokeWidth={2.5}
+                                    strokeDasharray={line.strokeDasharray}
+                                    dot={{ r: 3, strokeWidth: 0, fill: line.stroke }}
+                                    activeDot={{ r: 5, strokeWidth: 0, fill: line.stroke }}
+                                />
+                            ))}
+                        </LineChart>
+                    </ResponsiveContainer>
+                ) : null}
             </div>
 
             <SummaryRows rows={summaryRows} />
