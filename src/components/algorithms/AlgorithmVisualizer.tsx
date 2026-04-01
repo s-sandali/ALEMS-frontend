@@ -183,6 +183,53 @@ function formatActionLabel(actionLabel: string) {
         .join(" ");
 }
 
+type OperationTypeColor = {
+    barClassName: string;
+    labelColor: string;
+    indicatorColor: string;
+};
+
+function getOperationTypeColor(operationType: string | null | undefined): OperationTypeColor | null {
+    if (!operationType) return null;
+
+    const type = operationType.trim().toLowerCase();
+
+    switch (type) {
+        case "compare":
+            return {
+                barClassName: "border-yellow-300/50 from-yellow-300/80 to-yellow-400/60 shadow-[0_0_18px_rgba(250,204,21,0.25)]",
+                labelColor: "text-yellow-100",
+                indicatorColor: "bg-yellow-400",
+            };
+        case "swap":
+            return {
+                barClassName: "border-red-400/50 from-red-400/80 to-red-500/60 shadow-[0_0_18px_rgba(248,113,113,0.25)]",
+                labelColor: "text-red-100",
+                indicatorColor: "bg-red-400",
+            };
+        case "pivot_select":
+            return {
+                barClassName: "border-blue-400/50 from-blue-400/80 to-blue-500/60 shadow-[0_0_18px_rgba(59,130,246,0.25)]",
+                labelColor: "text-blue-100",
+                indicatorColor: "bg-blue-400",
+            };
+        case "pivot_positioned":
+            return {
+                barClassName: "border-amber-400/50 from-amber-400/80 to-amber-500/60 shadow-[0_0_18px_rgba(217,119,6,0.25)]",
+                labelColor: "text-amber-100",
+                indicatorColor: "bg-amber-400",
+            };
+        case "pivot_swap":
+            return {
+                barClassName: "border-purple-400/50 from-purple-400/80 to-purple-500/60 shadow-[0_0_18px_rgba(168,85,247,0.25)]",
+                labelColor: "text-purple-100",
+                indicatorColor: "bg-purple-400",
+            };
+        default:
+            return null;
+    }
+}
+
 function getSearchActiveIndices(step: AlgorithmSimulationStep | undefined) {
     if (!step?.search) {
         return step?.activeIndices ?? [];
@@ -877,6 +924,41 @@ function AlgorithmVisualizer({
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Sorted
                                 </span>
+                                {currentStep?.operationType && (
+                                    <>
+                                        <span className="w-full h-px bg-white/10 my-1"></span>
+                                        {currentStep.operationType === "compare" && (
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                                <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                                Compare Operation
+                                            </span>
+                                        )}
+                                        {currentStep.operationType === "swap" && (
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                                <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
+                                                Swap Operation
+                                            </span>
+                                        )}
+                                        {currentStep.operationType === "pivot_select" && (
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                                <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-blue-400 to-blue-500" />
+                                                Pivot Selected
+                                            </span>
+                                        )}
+                                        {currentStep.operationType === "pivot_positioned" && (
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                                <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-amber-400 to-amber-500" />
+                                                Pivot Positioned
+                                            </span>
+                                        )}
+                                        {currentStep.operationType === "pivot_swap" && (
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                                <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-purple-400 to-purple-500" />
+                                                Pivot Swap
+                                            </span>
+                                        )}
+                                    </>
+                                )}
                             </>
                         )}
                     </div>
@@ -1238,6 +1320,8 @@ function AlgorithmVisualizer({
                                     const isSuggested = suggestedIndexSet.has(index);
                                     const isFeedbackTarget = feedbackIndexSet.has(index);
                                     const isDiscarded = discardedIndexSet.has(index);
+                                    const isPivot = typeof currentStep?.pivotIndex === "number" && index === currentStep.pivotIndex;
+                                    const operationTypeColor = !isPracticeMode ? getOperationTypeColor(currentStep?.operationType) : null;
                                     const height = `${Math.max((bar.value / globalMax) * 100, 8)}%`;
                                     const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
                                     const shouldPulseMidpoint = !isPracticeMode && isSearchMidpoint && isActive && !shouldReduceMotion;
@@ -1265,6 +1349,7 @@ function AlgorithmVisualizer({
                                                 isInteractive && "cursor-pointer",
                                                 isInteractionDisabled && "cursor-not-allowed opacity-70",
                                                 isDiscarded && "opacity-30 grayscale pointer-events-none",
+                                                isPivot && !operationTypeColor && "relative",
                                             )}
                                             onClick={() => {
                                                 if (isInteractive && !isInteractionDisabled) {
@@ -1296,6 +1381,8 @@ function AlgorithmVisualizer({
                                                     isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
                                                     isFeedbackTarget && feedbackTone === "incorrect" && "text-red-100",
                                                     isActive && !isPracticeMode && "text-text-primary",
+                                                    isActive && operationTypeColor && operationTypeColor.labelColor,
+                                                    isPivot && !operationTypeColor && "text-amber-200",
                                                 )}
                                             >
                                                 {bar.value}
@@ -1320,8 +1407,11 @@ function AlgorithmVisualizer({
                                                     className={cn(
                                                         "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
                                                         isSorted && "border-emerald-400/40 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
-                                                        !isPracticeMode && isActive && tone.activeBarClassName,
-                                                        !isPracticeMode && isActive && "border-transparent",
+                                                        !isPracticeMode && isActive && operationTypeColor && operationTypeColor.barClassName,
+                                                        !isPracticeMode && isActive && operationTypeColor && "border-transparent",
+                                                        !isPracticeMode && isActive && !operationTypeColor && tone.activeBarClassName,
+                                                        !isPracticeMode && isActive && !operationTypeColor && "border-transparent",
+                                                        !isPracticeMode && isPivot && !operationTypeColor && "border-amber-400/60 from-amber-300/70 to-amber-400/50 shadow-[0_0_20px_rgba(217,119,6,0.3)]",
                                                         isSuggested && isPracticeMode && "border-accent/50 from-accent/80 to-accent/50 shadow-[0_0_18px_rgba(213,255,64,0.25)]",
                                                         isSelected && isPracticeMode && "border-sky-300/50 from-sky-400/90 to-sky-500 shadow-[0_0_18px_rgba(56,189,248,0.26)]",
                                                         isFeedbackTarget && feedbackTone === "correct" && "border-emerald-400/50 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.26)]",
@@ -1330,6 +1420,12 @@ function AlgorithmVisualizer({
                                                     aria-label={`Index ${index}, value ${bar.value}`}
                                                     aria-current={isActive || isSelected ? "true" : undefined}
                                                 />
+                                                {isPivot && !operationTypeColor && (
+                                                    <div className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 rounded-full border border-amber-400/50 bg-amber-400/10 text-[10px] font-semibold text-amber-100 whitespace-nowrap">
+                                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                                                        Pivot
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <motion.span
@@ -1342,6 +1438,7 @@ function AlgorithmVisualizer({
                                                     isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
                                                     isFeedbackTarget && feedbackTone === "incorrect" && "text-red-100",
                                                     isActive && !isPracticeMode && "text-text-primary",
+                                                    isPivot && !operationTypeColor && "text-amber-200",
                                                 )}
                                             >
                                                 {index}

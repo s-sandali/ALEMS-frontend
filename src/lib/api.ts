@@ -19,6 +19,8 @@ export type AlgorithmSimulationStep = {
     actionLabel: string;
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
+    operationType?: "compare" | "swap" | "pivot_select" | "pivot_positioned" | "pivot_swap" | null;
+    pivotIndex?: number | null;
 };
 
 export type HeapStepModel = {
