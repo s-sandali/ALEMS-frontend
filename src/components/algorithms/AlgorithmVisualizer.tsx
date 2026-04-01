@@ -5,6 +5,7 @@ import type { Transition } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
+import MergeSortVisualizer from "./MergeSortVisualizer";
 
 type LearningMode = "auto" | "practice";
 type PracticeFeedbackTone = "correct" | "incorrect" | null;
@@ -585,6 +586,8 @@ function AlgorithmVisualizer({
         : (currentStep?.search?.state ?? currentStep?.actionLabel ?? "Waiting for steps");
     const heapStepMeta = currentStep?.heap ?? null;
     const quickSortMeta = currentStep?.quickSort ?? null;
+    const mergeSortMeta = currentStep?.mergeSort ?? null;
+    const isMergeSortStep = Boolean(mergeSortMeta);
     const quickSortRange = useMemo(
         () => getQuickSortRange(currentStep),
         [currentStep],
@@ -908,6 +911,25 @@ function AlgorithmVisualizer({
                                     Sorted Array
                                 </span>
                             </>
+                        ) : isMergeSortStep ? (
+                            <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-400 to-sky-500" />
+                                    Left half
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-rose-400 to-rose-500" />
+                                    Right half
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    Comparing
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                                    Placed / Sorted
+                                </span>
+                            </>
                         ) : (
                             <>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
@@ -964,6 +986,13 @@ function AlgorithmVisualizer({
                             <span>
                                 Quick Sort Step: <span className="text-text-primary">{formatActionLabel(currentStep?.actionLabel ?? "--")}</span>
                             </span>
+                        </div>
+                    ) : mergeSortMeta ? (
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                            <span>Phase: <span className="text-text-primary">{formatActionLabel(mergeSortMeta.type ?? "--")}</span></span>
+                            <span>Depth: <span className="text-text-primary">{mergeSortMeta.recursionDepth}</span></span>
+                            <span>Range: <span className="text-text-primary">[{mergeSortMeta.left}..{mergeSortMeta.right}]</span></span>
+                            <span>Mid: <span className="text-text-primary">{typeof mergeSortMeta.mid === "number" ? mergeSortMeta.mid : "--"}</span></span>
                         </div>
                     ) : null}
 
@@ -1062,6 +1091,11 @@ function AlgorithmVisualizer({
                                 )}
                             </div>
                         </div>
+                    ) : isMergeSortStep ? (
+                        <MergeSortVisualizer
+                            steps={steps}
+                            currentStepIndex={safeIndex}
+                        />
                     ) : isHeapStep ? (
                         <div>
                             <div className="mb-3 flex items-center justify-between text-xs text-text-secondary">
