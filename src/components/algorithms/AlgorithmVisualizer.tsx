@@ -81,7 +81,108 @@ const activeBarTransition: Transition = {
     scale: { duration: 0.22, ease: "easeOut" },
 };
 
+type OperationVisualTone = {
+    badgeClassName: string;
+    activeBarClassName: string;
+    emphasisLabel: string;
+};
+
+type RecursionStackNode = {
+    depth: number;
+    low: number;
+    high: number;
+};
+
+function normalizeOperationType(step: AlgorithmSimulationStep | undefined) {
+    const candidate = (step?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
+    return candidate.replaceAll(/\s+/g, "_");
+}
+
+function getOperationVisualTone(operationType: string): OperationVisualTone | null {
+    if (operationType === "compare") {
+        return {
+            badgeClassName: "border-yellow-300/35 bg-yellow-300/10 text-yellow-100",
+            activeBarClassName: "from-yellow-300 to-orange-400 shadow-[0_0_18px_rgba(251,191,36,0.35)]",
+            emphasisLabel: "Comparing",
+        };
+    }
+
+    if (operationType === "swap") {
+        return {
+            badgeClassName: "border-red-400/30 bg-red-400/10 text-red-200",
+            activeBarClassName: "from-red-400 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.35)]",
+            emphasisLabel: "Swapped",
+        };
+    }
+
+    if (operationType === "pivot_select") {
+        return {
+            badgeClassName: "border-blue-400/30 bg-blue-400/10 text-blue-100",
+            activeBarClassName: "from-blue-400 to-blue-500 shadow-[0_0_18px_rgba(96,165,250,0.34)]",
+            emphasisLabel: "Pivot Selected",
+        };
+    }
+
+    if (operationType === "pivot_positioned") {
+        return {
+            badgeClassName: "border-amber-300/35 bg-amber-300/10 text-amber-100",
+            activeBarClassName: "from-amber-300 to-yellow-400 shadow-[0_0_18px_rgba(252,211,77,0.35)]",
+            emphasisLabel: "Pivot Positioned",
+        };
+    }
+
+    if (operationType === "pivot_swap") {
+        return {
+            badgeClassName: "border-purple-400/30 bg-purple-400/10 text-purple-100",
+            activeBarClassName: "from-purple-400 to-violet-500 shadow-[0_0_18px_rgba(168,85,247,0.35)]",
+            emphasisLabel: "Pivot Swap",
+        };
+    }
+
+    return null;
+}
+
+function formatRangeLabel(range: [number, number] | null | undefined) {
+    if (!range || typeof range[0] !== "number" || typeof range[1] !== "number") {
+        return "--";
+    }
+
+    return `${range[0]} to ${range[1]}`;
+}
+
+function buildRecursionStack(steps: AlgorithmSimulationStep[], upToIndex: number): RecursionStackNode[] {
+    const latestByDepth = new Map<number, { low: number; high: number }>();
+
+    for (let index = 0; index <= upToIndex && index < steps.length; index += 1) {
+        const step = steps[index];
+        const depth = step?.recursionDepth;
+        const range = step?.range;
+
+        if (
+            typeof depth !== "number"
+            || !range
+            || typeof range[0] !== "number"
+            || typeof range[1] !== "number"
+        ) {
+            continue;
+        }
+
+        latestByDepth.set(depth, { low: range[0], high: range[1] });
+    }
+
+    return Array.from(latestByDepth.entries())
+        .sort((left, right) => left[0] - right[0])
+        .map(([depth, range]) => ({ depth, low: range.low, high: range.high }));
+}
+
 function getStepTone(step: AlgorithmSimulationStep | undefined) {
+    const operationType = normalizeOperationType(step);
+    const operationTone = getOperationVisualTone(operationType);
+
+    if (operationTone) {
+        return operationTone;
+    }
+
     const action = (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
 
     if (action.includes("compare")) {
@@ -493,11 +594,36 @@ function AlgorithmVisualizer({
     const nextBarIdRef = useRef(0);
     const heapStageRef = useRef<HTMLDivElement | null>(null);
     const heapArrayCellRefs = useRef<Array<HTMLDivElement | null>>([]);
+    const [showRecursionStack, setShowRecursionStack] = useState(false);
 
     const safeIndex = steps.length === 0
         ? 0
         : Math.min(Math.max(currentStepIndex, 0), steps.length - 1);
     const currentStep = steps[safeIndex];
+    const normalizedStepType = normalizeOperationType(currentStep);
+    const hasRange = Array.isArray(currentStep?.range)
+        && typeof currentStep?.range?.[0] === "number"
+        && typeof currentStep?.range?.[1] === "number";
+    const activeRange = hasRange
+        ? ([currentStep?.range?.[0] ?? 0, currentStep?.range?.[1] ?? 0] as [number, number])
+        : null;
+    const activeRecursionDepth = typeof currentStep?.recursionDepth === "number"
+        ? currentStep.recursionDepth
+        : null;
+    const persistentPivotIndex = useMemo(() => {
+        for (let index = safeIndex; index >= 0; index -= 1) {
+            const step = steps[index];
+            if (typeof step?.pivotIndex === "number") {
+                return step.pivotIndex;
+            }
+        }
+
+        return null;
+    }, [safeIndex, steps]);
+    const recursionStack = useMemo(
+        () => buildRecursionStack(steps, safeIndex),
+        [safeIndex, steps],
+    );
     const searchState = getSearchState(currentStep);
     const isSearchMidpoint = searchState === "midpoint_pick";
     const isSearchFound = searchState === "found" || searchState === "target_found";
@@ -812,6 +938,11 @@ function AlgorithmVisualizer({
                             <span className="text-sm text-text-secondary">
                                 Step {steps.length === 0 ? 0 : safeIndex + 1} of {steps.length}
                             </span>
+                            {typeof activeRecursionDepth === "number" ? (
+                                <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-text-secondary">
+                                    Depth {activeRecursionDepth}
+                                </span>
+                            ) : null}
                             {isPracticeMode ? (
                                 <span className="text-sm text-sky-100/80">
                                     {algorithmType === "search"
@@ -871,7 +1002,27 @@ function AlgorithmVisualizer({
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
-                                    Swapped
+                                    Swap
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-blue-400 to-blue-500" />
+                                    Pivot Select
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-amber-300 to-yellow-400" />
+                                    Pivot Positioned
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-purple-400 to-violet-500" />
+                                    Pivot Swap
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full border border-sky-200/80 bg-sky-400/30" />
+                                    Pivot Index
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-white/60" />
+                                    Active Range
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
@@ -889,6 +1040,58 @@ function AlgorithmVisualizer({
                             {values.length > 0 ? tone.emphasisLabel : "No active step"}
                         </span>
                     </div>
+
+                    <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                        <span>
+                            Type: <span className="text-text-primary">{formatActionLabel(normalizedStepType || "--")}</span>
+                        </span>
+                        <span>
+                            Range: <span className="text-text-primary">{formatRangeLabel(activeRange)}</span>
+                        </span>
+                        <span>
+                            Depth: <span className="text-text-primary">{activeRecursionDepth ?? "--"}</span>
+                        </span>
+                        <span>
+                            Pivot: <span className="text-text-primary">{persistentPivotIndex ?? "--"}</span>
+                        </span>
+                    </div>
+
+                    {recursionStack.length > 0 ? (
+                        <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowRecursionStack((previous) => !previous)}
+                                className="flex w-full items-center justify-between text-left text-xs font-medium uppercase tracking-[0.14em] text-text-secondary"
+                            >
+                                <span>Recursion stack</span>
+                                <span>{showRecursionStack ? "Hide" : "Show"}</span>
+                            </button>
+
+                            {showRecursionStack ? (
+                                <div className="mt-3 space-y-1 text-xs text-text-secondary">
+                                    {recursionStack.map((node) => {
+                                        const isCurrentDepth = activeRecursionDepth === node.depth;
+
+                                        return (
+                                            <div
+                                                key={`depth-${node.depth}-${node.low}-${node.high}`}
+                                                className={cn(
+                                                    "flex items-center gap-2 rounded-lg px-2 py-1",
+                                                    isCurrentDepth && "bg-accent/10 text-text-primary",
+                                                )}
+                                                style={{ paddingLeft: `${8 + (node.depth * 14)}px` }}
+                                            >
+                                                <span className="text-[11px] text-text-secondary">{node.depth === 0 ? "root" : "|-"}</span>
+                                                <span>
+                                                    [Depth {node.depth}] quickSort(arr, {node.low}, {node.high})
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null}
 
                     {heapStepMeta ? (
                         <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
@@ -1238,6 +1441,10 @@ function AlgorithmVisualizer({
                                     const isSuggested = suggestedIndexSet.has(index);
                                     const isFeedbackTarget = feedbackIndexSet.has(index);
                                     const isDiscarded = discardedIndexSet.has(index);
+                                    const isPivot = typeof persistentPivotIndex === "number" && index === persistentPivotIndex;
+                                    const isInActiveRange = !activeRange
+                                        || (index >= activeRange[0] && index <= activeRange[1]);
+                                    const shouldDimOutsideRange = Boolean(activeRange) && !isInActiveRange;
                                     const height = `${Math.max((bar.value / globalMax) * 100, 8)}%`;
                                     const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
                                     const shouldPulseMidpoint = !isPracticeMode && isSearchMidpoint && isActive && !shouldReduceMotion;
@@ -1265,6 +1472,7 @@ function AlgorithmVisualizer({
                                                 isInteractive && "cursor-pointer",
                                                 isInteractionDisabled && "cursor-not-allowed opacity-70",
                                                 isDiscarded && "opacity-30 grayscale pointer-events-none",
+                                                shouldDimOutsideRange && "opacity-45 saturate-50",
                                             )}
                                             onClick={() => {
                                                 if (isInteractive && !isInteractionDisabled) {
@@ -1320,8 +1528,10 @@ function AlgorithmVisualizer({
                                                     className={cn(
                                                         "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
                                                         isSorted && "border-emerald-400/40 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
-                                                        !isPracticeMode && isActive && tone.activeBarClassName,
+                                                        !isPracticeMode && (isActive || isPivot) && tone.activeBarClassName,
                                                         !isPracticeMode && isActive && "border-transparent",
+                                                        !isPracticeMode && isPivot && "border-sky-200/80 ring-2 ring-sky-300/70 shadow-[0_0_22px_rgba(56,189,248,0.34)]",
+                                                        !isPracticeMode && isInActiveRange && "border-white/20",
                                                         isSuggested && isPracticeMode && "border-accent/50 from-accent/80 to-accent/50 shadow-[0_0_18px_rgba(213,255,64,0.25)]",
                                                         isSelected && isPracticeMode && "border-sky-300/50 from-sky-400/90 to-sky-500 shadow-[0_0_18px_rgba(56,189,248,0.26)]",
                                                         isFeedbackTarget && feedbackTone === "correct" && "border-emerald-400/50 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.26)]",
@@ -1330,6 +1540,18 @@ function AlgorithmVisualizer({
                                                     aria-label={`Index ${index}, value ${bar.value}`}
                                                     aria-current={isActive || isSelected ? "true" : undefined}
                                                 />
+
+                                                {activeRange && index === activeRange[0] ? (
+                                                    <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-white/80">
+                                                        low
+                                                    </span>
+                                                ) : null}
+
+                                                {activeRange && index === activeRange[1] ? (
+                                                    <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-white/80">
+                                                        high
+                                                    </span>
+                                                ) : null}
                                             </div>
 
                                             <motion.span

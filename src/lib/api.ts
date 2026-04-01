@@ -17,6 +17,10 @@ export type AlgorithmSimulationStep = {
     activeIndices: number[];
     lineNumber: number;
     actionLabel: string;
+    type?: string | null;
+    pivotIndex?: number | null;
+    range?: [number, number] | null;
+    recursionDepth?: number | null;
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
 };

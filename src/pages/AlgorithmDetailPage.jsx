@@ -360,6 +360,7 @@ export default function AlgorithmDetailPage() {
     const algorithmType = simulationAlgorithmKey === "binary_search" ? "search" : "sort";
     const isSearchMode = algorithmType === "search";
     const activeLine = steps[currentStepIndex]?.lineNumber ?? 0;
+    const activeStepType = steps[currentStepIndex]?.type ?? steps[currentStepIndex]?.actionLabel ?? "";
     const lineToStepIndexMap = useMemo(
         () => steps.reduce((accumulator, step, index) => {
             if (typeof step.lineNumber === "number" && accumulator[step.lineNumber] === undefined) {
@@ -977,6 +978,7 @@ export default function AlgorithmDetailPage() {
                             <CodePanel
                                 snippets={codeSnippets}
                                 activeLine={activeLine}
+                                activeStepType={activeStepType}
                                 lineToStepIndexMap={lineToStepIndexMap}
                                 onSeekToStep={handleStepChange}
                             />

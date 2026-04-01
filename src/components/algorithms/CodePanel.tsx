@@ -16,14 +16,42 @@ type CodeSnippet = {
 type CodePanelProps = {
     snippets: CodeSnippet[];
     activeLine?: number;
+    activeStepType?: string;
     lineToStepIndexMap?: Record<number, number>;
     onSeekToStep?: (stepIndex: number) => void;
     className?: string;
 };
 
+function getActiveLineClass(activeStepType: string) {
+    const normalizedType = activeStepType.trim().toLowerCase().replaceAll(/\s+/g, "_");
+
+    if (normalizedType === "compare") {
+        return "bg-yellow-400/10";
+    }
+
+    if (normalizedType === "swap") {
+        return "bg-red-400/10";
+    }
+
+    if (normalizedType === "pivot_select") {
+        return "bg-blue-400/10";
+    }
+
+    if (normalizedType === "pivot_positioned") {
+        return "bg-amber-300/10";
+    }
+
+    if (normalizedType === "pivot_swap") {
+        return "bg-purple-400/10";
+    }
+
+    return "bg-accent/[0.07]";
+}
+
 export default function CodePanel({
     snippets,
     activeLine = 0,
+    activeStepType = "",
     lineToStepIndexMap,
     onSeekToStep,
     className,
@@ -46,6 +74,10 @@ export default function CodePanel({
     const codeLines = useMemo(
         () => activeSnippet?.code.split("\n") ?? [],
         [activeSnippet],
+    );
+    const activeLineClassName = useMemo(
+        () => getActiveLineClass(activeStepType),
+        [activeStepType],
     );
     const activeDisplayLines = useMemo(() => {
         if (!activeSnippet?.syncsWithTrace || activeLine <= 0) {
@@ -179,7 +211,7 @@ export default function CodePanel({
                                     className={cn(
                                         "relative flex w-full items-start gap-4 rounded-lg px-3 py-1.5 text-left transition-[background-color,color,box-shadow] duration-300 ease-out",
                                         isClickable && "cursor-pointer hover:bg-accent/5",
-                                        isActive && "bg-accent/[0.07]",
+                                        isActive && activeLineClassName,
                                     )}
                                     disabled={!isClickable}
                                 >
