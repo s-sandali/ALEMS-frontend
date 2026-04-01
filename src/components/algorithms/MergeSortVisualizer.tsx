@@ -94,6 +94,7 @@ function MergeSortVisualizer({
         : Math.min(Math.max(currentStepIndex, 0), steps.length - 1);
 
     const currentStep = steps[safeIndex];
+    const previousStep = safeIndex > 0 ? steps[safeIndex - 1] : null;
     const meta = currentStep?.mergeSort ?? null;
     const actionLabel = (currentStep?.actionLabel ?? "").trim().toLowerCase();
     const activeIndices = currentStep?.activeIndices ?? [];
@@ -108,6 +109,51 @@ function MergeSortVisualizer({
     const mid   = meta?.mid ?? null;
     const depth = meta?.recursionDepth ?? 0;
     const mergeBuffer = meta?.mergeBuffer ?? null;
+
+    const compareSwap = useMemo(() => {
+        if (actionLabel !== "compare" || activeIndices.length < 2) {
+            return null;
+        }
+
+        const [leftIndex, rightIndex] = [...activeIndices].sort((a, b) => a - b);
+        if (leftIndex === rightIndex) {
+            return null;
+        }
+
+        return {
+            leftIndex,
+            rightIndex,
+            delta: (rightIndex - leftIndex) * 56,
+        };
+    }, [actionLabel, activeIndices]);
+
+    const placeSwap = useMemo(() => {
+        if (actionLabel !== "place" || !previousStep || !meta || typeof meta.placeIndex !== "number") {
+            return null;
+        }
+
+        const targetIndex = meta.placeIndex;
+        const targetValue = arrayState[targetIndex];
+        if (typeof targetValue !== "number") {
+            return null;
+        }
+
+        const previousArray = previousStep.arrayState ?? [];
+        const previousCandidates = (previousStep.activeIndices ?? []).filter(
+            (index) => index !== targetIndex && previousArray[index] === targetValue,
+        );
+
+        const sourceIndex = previousCandidates[0];
+        if (typeof sourceIndex !== "number" || sourceIndex === targetIndex) {
+            return null;
+        }
+
+        return {
+            sourceIndex,
+            targetIndex,
+            delta: (targetIndex - sourceIndex) * 56,
+        };
+    }, [actionLabel, previousStep, meta, arrayState]);
 
     // Phase label for the info strip
     const phaseText = useMemo(() => {
@@ -152,52 +198,89 @@ function MergeSortVisualizer({
             <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
 
                 {/* Elements */}
-                <div className="flex min-h-[140px] flex-wrap items-end justify-center gap-2 rounded-xl px-2 pb-6 pt-12 sm:min-h-[160px] sm:gap-3">
+                <div className="flex min-h-[140px] flex-nowrap items-end justify-center gap-2 overflow-x-auto rounded-xl px-2 pb-6 pt-12 sm:min-h-[160px] sm:gap-3">
                     <AnimatePresence initial={false}>
-                        {arrayState.map((value, index) => {
-                            const boxStyle = getBoxStyle(
-                                index,
-                                actionLabel,
-                                activeIndices,
-                                isFinalStep,
-                            );
-                            const isActive = activeIndices.includes(index);
-                            const isPlace  = actionLabel === "place" && meta?.placeIndex === index;
+                        {(() => {
+                            const valCounts = new Map<number, number>();
+                            
+                            return arrayState.map((value, index) => {
+                                const count = valCounts.get(value) || 0;
+                                valCounts.set(value, count + 1);
+                                const uniqueKey = `ms-val-${value}-${count}`;
 
-                            // Calculate physical separation based on merges (simulate physical splitting)
-                            let marginStyle = {};
-                            if (typeof mid === "number" && index === mid && (isMergeParse || actionLabel === "split" || actionLabel === "compare")) {
-                                marginStyle = { marginRight: "1rem" };
-                            }
+                                const boxStyle = getBoxStyle(
+                                    index,
+                                    actionLabel,
+                                    activeIndices,
+                                    isFinalStep,
+                                );
+                                const isActive = activeIndices.includes(index);
+                                const isPlace  = actionLabel === "place" && meta?.placeIndex === index;
 
-                            return (
-                                <motion.div
-                                    key={`ms-box-${index}`}
-                                    layout="position"
-                                    style={marginStyle}
-                                    className="flex flex-col items-center gap-2"
-                                >
+                                // Calculate physical separation based on merges (simulate physical splitting)
+                                let marginStyle = {};
+                                if (typeof mid === "number" && index === mid && (isMergeParse || actionLabel === "split" || actionLabel === "compare")) {
+                                    marginStyle = { marginRight: "1rem" };
+                                }
+
+                                // Identify elements currently inside the merge buffer (hide them in the main array)
+                                const isMerging = (isComparePase || isMergeParse) && mergeBuffer && mergeBuffer.length > 0;
+                                const remainingInBuffer = mergeBuffer?.length || 0;
+                                const totalMergeLength = right - left + 1;
+                                const placedCount = totalMergeLength - remainingInBuffer;
+                                const currentK = left + placedCount;
+                                
+                                const isLifted = isMerging && index >= currentK && index <= right;
+                                
+                                let finalBoxStyle = boxStyle;
+                                if (isLifted) {
+                                    finalBoxStyle = "border-dashed border-white/20 bg-transparent text-transparent shadow-none";
+                                }
+
+                                return (
                                     <motion.div
-                                        animate={shouldReduceMotion ? {} : {
-                                            y: isActive ? -24 : 0,
-                                            scale: isPlace ? [1, 1.15, 1] : (isActive ? 1.08 : 1),
-                                        }}
-                                        transition={shouldReduceMotion ? { duration: 0 } : {
-                                            y: { type: "spring", stiffness: 350, damping: 20 },
-                                            scale: { duration: 0.35, ease: "easeInOut" },
-                                        }}
-                                        className={cn(
-                                            "flex h-12 w-12 items-center justify-center rounded-lg border text-lg font-bold transition-[background-color,border-color,color] duration-300 sm:h-14 sm:w-14 sm:text-xl",
-                                            boxStyle,
-                                        )}
-                                        aria-label={`Index ${index}, value ${value}`}
+                                        key={uniqueKey}
+                                        layout="position"
+                                        style={marginStyle}
+                                        className="flex flex-col items-center gap-2"
                                     >
-                                        {value}
+                                        <motion.div
+                                            animate={shouldReduceMotion ? {} : {
+                                                x: compareSwap
+                                                    ? (index === compareSwap.leftIndex
+                                                        ? compareSwap.delta
+                                                        : index === compareSwap.rightIndex
+                                                            ? -compareSwap.delta
+                                                            : 0)
+                                                    : placeSwap
+                                                        ? (index === placeSwap.sourceIndex
+                                                            ? placeSwap.delta
+                                                            : index === placeSwap.targetIndex
+                                                                ? -placeSwap.delta
+                                                                : 0)
+                                                        : 0,
+                                                y: isActive && !isLifted ? -24 : 0,
+                                                scale: (isPlace && !isLifted) ? [1, 1.15, 1] : ((isActive && !isLifted) ? 1.08 : 1),
+                                                opacity: isLifted ? 0.3 : 1
+                                            }}
+                                            transition={shouldReduceMotion ? { duration: 0 } : {
+                                                x: { duration: 0.34, ease: "easeInOut" },
+                                                y: { type: "spring", stiffness: 350, damping: 20 },
+                                                scale: { duration: 0.35, ease: "easeInOut" },
+                                            }}
+                                            className={cn(
+                                                "flex h-12 w-12 items-center justify-center rounded-lg border text-lg font-bold transition-[background-color,border-color,color] duration-300 sm:h-14 sm:w-14 sm:text-xl",
+                                                finalBoxStyle,
+                                            )}
+                                            aria-label={`Index ${index}, value ${value}`}
+                                        >
+                                            {!isLifted && value}
+                                        </motion.div>
+                                        <span className="text-[10px] text-text-secondary">{index}</span>
                                     </motion.div>
-                                    <span className="text-[10px] text-text-secondary">{index}</span>
-                                </motion.div>
-                            );
-                        })}
+                                );
+                            });
+                        })()}
                     </AnimatePresence>
                 </div>
 
