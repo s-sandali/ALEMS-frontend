@@ -191,7 +191,7 @@ function ResultsSummary({ result, quiz, onRetry }) {
                 </p>
             </div>
 
-            {result.xpEarned > 0 && (
+            {result.isFirstAttempt && result.xpEarned > 0 ? (
                 <div style={{
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                     background: "rgba(var(--lime-rgb), 0.07)",
@@ -203,7 +203,19 @@ function ResultsSummary({ result, quiz, onRetry }) {
                         +{result.xpEarned} XP earned
                     </span>
                 </div>
-            )}
+            ) : !result.isFirstAttempt ? (
+                <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    background: "var(--db-bg3)",
+                    border: "1px solid var(--db-border2)",
+                    borderRadius: 12, padding: "12px 20px",
+                }}>
+                    <Zap size={16} color="var(--db-text3)" />
+                    <span style={{ fontSize: 13, color: "var(--db-text3)" }}>
+                        No XP awarded — you already earned XP on your first attempt.
+                    </span>
+                </div>
+            ) : null}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <p style={{ fontSize: 12, color: "var(--db-text3)", textTransform: "uppercase", letterSpacing: "1.2px" }}>
