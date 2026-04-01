@@ -595,6 +595,11 @@ function AlgorithmVisualizer({
     const quickSortPivotIndex = isQuickSortPivotPlaced && typeof quickSortMeta?.pivotIndex === "number"
         ? quickSortMeta.pivotIndex
         : null;
+    const rawSortedBoundary = currentStep?.sortedBoundary ?? quickSortMeta?.sortedBoundary ?? null;
+    const sortedPartitionBoundary = typeof rawSortedBoundary === "number"
+        ? Math.min(Math.max(rawSortedBoundary, -1), Math.max(values.length - 1, -1))
+        : null;
+    const hasSortedPartitionBoundary = typeof sortedPartitionBoundary === "number";
     const hasQuickSortMetadata = Boolean(quickSortMeta) || isQuickSortPivotPlaced;
     const heapComparison = useMemo(
         () => formatHeapComparison(currentStep),
@@ -1288,12 +1293,21 @@ function AlgorithmVisualizer({
                                         ? { scale: [1, 1.015, 1] }
                                         : { x: 0, scale: 1 }))}
                             transition={{ duration: 0.38, ease: "easeOut" }}
-                            className="flex min-h-64 items-end gap-2 overflow-x-auto rounded-xl px-1 pb-1 pt-6 sm:min-h-72 sm:gap-3"
+                            className="relative flex min-h-64 items-end gap-2 overflow-x-auto rounded-xl px-1 pb-1 pt-6 sm:min-h-72 sm:gap-3"
                         >
+                            {hasSortedPartitionBoundary ? (
+                                <div className="absolute left-4 right-4 top-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.15em] text-text-secondary/90">
+                                    <span className="text-emerald-200">Sorted partition</span>
+                                    <span className="text-slate-300">Unsorted partition</span>
+                                </div>
+                            ) : null}
                             {visualBars.length > 0 ? (
                                 visualBars.map((bar, index) => {
                                     const isActive = activeIndices.has(index);
                                     const isSorted = sortedIndices.has(index);
+                                    const isSortedPartition = hasSortedPartitionBoundary && index <= sortedPartitionBoundary;
+                                    const isUnsortedPartition = hasSortedPartitionBoundary && index > sortedPartitionBoundary;
+                                    const isPartitionSplit = hasSortedPartitionBoundary && index === sortedPartitionBoundary;
                                     const isSelected = selectedIndexSet.has(index);
                                     const isSuggested = suggestedIndexSet.has(index);
                                     const isFeedbackTarget = feedbackIndexSet.has(index);
@@ -1328,7 +1342,7 @@ function AlgorithmVisualizer({
                                             layout
                                             transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
                                             className={cn(
-                                                "flex min-w-10 flex-1 flex-col items-center justify-end gap-2 sm:min-w-12 transition-[opacity,filter] duration-500",
+                                                "relative flex min-w-10 flex-1 flex-col items-center justify-end gap-2 sm:min-w-12 transition-[opacity,filter] duration-500",
                                                 isInteractive && "cursor-pointer",
                                                 isInteractionDisabled && "cursor-not-allowed opacity-70",
                                                 isDiscarded && "opacity-30 grayscale pointer-events-none",
@@ -1358,6 +1372,8 @@ function AlgorithmVisualizer({
                                                 transition={{ duration: 0.2 }}
                                                 className={cn(
                                                     "text-xs font-medium text-text-secondary transition-colors duration-300",
+                                                        isSortedPartition && "text-emerald-100",
+                                                        isUnsortedPartition && "text-slate-300",
                                                     isSorted && "text-emerald-200",
                                                     isSelected && "text-sky-50",
                                                     isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
@@ -1386,6 +1402,8 @@ function AlgorithmVisualizer({
                                                         }}
                                                     className={cn(
                                                         "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
+                                                        isUnsortedPartition && "border-slate-500/45 from-slate-500/55 to-slate-700/55",
+                                                        isSortedPartition && "border-emerald-400/45 from-emerald-400/85 to-emerald-500/85 shadow-[0_0_14px_rgba(52,211,153,0.18)]",
                                                         isSorted && "border-emerald-400/40 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
                                                         isInQuickSortRange && !isHeapStep && "border-sky-300/40 from-sky-400/40 to-sky-500/20 shadow-[0_0_12px_rgba(56,189,248,0.18)]",
                                                         isQuickSortPivotPlacementIndex && "border-emerald-300/70 from-emerald-300 to-emerald-500 shadow-[0_0_24px_rgba(52,211,153,0.35)]",
@@ -1399,6 +1417,13 @@ function AlgorithmVisualizer({
                                                     aria-label={`Index ${index}, value ${bar.value}`}
                                                     aria-current={isActive || isSelected ? "true" : undefined}
                                                 />
+
+                                                {isPartitionSplit ? (
+                                                    <div className="pointer-events-none absolute bottom-0 right-[-7px] top-0 flex flex-col items-center">
+                                                        <span className="-mt-4 text-xs font-semibold text-emerald-200">|</span>
+                                                        <span className="h-full w-px bg-emerald-300/80 shadow-[0_0_8px_rgba(52,211,153,0.45)]" />
+                                                    </div>
+                                                ) : null}
                                             </div>
 
                                             <motion.span
@@ -1406,6 +1431,8 @@ function AlgorithmVisualizer({
                                                 transition={{ duration: 0.2 }}
                                                 className={cn(
                                                     "text-[11px] text-text-secondary transition-colors duration-300",
+                                                    isSortedPartition && "text-emerald-100",
+                                                    isUnsortedPartition && "text-slate-300",
                                                     isSorted && "text-emerald-200",
                                                     isInQuickSortRange && !isSorted && "text-sky-100",
                                                     isQuickSortPivotPlacementIndex && "text-emerald-100",

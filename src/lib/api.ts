@@ -17,6 +17,7 @@ export type AlgorithmSimulationStep = {
     activeIndices: number[];
     lineNumber: number;
     actionLabel: string;
+    sortedBoundary?: number | null;
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
     quickSort?: QuickSortStepModel | null;
@@ -27,6 +28,7 @@ export type QuickSortStepModel = {
     pivot?: number | null;
     pivotIndex?: number | null;
     range?: number[] | null;
+    sortedBoundary?: number | null;
 };
 
 export type HeapStepModel = {
