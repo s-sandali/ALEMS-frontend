@@ -5,7 +5,6 @@ import type { Transition } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
-import QuickSortTreeVisualizer from "./QuickSortTreeVisualizer";
 
 type LearningMode = "auto" | "practice";
 type PracticeFeedbackTone = "correct" | "incorrect" | null;
@@ -63,18 +62,6 @@ type HeapVisualEdge = {
     y2: number;
 };
 
-type RecursionVisualFrame = {
-    id: string;
-    label: string;
-    stateLabel: string | null;
-    depth: number | null;
-    rangeLabel: string | null;
-    argumentLabel: string | null;
-    returnLabel: string | null;
-    isActive: boolean;
-    sourceIndex: number;
-};
-
 const HEAP_NODE_RADIUS_PX = 22;
 const FALLING_NODE_RADIUS_PX = 20;
 
@@ -94,183 +81,10 @@ const activeBarTransition: Transition = {
     scale: { duration: 0.22, ease: "easeOut" },
 };
 
-function isObjectRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null;
-}
-
-function getFirstString(record: Record<string, unknown>, keys: string[]) {
-    for (const key of keys) {
-        const value = record[key];
-        if (typeof value === "string" && value.trim() !== "") {
-            return value;
-        }
-    }
-
-    return null;
-}
-
-function getFirstNumber(record: Record<string, unknown>, keys: string[]) {
-    for (const key of keys) {
-        const value = record[key];
-        if (typeof value === "number" && Number.isFinite(value)) {
-            return value;
-        }
-    }
-
-    return null;
-}
-
-function getFirstRecord(record: Record<string, unknown>, keys: string[]) {
-    for (const key of keys) {
-        const value = record[key];
-        if (isObjectRecord(value)) {
-            return value;
-        }
-    }
-
-    return null;
-}
-
-function truncateLabel(value: string, max = 84) {
-    return value.length > max ? `${value.slice(0, max - 3)}...` : value;
-}
-
-function formatRecursionValue(value: unknown): string {
-    if (value === null || value === undefined) {
-        return "";
-    }
-
-    if (Array.isArray(value)) {
-        return `[${value.map(String).join(", ")}]`;
-    }
-
-    if (typeof value === "object") {
-        try {
-            return JSON.stringify(value);
-        } catch {
-            return "[object]";
-        }
-    }
-
-    if (typeof value === "string") {
-        return value;
-    }
-
-    if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
-        return `${value}`;
-    }
-
-    return "";
-}
-
-function getRecursionRangeLabel(frame: Record<string, unknown>) {
-    const low = getFirstNumber(frame, ["lowIndex", "startIndex", "leftIndex", "left", "lo"]);
-    const high = getFirstNumber(frame, ["highIndex", "endIndex", "rightIndex", "right", "hi"]);
-    const midpoint = getFirstNumber(frame, ["midpointIndex", "midIndex", "pivotIndex", "pivot"]);
-
-    const parts: string[] = [];
-    if (low !== null || high !== null) {
-        parts.push(`Range: ${low ?? "?"} to ${high ?? "?"}`);
-    }
-
-    if (midpoint !== null) {
-        parts.push(`Pivot/Mid: ${midpoint}`);
-    }
-
-    return parts.length > 0 ? parts.join(" | ") : null;
-}
-
-function getRecursionArgumentsLabel(frame: Record<string, unknown>) {
-    const argsRecord = getFirstRecord(frame, ["arguments", "params", "args", "parameters"]);
-    if (!argsRecord) {
-        return null;
-    }
-
-    const entries = Object.entries(argsRecord)
-        .map(([key, value]) => `${key}: ${formatRecursionValue(value)}`)
-        .filter((value) => value.trim() !== "");
-    if (entries.length === 0) {
-        return null;
-    }
-
-    return truncateLabel(`Args: ${entries.join(", ")}`);
-}
-
-function getRecursionReturnLabel(frame: Record<string, unknown>) {
-    const resultValue = frame.returnValue ?? frame.result;
-    const formatted = formatRecursionValue(resultValue);
-    if (!formatted) {
-        return null;
-    }
-
-    return truncateLabel(`Returns: ${formatted}`);
-}
-
-function getRecursionVisualFrames(step: AlgorithmSimulationStep | undefined): RecursionVisualFrame[] {
-    if (!step) {
-        return [];
-    }
-
-    const stepWithExtras = step as AlgorithmSimulationStep & {
-        recursionStack?: unknown;
-        callStack?: unknown;
-    };
-    const recursionMeta = step.recursion ?? null;
-    const candidateFrames = recursionMeta?.frames
-        ?? recursionMeta?.stack
-        ?? (Array.isArray(stepWithExtras.recursionStack) ? stepWithExtras.recursionStack : null)
-        ?? (Array.isArray(stepWithExtras.callStack) ? stepWithExtras.callStack : null)
-        ?? [];
-    const currentFrameId = recursionMeta?.currentFrameId ?? null;
-
-    if (!Array.isArray(candidateFrames)) {
-        return [];
-    }
-
-    const parsedFrames = candidateFrames
-        .map((frame, index) => {
-            if (!isObjectRecord(frame)) {
-                return null;
-            }
-
-            const rawFrameId = frame.id ?? frame.frameId ?? frame.key ?? index;
-            const frameId = typeof rawFrameId === "string" || typeof rawFrameId === "number"
-                ? String(rawFrameId)
-                : `frame-${index}`;
-            const label = getFirstString(frame, ["functionName", "label", "name", "method", "fn"])
-                ?? `Frame ${index + 1}`;
-            const rawState = getFirstString(frame, ["state", "status", "event"]);
-            const stateLabel = rawState ? formatActionLabel(rawState) : null;
-            const depth = getFirstNumber(frame, ["depth", "level", "stackDepth"]);
-            const isCurrentById = currentFrameId !== null && String(currentFrameId) === frameId;
-            const isCurrentByState = (rawState ?? "").toLowerCase().includes("active")
-                || (rawState ?? "").toLowerCase().includes("processing")
-                || (rawState ?? "").toLowerCase().includes("current");
-
-            return {
-                id: frameId,
-                label,
-                stateLabel,
-                depth,
-                rangeLabel: getRecursionRangeLabel(frame),
-                argumentLabel: getRecursionArgumentsLabel(frame),
-                returnLabel: getRecursionReturnLabel(frame),
-                isActive: isCurrentById || isCurrentByState,
-                sourceIndex: index,
-            } satisfies RecursionVisualFrame;
-        })
-        .filter((frame): frame is RecursionVisualFrame => frame !== null);
-
-    if (parsedFrames.some((frame) => frame.depth !== null)) {
-        parsedFrames.sort((left, right) => {
-            const leftDepth = left.depth ?? left.sourceIndex;
-            const rightDepth = right.depth ?? right.sourceIndex;
-            return leftDepth - rightDepth;
-        });
-    }
-
-    return parsedFrames;
-}
+const actionLabelAliases: Record<string, string> = {
+    pivotplaced: "Pivot Placed",
+    partition_complete: "Pivot Placed",
+};
 
 function getStepTone(step: AlgorithmSimulationStep | undefined) {
     const action = (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
@@ -366,11 +180,6 @@ function getPracticeTone(feedbackTone: PracticeFeedbackTone, practiceCompleted: 
     };
 }
 
-const actionLabelAliases: Record<string, string> = {
-    pivotplaced: "Pivot Placed",
-    partition_complete: "Pivot Placed",
-};
-
 function formatActionLabel(actionLabel: string) {
     const normalizedLabel = actionLabel.trim().toLowerCase();
     if (actionLabelAliases[normalizedLabel]) {
@@ -421,20 +230,6 @@ function getSearchActiveIndices(step: AlgorithmSimulationStep | undefined) {
 
 function getSearchState(step: AlgorithmSimulationStep | undefined) {
     return (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
-}
-
-function getQuickSortPracticeAction(step: AlgorithmSimulationStep | undefined) {
-    const action = (step?.quickSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
-
-    if (action === "pivot_swap" || action === "swap") {
-        return "swap";
-    }
-
-    if (action === "compare") {
-        return "compare";
-    }
-
-    return action;
 }
 
 function getSearchWindow(step: AlgorithmSimulationStep | undefined, totalValues: number) {
@@ -500,6 +295,18 @@ function getSortedIndices(step: AlgorithmSimulationStep | undefined, totalValues
     }
 
     return new Set<number>();
+}
+
+function getSafeStepIndex(index: number | null | undefined, totalValues: number) {
+    if (typeof index !== "number") {
+        return null;
+    }
+
+    if (index < 0 || index >= totalValues) {
+        return null;
+    }
+
+    return index;
 }
 
 function formatHeapComparison(step: AlgorithmSimulationStep | undefined) {
@@ -781,6 +588,29 @@ function AlgorithmVisualizer({
             : getSortedIndices(currentStep, values.length)),
         [currentStep, isPracticeMode, practiceCompleted, values.length],
     );
+    const insertionKeyIndex = useMemo(
+        () => getSafeStepIndex(currentStep?.keyIndex, values.length),
+        [currentStep?.keyIndex, values.length],
+    );
+    const insertionKeyValue = currentStep?.key ?? null;
+    const insertionCompareIndex = useMemo(
+        () => getSafeStepIndex(currentStep?.compareIndex, values.length),
+        [currentStep?.compareIndex, values.length],
+    );
+    const insertionSortedBoundary = useMemo(
+        () => getSafeStepIndex(currentStep?.sortedBoundary, values.length),
+        [currentStep?.sortedBoundary, values.length],
+    );
+    const insertionPositionIndex = useMemo(
+        () => getSafeStepIndex(currentStep?.insertPosition, values.length),
+        [currentStep?.insertPosition, values.length],
+    );
+    const hasInsertionMetadata = Boolean(
+        typeof currentStep?.keyIndex === "number"
+        || typeof currentStep?.key === "number"
+        || typeof currentStep?.compareIndex === "number"
+        || typeof currentStep?.sortedBoundary === "number",
+    );
 
     const practiceTone = getPracticeTone(feedbackTone, practiceCompleted);
     const stepTone = getStepTone(currentStep);
@@ -805,11 +635,6 @@ function AlgorithmVisualizer({
         () => formatHeapComparison(currentStep),
         [currentStep],
     );
-    const quickSortPracticeAction = useMemo(
-        () => getQuickSortPracticeAction(currentStep),
-        [currentStep],
-    );
-    const isQuickSortStep = hasQuickSortMetadata && algorithmType === "sort";
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
     const heapIdentityData = useMemo(() => {
         if (!isHeapStep || steps.length === 0) {
@@ -1004,28 +829,6 @@ function AlgorithmVisualizer({
     const isHeapPracticeInteractive = isHeapStep
         && isPracticeMode
         && typeof onBarClick === "function";
-    const recursionFrames = useMemo(
-        () => getRecursionVisualFrames(currentStep),
-        [currentStep],
-    );
-    const recursionStackFrames = useMemo(
-        () => [...recursionFrames].reverse(),
-        [recursionFrames],
-    );
-    const recursionDepth = useMemo(() => {
-        if (recursionFrames.length === 0) {
-            return 0;
-        }
-
-        const knownDepths = recursionFrames
-            .map((frame) => frame.depth)
-            .filter((depth): depth is number => typeof depth === "number");
-        if (knownDepths.length === 0) {
-            return recursionFrames.length;
-        }
-
-        return Math.max(...knownDepths) + 1;
-    }, [recursionFrames]);
 
     const createBar = (value: number): VisualBar => ({
         id: `visual-bar-${nextBarIdRef.current++}`,
@@ -1093,15 +896,9 @@ function AlgorithmVisualizer({
                                 <span className="text-sm text-sky-100/80">
                                     {algorithmType === "search"
                                         ? "Use Go Left, Go Right, or Found to decide the next move"
-                                        : (isQuickSortStep
-                                            ? (quickSortPracticeAction === "compare"
-                                                ? "Use the bottom array strip to validate the next comparison"
-                                                : (quickSortPracticeAction === "swap"
-                                                    ? "Use the bottom array strip to validate the next swap"
-                                                    : "Use the bottom array strip to follow the next quick sort action"))
                                         : (isHeapStep
                                             ? "Click two heap nodes to validate a swap"
-                                            : "Click two bars to validate a swap"))}
+                                            : "Click two bars to validate a swap")}
                                 </span>
                             ) : null}
                         </div>
@@ -1121,25 +918,6 @@ function AlgorithmVisualizer({
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Found
-                                </span>
-                            </>
-                        ) : isQuickSortStep ? (
-                            <>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
-                                    Left Partition
-                                </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
-                                    Pivot
-                                </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-400 to-sky-500" />
-                                    Right Partition
-                                </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-white/70 to-white/90" />
-                                    Active Frame
                                 </span>
                             </>
                         ) : isHeapStep ? (
@@ -1222,63 +1000,26 @@ function AlgorithmVisualizer({
                                 Quick Sort Step: <span className="text-text-primary">{formatActionLabel(currentStep?.actionLabel ?? "--")}</span>
                             </span>
                         </div>
+                    ) : hasInsertionMetadata ? (
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                            <span>
+                                Key Index: <span className="text-text-primary">{insertionKeyIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Key: <span className="text-text-primary">{typeof insertionKeyValue === "number" ? insertionKeyValue : "--"}</span>
+                            </span>
+                            <span>
+                                Compare Index: <span className="text-text-primary">{insertionCompareIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Sorted Boundary: <span className="text-text-primary">{insertionSortedBoundary ?? "--"}</span>
+                            </span>
+                        </div>
                     ) : null}
 
                     {isPracticeMode && hintMessage ? (
                         <div className="mb-4 rounded-2xl border border-sky-400/10 bg-sky-400/5 px-4 py-3 text-sm text-sky-50">
                             {hintMessage}
-                        </div>
-                    ) : null}
-
-                    {recursionStackFrames.length > 0 && !isQuickSortStep ? (
-                        <div className="mb-4 rounded-2xl border border-fuchsia-300/15 bg-fuchsia-300/[0.06] px-4 py-3">
-                            <div className="mb-3 flex items-center justify-between gap-3 text-xs text-fuchsia-100/85">
-                                <span className="font-semibold uppercase tracking-[0.18em] text-fuchsia-100">Recursion Stack</span>
-                                <span>Depth: {recursionDepth}</span>
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                {recursionStackFrames.map((frame, frameIndex) => {
-                                    const isTopFrame = frameIndex === 0;
-
-                                    return (
-                                        <motion.div
-                                            key={`recursion-${frame.id}`}
-                                            layout
-                                            transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
-                                            className={cn(
-                                                "rounded-xl border px-3 py-2",
-                                                frame.isActive
-                                                    ? "border-fuchsia-300/45 bg-fuchsia-300/15 text-fuchsia-50"
-                                                    : "border-fuchsia-300/20 bg-fuchsia-300/[0.08] text-fuchsia-100/90",
-                                            )}
-                                        >
-                                            <div className="flex items-center justify-between gap-2 text-sm">
-                                                <span className="font-semibold text-fuchsia-50">{frame.label}</span>
-                                                <div className="flex items-center gap-2">
-                                                    {frame.stateLabel ? (
-                                                        <span className="rounded-full border border-fuchsia-300/35 bg-fuchsia-300/10 px-2 py-0.5 text-[11px] text-fuchsia-100">
-                                                            {frame.stateLabel}
-                                                        </span>
-                                                    ) : null}
-                                                    {isTopFrame ? (
-                                                        <span className="rounded-full border border-fuchsia-200/45 bg-fuchsia-200/20 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-50">
-                                                            TOP
-                                                        </span>
-                                                    ) : null}
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-fuchsia-100/80">
-                                                <span>Depth: {frame.depth ?? "--"}</span>
-                                                {frame.rangeLabel ? <span>{frame.rangeLabel}</span> : null}
-                                                {frame.argumentLabel ? <span>{frame.argumentLabel}</span> : null}
-                                                {frame.returnLabel ? <span>{frame.returnLabel}</span> : null}
-                                            </div>
-                                        </motion.div>
-                                    );
-                                })}
-                            </div>
                         </div>
                     ) : null}
 
@@ -1371,20 +1112,6 @@ function AlgorithmVisualizer({
                                 )}
                             </div>
                         </div>
-                    ) : isQuickSortStep ? (
-                        <QuickSortTreeVisualizer
-                            steps={steps}
-                            currentStepIndex={currentStepIndex}
-                            mode={mode}
-                            values={values}
-                            selectedIndices={selectedIndices}
-                            suggestedIndices={suggestedIndices}
-                            feedbackIndices={feedbackIndices}
-                            feedbackTone={feedbackTone}
-                            isInteractionDisabled={isInteractionDisabled}
-                            onBarClick={onBarClick}
-                            shouldReduceMotion={Boolean(shouldReduceMotion)}
-                        />
                     ) : isHeapStep ? (
                         <div>
                             <div className="mb-3 flex items-center justify-between text-xs text-text-secondary">
@@ -1617,6 +1344,12 @@ function AlgorithmVisualizer({
                                 visualBars.map((bar, index) => {
                                     const isActive = activeIndices.has(index);
                                     const isSorted = sortedIndices.has(index);
+                                    const isKeyElement = !isPracticeMode && index === insertionKeyIndex;
+                                    const isCompareElement = !isPracticeMode && index === insertionCompareIndex;
+                                    const isInsertionPosition = !isPracticeMode && index === insertionPositionIndex;
+                                    const isInSortedBoundary = !isPracticeMode
+                                        && typeof insertionSortedBoundary === "number"
+                                        && index <= insertionSortedBoundary;
                                     const isSelected = selectedIndexSet.has(index);
                                     const isSuggested = suggestedIndexSet.has(index);
                                     const isFeedbackTarget = feedbackIndexSet.has(index);
@@ -1681,6 +1414,9 @@ function AlgorithmVisualizer({
                                                 transition={{ duration: 0.2 }}
                                                 className={cn(
                                                     "text-xs font-medium text-text-secondary transition-colors duration-300",
+                                                    isKeyElement && "text-yellow-100",
+                                                    isCompareElement && "text-red-100",
+                                                    isInsertionPosition && "text-sky-100",
                                                     isSorted && "text-emerald-200",
                                                     isSelected && "text-sky-50",
                                                     isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
@@ -1718,6 +1454,10 @@ function AlgorithmVisualizer({
                                                         isSelected && isPracticeMode && "border-sky-300/50 from-sky-400/90 to-sky-500 shadow-[0_0_18px_rgba(56,189,248,0.26)]",
                                                         isFeedbackTarget && feedbackTone === "correct" && "border-emerald-400/50 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.26)]",
                                                         isFeedbackTarget && feedbackTone === "incorrect" && "border-red-400/50 from-red-400/90 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.3)]",
+                                                        isKeyElement && "border-yellow-300/70 from-yellow-300 to-yellow-500 shadow-[0_0_22px_rgba(250,204,21,0.32)]",
+                                                        isCompareElement && "border-red-300/75 from-red-300 to-red-500 shadow-[0_0_22px_rgba(248,113,113,0.34)]",
+                                                        isInsertionPosition && "border-sky-300/75 from-sky-300 to-sky-500 shadow-[0_0_22px_rgba(56,189,248,0.34)]",
+                                                        isInSortedBoundary && "border-emerald-300/40 from-emerald-400/85 to-emerald-500 shadow-[0_0_14px_rgba(52,211,153,0.2)]",
                                                     )}
                                                     aria-label={`Index ${index}, value ${bar.value}`}
                                                     aria-current={isActive || isSelected ? "true" : undefined}
@@ -1729,6 +1469,9 @@ function AlgorithmVisualizer({
                                                 transition={{ duration: 0.2 }}
                                                 className={cn(
                                                     "text-[11px] text-text-secondary transition-colors duration-300",
+                                                    isKeyElement && "text-yellow-100",
+                                                    isCompareElement && "text-red-100",
+                                                    isInsertionPosition && "text-sky-100",
                                                     isSorted && "text-emerald-200",
                                                     isInQuickSortRange && !isSorted && "text-sky-100",
                                                     isQuickSortPivotPlacementIndex && "text-emerald-100",

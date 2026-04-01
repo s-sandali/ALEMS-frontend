@@ -17,41 +17,40 @@ export type AlgorithmSimulationStep = {
     activeIndices: number[];
     lineNumber: number;
     actionLabel: string;
+    keyIndex?: number | null;
+    key?: number | null;
+    compareIndex?: number | null;
+    sortedBoundary?: number | null;
+    insertPosition?: number | null;
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
     quickSort?: QuickSortStepModel | null;
-    recursion?: RecursionStepModel | null;
+    recursion?: RecursionStateModel | null;
 };
 
-type RecursionPrimitive = string | number | boolean | null;
+export type QuickSortStepModel = {
+    type?: string | null;
+    pivot?: number | null;
+    pivotIndex?: number | null;
+    range?: number[] | null;
+    recursionDepth?: number | null;
+};
 
 export type RecursionFrameModel = {
     id?: string | number | null;
-    functionName?: string | null;
-    label?: string | null;
-    state?: string | null;
     depth?: number | null;
-    arguments?: Record<string, RecursionPrimitive> | null;
-    params?: Record<string, RecursionPrimitive> | null;
     leftIndex?: number | null;
     rightIndex?: number | null;
     lowIndex?: number | null;
     highIndex?: number | null;
     startIndex?: number | null;
     endIndex?: number | null;
-    midpointIndex?: number | null;
-    pivotIndex?: number | null;
-    returnValue?: RecursionPrimitive | number[] | string[] | null;
-    result?: RecursionPrimitive | number[] | string[] | null;
 };
 
-export type RecursionStepModel = {
-    event?: string | null;
-    state?: string | null;
-    depth?: number | null;
+export type RecursionStateModel = {
     currentFrameId?: string | number | null;
-    frames?: RecursionFrameModel[] | null;
-    stack?: RecursionFrameModel[] | null;
+    stack?: RecursionFrameModel[];
+    frames?: RecursionFrameModel[];
 };
 
 export type HeapStepModel = {
@@ -68,14 +67,6 @@ export type HeapStepModel = {
     extractedValue?: number | null;
     extractedFromIndex?: number | null;
     sortedTargetIndex?: number | null;
-};
-
-export type QuickSortStepModel = {
-    type?: string | null;
-    pivot?: number | null;
-    pivotIndex?: number | null;
-    range?: number[] | null;
-    recursionDepth?: number | null;
 };
 
 export type SearchStepModel = {
