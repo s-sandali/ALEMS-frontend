@@ -448,10 +448,11 @@ export type QuizAttemptQuestionResult = {
 export type QuizAttemptResult = {
     attemptId: number;
     quizId: number;
-    score: number;           // percentage 0–100
-    passed: boolean;
+    score: number;           // percentage 0–100 (rounded)
+    correctCount: number;    // raw number of correct answers
     totalQuestions: number;
-    correctCount: number;
+    xpEarned: number;
+    passed: boolean;
     results: QuizAttemptQuestionResult[];
 };
 
