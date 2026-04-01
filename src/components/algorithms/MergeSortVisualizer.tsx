@@ -11,23 +11,10 @@ type MergeSortVisualizerProps = {
     className?: string;
 };
 
-// ── Colour palette ─────────────────────────────────────────────────────────────
-
-const DEPTH_COLORS = [
-    { bar: "from-violet-400 to-violet-500",  border: "border-violet-400/60",  text: "text-violet-100",  badge: "bg-violet-400/20 border-violet-400/40",  label: "Left (depth 0)"  },
-    { bar: "from-sky-400 to-sky-500",         border: "border-sky-400/60",      text: "text-sky-100",      badge: "bg-sky-400/20 border-sky-400/40",          label: "Left (depth 1)"  },
-    { bar: "from-teal-400 to-teal-500",       border: "border-teal-400/60",     text: "text-teal-100",     badge: "bg-teal-400/20 border-teal-400/40",         label: "Left (depth 2)"  },
-    { bar: "from-amber-400 to-amber-500",     border: "border-amber-400/60",    text: "text-amber-100",    badge: "bg-amber-400/20 border-amber-400/40",        label: "Left (depth 3)"  },
-];
-
 const COMPARE_COLOR  = "bg-yellow-400 text-yellow-950 border-yellow-300 shadow-[0_0_18px_rgba(250,204,21,0.5)]";
 const PLACE_COLOR    = "bg-emerald-400 text-emerald-950 border-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.5)]";
-const ACTIVE_COLOR   = "bg-violet-400 text-violet-950 border-violet-300 shadow-[0_0_14px_rgba(167,139,250,0.5)]";
 const SORTED_COLOR   = "bg-emerald-500 text-emerald-950 border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.22)]";
-const LEFT_COLOR     = "bg-sky-400 text-sky-950 border-sky-300 shadow-[0_0_10px_rgba(56,189,248,0.2)]";
-const RIGHT_COLOR    = "bg-rose-400 text-rose-950 border-rose-300 shadow-[0_0_10px_rgba(251,113,133,0.2)]";
-const RANGE_COLOR    = "bg-white/20 text-white border-white/30";
-const DEFAULT_COLOR  = "bg-white/[0.04] text-white/50 border-white/10";
+const DEFAULT_COLOR  = "bg-white/[0.08] text-white/80 border-white/10";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -35,9 +22,6 @@ function getBoxStyle(
     index: number,
     actionLabel: string,
     activeIndices: number[],
-    left: number,
-    right: number,
-    mid: number | null | undefined,
     isFinalStep: boolean,
 ) {
     if (isFinalStep) return SORTED_COLOR;
@@ -47,17 +31,6 @@ function getBoxStyle(
 
     if (action === "compare" && isActive) return COMPARE_COLOR;
     if (action === "place" && isActive) return PLACE_COLOR;
-    if (isActive) return ACTIVE_COLOR;
-
-    if (action === "merge_start" || action === "compare" || action === "place" || action === "merge_complete") {
-        if (typeof mid === "number") {
-            if (index >= left && index <= mid) return LEFT_COLOR;
-            if (index > mid && index <= right) return RIGHT_COLOR;
-        }
-        if (index >= left && index <= right) return RANGE_COLOR;
-    }
-
-    if (index >= left && index <= right) return RANGE_COLOR;
 
     return DEFAULT_COLOR;
 }
@@ -105,24 +78,7 @@ function MergeBufferRow({
     );
 }
 
-// ── Recursion depth legend ─────────────────────────────────────────────────────
-
-function DepthBadge({ depth, label }: { depth: number; label: string }) {
-    const palette = DEPTH_COLORS[Math.min(depth, DEPTH_COLORS.length - 1)];
-
-    return (
-        <span
-            className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px]",
-                palette.badge,
-                palette.text,
-            )}
-        >
-            <span className={cn("h-2 w-2 rounded-full bg-gradient-to-b", palette.bar)} />
-            {label}
-        </span>
-    );
-}
+// Removed DepthBadge component inline as it is overly distracting
 
 // ── Main component ──────────────────────────────────────────────────────────────
 
@@ -153,8 +109,6 @@ function MergeSortVisualizer({
     const depth = meta?.recursionDepth ?? 0;
     const mergeBuffer = meta?.mergeBuffer ?? null;
 
-    const depthPalette = DEPTH_COLORS[Math.min(depth, DEPTH_COLORS.length - 1)];
-
     // Phase label for the info strip
     const phaseText = useMemo(() => {
         switch (actionLabel) {
@@ -181,22 +135,10 @@ function MergeSortVisualizer({
             {/* ── Phase info strip ───────────────────────────────────────────── */}
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-xs text-text-secondary">
                 <span className="font-medium text-text-primary">{phaseText}</span>
-                <div className="flex flex-wrap gap-2">
-                    <span>Depth: <span className={cn("font-semibold", depthPalette.text)}>{depth}</span></span>
-                    {typeof mid === "number" ? (
-                        <span>Mid: <span className="font-semibold text-text-primary">{mid}</span></span>
-                    ) : null}
-                    <span>Range: <span className="font-semibold text-text-primary">[{left}..{right}]</span></span>
-                </div>
             </div>
 
             {/* ── Legend ────────────────────────────────────────────────────── */}
             <div className="flex flex-wrap gap-2">
-                <DepthBadge depth={0} label="Left half (sky)" />
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-400/40 bg-rose-400/15 px-2.5 py-0.5 text-[11px] text-rose-100">
-                    <span className="h-2 w-2 rounded-full bg-rose-400" />
-                    Right half (rose)
-                </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-300/40 bg-yellow-300/10 px-2.5 py-0.5 text-[11px] text-yellow-100">
                     <span className="h-2 w-2 rounded-full bg-yellow-400" />
                     Comparing
@@ -207,36 +149,7 @@ function MergeSortVisualizer({
                 </span>
             </div>
 
-            {/* ── Bar chart ─────────────────────────────────────────────────── */}
             <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
-                {/* Sub-array bracket */}
-                {!isFinalStep && arrayState.length > 0 ? (
-                    <div
-                        className="relative mb-2 h-4"
-                        aria-hidden
-                    >
-                        {/* Full range bracket */}
-                        <div
-                            className={cn(
-                                "absolute top-1 h-2 rounded-full opacity-40",
-                                `bg-gradient-to-r ${depthPalette.bar}`,
-                            )}
-                            style={{
-                                left: `${(left / arrayState.length) * 100}%`,
-                                width: `${((right - left + 1) / arrayState.length) * 100}%`,
-                            }}
-                        />
-                        {/* Left / right divider */}
-                        {typeof mid === "number" && (isMergeParse || actionLabel === "split") ? (
-                            <>
-                                <div
-                                    className="absolute top-0 h-4 w-px bg-white/40"
-                                    style={{ left: `${((mid + 1) / arrayState.length) * 100}%` }}
-                                />
-                            </>
-                        ) : null}
-                    </div>
-                ) : null}
 
                 {/* Elements */}
                 <div className="flex min-h-[140px] flex-wrap items-end justify-center gap-2 rounded-xl px-2 pb-6 pt-12 sm:min-h-[160px] sm:gap-3">
@@ -246,9 +159,6 @@ function MergeSortVisualizer({
                                 index,
                                 actionLabel,
                                 activeIndices,
-                                left,
-                                right,
-                                mid,
                                 isFinalStep,
                             );
                             const isActive = activeIndices.includes(index);
@@ -300,40 +210,7 @@ function MergeSortVisualizer({
                 ) : null}
             </div>
 
-            {/* ── Recursion call stack breadcrumb ────────────────────────────── */}
-            {currentStep?.recursion?.stack && currentStep.recursion.stack.length > 0 ? (
-                <div className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
-                    <p className="mb-2 text-xs text-text-secondary">Call stack (deepest first)</p>
-                    <div className="flex flex-col gap-1">
-                        {[...currentStep.recursion.stack].reverse().map((frame) => {
-                            const isCurrentFrame = frame.id === currentStep.recursion?.currentFrameId;
-                            const palette = DEPTH_COLORS[Math.min(frame.depth, DEPTH_COLORS.length - 1)];
-                            return (
-                                <motion.div
-                                    key={frame.id}
-                                    layout
-                                    initial={false}
-                                    className={cn(
-                                        "flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-colors duration-200",
-                                        isCurrentFrame
-                                            ? `${palette.badge} ${palette.text}`
-                                            : "border-white/10 bg-white/[0.02] text-text-secondary",
-                                    )}
-                                    style={{ marginLeft: `${frame.depth * 12}px` }}
-                                >
-                                    <span className={cn("h-1.5 w-1.5 rounded-full bg-gradient-to-b", palette.bar)} />
-                                    <span className="font-mono">
-                                        {frame.functionName}([{frame.leftIndex}..{frame.rightIndex}])
-                                    </span>
-                                    {isCurrentFrame ? (
-                                        <span className="ml-auto rounded bg-white/10 px-1.5 py-0.5 text-[10px]">active</span>
-                                    ) : null}
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                </div>
-            ) : null}
+            {/* Removed recursion call stack as the visual is meant to be simple */}
         </div>
     );
 }
