@@ -57,6 +57,12 @@ type QuickSortTreeVisualizerProps = {
 
 type VisualCell = { id: string; value: number };
 
+type QuickSortCue = {
+    pivotCandidateIndex: number | null;
+    pointerIndex: number | null;
+    pointerLabel: string | null;
+};
+
 function reconcileCells(prev: VisualCell[], nextValues: number[], create: (v: number) => VisualCell): VisualCell[] {
     const pool = new Map<number, VisualCell[]>();
     prev.forEach((cell) => {
@@ -95,71 +101,83 @@ function getStatusText(step: AlgorithmSimulationStep | undefined): string {
     if (!step) return "";
 
     const action = (step.actionLabel ?? "").trim().toLowerCase();
-    const qs = step.quickSort;
-    const pivot = qs?.pivot;
-    const range = qs?.range;
+    const pivot = step.quickSort?.pivot;
+    const range = step.quickSort?.range;
     const active = step.activeIndices ?? [];
     const arr = step.arrayState;
 
+    if (action === "start") return "Quick Sort begins with the full unsorted array.";
+
     if (action === "recursive_call") {
         if (Array.isArray(range) && range.length >= 2) {
-            return `Sorting subarray  [ ${range[0]} → ${range[1]} ]`;
+            return `Sorting subarray [${range[0]}..${range[1]}].`;
         }
-        return "Recursive call";
+        return "Entering a recursive call.";
     }
 
     if (action === "base_case") {
-        return "Base case — subarray has ≤ 1 element, already sorted";
+        return "Base case - this branch already has one or zero elements.";
     }
 
     if (action === "partition_start") {
-        return `Partitioning — pivot selected: ${pivot ?? "?"}`;
+        return "Starting a partition pass on the current subarray.";
+    }
+
+    if (action === "pivot_select") {
+        return `Pivot selected: ${pivot ?? "?"}.`;
     }
 
     if (action === "pivot_placed") {
-        return `Pivot ${pivot ?? "?"} placed at its final sorted position`;
+        return `Pivot ${pivot ?? "?"} placed at its final sorted position.`;
+    }
+
+    if (action === "pivot_positioned") {
+        return "Partition complete. The pivot now splits this branch into left and right subarrays.";
     }
 
     if (action === "compare") {
         const [i] = active;
-        if (typeof i === "number" && typeof arr[i] === "number") {
-            const val = arr[i];
-            if (typeof pivot === "number") {
-                const side = val <= pivot ? "LEFT" : "RIGHT";
-                const rel = val <= pivot ? "≤" : ">";
-                return `${val} ${rel} pivot (${pivot}) → append to ${side}`;
-            }
+        if (typeof i === "number" && typeof arr[i] === "number" && typeof pivot === "number") {
+            const value = arr[i];
+            const side = value < pivot ? "left partition" : "right partition";
+            const relation = value < pivot ? "<" : ">=";
+            return `${value} ${relation} pivot (${pivot}) - move it toward the ${side}.`;
         }
-        return "Comparing element with pivot…";
+        return "Comparing the active element against the pivot.";
     }
 
-    if (action === "swap" || action === "pivot_swap") {
+    if (action === "swap") {
         const [i, j] = active;
         if (typeof i === "number" && typeof j === "number") {
-            const a = arr[i];
-            const b = arr[j];
-            if (typeof a === "number" && typeof b === "number") {
-                return `Swapping  ${a}  ↔  ${b}`;
+            const leftValue = arr[i];
+            const rightValue = arr[j];
+            if (typeof leftValue === "number" && typeof rightValue === "number") {
+                return `Swapping ${leftValue} with ${rightValue}.`;
             }
         }
-        return "Swapping elements…";
+        return "Swapping two values inside the partition.";
     }
 
-    if (action === "sort_left_complete") return "Left partition fully sorted ✓";
-    if (action === "sort_right_complete") return "Right partition fully sorted ✓";
+    if (action === "pivot_swap") {
+        return "Moving the pivot into its final slot.";
+    }
+
+    if (action === "sort_left_start") return "Descending into the left branch.";
+    if (action === "sort_right_start") return "Descending into the right branch.";
+    if (action === "sort_left_complete") return "Left branch sorted.";
+    if (action === "sort_right_complete") return "Right branch sorted.";
 
     if (action === "return") {
         if (Array.isArray(range) && range.length >= 2) {
-            return `Subarray [ ${range[0]} .. ${range[1]} ] is fully sorted`;
+            return `Subarray [${range[0]}..${range[1]}] is fully sorted.`;
         }
-        return "Returning from recursive call";
+        return "Returning from the recursive call.";
     }
 
-    if (action === "complete" || action === "done") return "Array is fully sorted!";
+    if (action === "complete" || action === "done") return "Array is fully sorted.";
 
     return action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
-
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function arraysEqual(left: number[], right: number[]) {
     if (left.length !== right.length) return false;
@@ -318,7 +336,16 @@ function buildQuickSortTree(steps: AlgorithmSimulationStep[], uptoIndex: number)
         if (!currentNode) continue;
 
         if (action === "base_case") { currentNode.state = "base_case"; continue; }
-        if (action === "partition_start") { currentNode.state = "partitioning"; continue; }
+        if (
+            action === "partition_start"
+            || action === "pivot_select"
+            || action === "compare"
+            || action === "swap"
+            || action === "pivot_swap"
+        ) {
+            currentNode.state = "partitioning";
+            continue;
+        }
 
         if (action === "pivot_placed" && bounds) {
             const pivotIndex = typeof step.quickSort?.pivotIndex === "number"
@@ -487,6 +514,67 @@ function normalizePracticeAction(step: AlgorithmSimulationStep | undefined) {
     return rawAction;
 }
 
+function getQuickSortCue(step: AlgorithmSimulationStep | undefined): QuickSortCue {
+    if (!step) {
+        return {
+            pivotCandidateIndex: null,
+            pointerIndex: null,
+            pointerLabel: null,
+        };
+    }
+
+    const action = (step.quickSort?.type ?? step.actionLabel ?? "").trim().toLowerCase();
+    const range = Array.isArray(step.quickSort?.range) && step.quickSort.range.length === 2
+        ? step.quickSort.range
+        : null;
+    const pivotCandidateIndex = typeof step.quickSort?.pivotIndex === "number"
+        ? step.quickSort.pivotIndex
+        : range?.[1] ?? null;
+    const [firstActive] = step.activeIndices ?? [];
+    const firstValue = typeof firstActive === "number" ? step.arrayState[firstActive] : null;
+    const pivotValue = step.quickSort?.pivot ?? null;
+
+    if (action === "pivot_select") {
+        return {
+            pivotCandidateIndex,
+            pointerIndex: pivotCandidateIndex,
+            pointerLabel: "pivot",
+        };
+    }
+
+    if (action === "compare" && typeof firstActive === "number") {
+        return {
+            pivotCandidateIndex,
+            pointerIndex: firstActive,
+            pointerLabel: typeof firstValue === "number" && typeof pivotValue === "number"
+                ? (firstValue < pivotValue ? "left" : "right")
+                : "compare",
+        };
+    }
+
+    if ((action === "swap" || action === "pivot_swap") && typeof firstActive === "number") {
+        return {
+            pivotCandidateIndex,
+            pointerIndex: firstActive,
+            pointerLabel: action === "pivot_swap" ? "place" : "swap",
+        };
+    }
+
+    if (action === "partition_start") {
+        return {
+            pivotCandidateIndex,
+            pointerIndex: null,
+            pointerLabel: null,
+        };
+    }
+
+    return {
+        pivotCandidateIndex,
+        pointerIndex: null,
+        pointerLabel: null,
+    };
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function QuickSortTreeVisualizer({
     steps,
@@ -512,6 +600,10 @@ export default function QuickSortTreeVisualizer({
     );
     const currentFrameId = visualStep?.recursion?.currentFrameId;
     const normalizedAction = normalizePracticeAction(visualStep);
+    const quickSortCue = useMemo(
+        () => getQuickSortCue(visualStep),
+        [visualStep],
+    );
     const selectedIndexSet = useMemo(() => new Set(selectedIndices), [selectedIndices]);
     const suggestedIndexSet = useMemo(() => new Set(suggestedIndices), [suggestedIndices]);
     const feedbackIndexSet = useMemo(() => new Set(feedbackIndices), [feedbackIndices]);
@@ -523,6 +615,42 @@ export default function QuickSortTreeVisualizer({
     const pivotIndex = typeof visualStep?.quickSort?.pivotIndex === "number"
         ? visualStep.quickSort.pivotIndex
         : null;
+    const previewNode = useMemo<QuickSortRenderableNode | null>(() => {
+        if (treeLayout.nodes.length > 0 || values.length === 0) {
+            return null;
+        }
+
+        return {
+            id: "quick-sort-preview-root",
+            low: 0,
+            high: values.length - 1,
+            depth: 0,
+            elements: values,
+            pivotIndex: null,
+            pivotValue: null,
+            leftPartition: [],
+            rightPartition: [],
+            state: "active",
+            x: 360,
+            y: TREE_TOP_PADDING + 16,
+            width: getNodeCardWidth({
+                id: "preview",
+                low: 0,
+                high: values.length - 1,
+                depth: 0,
+                elements: values,
+                pivotIndex: null,
+                pivotValue: null,
+                leftPartition: [],
+                rightPartition: [],
+                leftChildId: null,
+                rightChildId: null,
+                parentId: null,
+                state: "active",
+            }),
+        };
+    }, [treeLayout.nodes.length, values]);
+    const nodesToRender = previewNode ? [previewNode] : treeLayout.nodes;
 
     // Practice mode interactive array
     const nextCellIdRef = useRef(0);
@@ -543,11 +671,11 @@ export default function QuickSortTreeVisualizer({
     // Coordinate mapping
     // Auto mode: status bar ~48px, practice mode: array panel ~128px
     const BOTTOM_PANEL_PX = isPracticeMode ? 128 : 52;
-    const CONTAINER_PX = 480; // 30rem
+    const CONTAINER_PX = 480;
     const treeAreaFraction = (CONTAINER_PX - BOTTOM_PANEL_PX) / CONTAINER_PX;
 
-    const safeStageWidth = Math.max(treeLayout.stageWidth, 1);
-    const safeStageHeight = Math.max(treeLayout.stageHeight, 1);
+    const safeStageWidth = Math.max(treeLayout.stageWidth || 720, 1);
+    const safeStageHeight = Math.max(treeLayout.stageHeight || 180, 1);
     const toXPct = (x: number) => (x / safeStageWidth) * 100;
     const toYPct = (y: number) => (y / safeStageHeight) * treeAreaFraction * 100;
 
@@ -564,7 +692,7 @@ export default function QuickSortTreeVisualizer({
                     ) : null}
                     {currentPartitionRange ? (
                         <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-1">
-                            Range {currentPartitionRange[0]}–{currentPartitionRange[1]}
+                            Range {currentPartitionRange[0]}-{currentPartitionRange[1]}
                         </span>
                     ) : null}
                 </div>
@@ -572,7 +700,7 @@ export default function QuickSortTreeVisualizer({
 
             {/* Main container */}
             <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#111214] h-[30rem]">
-                {treeLayout.nodes.length > 0 ? (
+                {nodesToRender.length > 0 ? (
                     <>
                         {/* SVG edges */}
                         <svg
@@ -593,51 +721,55 @@ export default function QuickSortTreeVisualizer({
                                     <polygon points="0 0, 5 2, 0 4" fill="rgba(251,113,133,0.75)" />
                                 </marker>
                             </defs>
-                            {treeLayout.edges.map((edge) => (
-                                <motion.line
-                                    key={edge.id}
-                                    initial={false}
-                                    animate={{
-                                        x1: toXPct(edge.x1),
-                                        y1: toYPct(edge.y1),
-                                        x2: toXPct(edge.x2),
-                                        y2: toYPct(edge.y2),
-                                    }}
-                                    transition={shouldReduceMotion ? { duration: 0 } : {
-                                        x1: springTransition,
-                                        y1: springTransition,
-                                        x2: springTransition,
-                                        y2: springTransition,
-                                    }}
-                                    stroke="rgba(251,113,133,0.45)"
-                                    strokeWidth="0.9"
-                                    strokeLinecap="round"
-                                    markerEnd="url(#qs-arrow)"
-                                />
-                            ))}
+                            {treeLayout.edges.map((edge) => {
+                                const d = `M ${toXPct(edge.x1)} ${toYPct(edge.y1)} L ${toXPct(edge.x2)} ${toYPct(edge.y2)}`;
+
+                                return (
+                                    <motion.path
+                                        key={edge.id}
+                                        initial={shouldReduceMotion ? false : { pathLength: 0, opacity: 0.2 }}
+                                        animate={{ d, pathLength: 1, opacity: 1 }}
+                                        transition={shouldReduceMotion ? { duration: 0 } : {
+                                            d: springTransition,
+                                            pathLength: { duration: 0.35, ease: "easeOut" },
+                                            opacity: { duration: 0.18, ease: "easeOut" },
+                                        }}
+                                        fill="none"
+                                        stroke="rgba(251,113,133,0.48)"
+                                        strokeWidth="0.9"
+                                        strokeLinecap="round"
+                                        markerEnd="url(#qs-arrow)"
+                                    />
+                                );
+                            })}
                         </svg>
 
                         {/* Tree nodes */}
-                        {treeLayout.nodes.map((node) => {
-                            const xPct = toXPct(node.x);
-                            const yPct = toYPct(node.y);
-                            const isCurrentFrame = currentFrameId !== null
-                                && currentFrameId !== undefined
-                                && String(currentFrameId) === node.id;
+                        {nodesToRender.map((node) => {
+                            const isPreviewNode = previewNode?.id === node.id;
+                            const xPct = isPreviewNode ? 50 : toXPct(node.x);
+                            const yPct = isPreviewNode ? 10 : toYPct(node.y);
+                            const isCurrentFrame = isPreviewNode
+                                ? true
+                                : currentFrameId !== null
+                                    && currentFrameId !== undefined
+                                    && String(currentFrameId) === node.id;
 
                             return (
                                 <motion.div
                                     key={node.id}
-                                    initial={{ opacity: 0, scale: 0.88 }}
+                                    initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.88, y: -10 }}
                                     animate={{
                                         opacity: 1,
                                         scale: 1,
+                                        y: 0,
                                         left: `${xPct}%`,
                                         top: `${yPct}%`,
                                     }}
                                     transition={shouldReduceMotion ? { duration: 0 } : {
                                         opacity: { duration: 0.28, ease: "easeOut" },
                                         scale: { duration: 0.28, ease: "easeOut" },
+                                        y: { duration: 0.28, ease: "easeOut" },
                                         left: springTransition,
                                         top: springTransition,
                                     }}
@@ -652,6 +784,9 @@ export default function QuickSortTreeVisualizer({
                                         isCurrentFrame={isCurrentFrame}
                                         activeGlobalIndices={isCurrentFrame ? (visualStep?.activeIndices ?? []) : []}
                                         actionType={isCurrentFrame ? normalizedAction : ""}
+                                        pivotCandidateIndex={isCurrentFrame ? quickSortCue.pivotCandidateIndex : null}
+                                        pointerIndex={isCurrentFrame ? quickSortCue.pointerIndex : null}
+                                        pointerLabel={isCurrentFrame ? quickSortCue.pointerLabel : null}
                                         shouldReduceMotion={shouldReduceMotion}
                                     />
                                 </motion.div>
@@ -750,3 +885,7 @@ export default function QuickSortTreeVisualizer({
         </div>
     );
 }
+
+
+
+
