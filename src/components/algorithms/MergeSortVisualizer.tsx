@@ -93,14 +93,6 @@ function describeMergeSortLine(lineNumber?: number) {
     }
 }
 
-function compactRangeValues(values: number[]) {
-    if (values.length <= 4) {
-        return values.join("  ");
-    }
-
-    return `${values[0]}  ${values[1]}  ...  ${values[values.length - 2]}  ${values[values.length - 1]}`;
-}
-
 function buildMergeTree(length: number) {
     if (length <= 0) {
         return {
@@ -165,11 +157,12 @@ function buildMergeTree(length: number) {
 
     const totalLeafCount = Math.max(leafCursor, 1);
     const normalizedDepth = Math.max(maxDepth, 1);
+    const horizontalPadding = 7;
 
     for (const node of nodes) {
         node.xPercent = totalLeafCount === 1
             ? 50
-            : (node.xSlot / (totalLeafCount - 1)) * 100;
+            : horizontalPadding + (node.xSlot / (totalLeafCount - 1)) * (100 - horizontalPadding * 2);
         node.yPercent = 9 + (node.depth / normalizedDepth) * 74;
     }
 
@@ -434,8 +427,8 @@ function MergeSortVisualizer({
                         : "Divide phase: recursion expands level by level."}
                 </div>
 
-                <div className="relative overflow-x-auto">
-                    <div className="relative h-[340px] min-w-[720px]">
+                <div className="relative overflow-hidden">
+                    <div className="relative h-[300px] w-full">
                         <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
                             {tree.nodes.flatMap((node) => {
                                 if (node.depth > visibleDepth || suppressedNodes.has(node.id)) return [];
@@ -480,11 +473,20 @@ function MergeSortVisualizer({
                                 }
 
                                 const values = arrayState.slice(node.left, node.right + 1);
-                                const displayText = compactRangeValues(values);
-                                const width = Math.min(240, Math.max(52, values.length * 42));
+                                const segmentLength = Math.max(1, node.right - node.left + 1);
+                                const totalLength = Math.max(1, arrayState.length);
+                                const widthPercent = Math.min(88, Math.max(2.2, (segmentLength / totalLength) * 88));
+                                const valueFontSize = Math.max(8, Math.min(16, 14 - Math.floor(totalLength / 10)));
+                                const indexFontSize = Math.max(7, valueFontSize - 2);
                                 const isActiveRange = activeRangeId === node.id;
                                 const isMerged = mergeProgress.mergedRanges.has(node.id);
                                 const isOnActivePath = activePath.has(node.id);
+
+                                const nodeTone = isMerged
+                                    ? "border-emerald-300/70 bg-emerald-400/20 text-emerald-100"
+                                    : isActiveRange
+                                        ? "border-sky-300/80 bg-sky-400/25 text-sky-50"
+                                        : "border-blue-200/45 bg-blue-500/30 text-blue-50";
 
                                 return (
                                     <motion.div
@@ -501,23 +503,39 @@ function MergeSortVisualizer({
                                         }}
                                         exit={shouldReduceMotion ? {} : { opacity: 0, scale: 0.8, y: 10 }}
                                         transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" }}
-                                        className={cn(
-                                            "absolute -translate-x-1/2 -translate-y-1/2 rounded-lg border px-2 py-2 text-center text-sm font-semibold shadow-[0_0_10px_rgba(59,130,246,0.2)]",
-                                            isMerged
-                                                ? "border-emerald-300/70 bg-emerald-400/20 text-emerald-100"
-                                                : isActiveRange
-                                                    ? "border-sky-300/80 bg-sky-400/25 text-sky-50"
-                                                    : "border-blue-200/45 bg-blue-500/40 text-blue-50",
-                                        )}
+                                        className="absolute -translate-x-1/2 -translate-y-1/2"
                                         style={{
                                             left: `${node.xPercent}%`,
                                             top: `${node.yPercent}%`,
-                                            width,
+                                            width: `${widthPercent}%`,
                                         }}
                                     >
-                                        <div className="truncate">{displayText}</div>
-                                        <div className="mt-1 text-[10px] font-medium text-white/80">
-                                            [{node.left}..{node.right}]
+                                        <div
+                                            className="grid gap-1"
+                                            style={{ gridTemplateColumns: `repeat(${segmentLength}, minmax(0, 1fr))` }}
+                                        >
+                                            {values.map((value, localIndex) => {
+                                                const absoluteIndex = node.left + localIndex;
+
+                                                return (
+                                                    <div
+                                                        key={`${node.id}-${absoluteIndex}`}
+                                                        className={cn(
+                                                            "rounded-md border px-1 py-1 text-center font-semibold shadow-[0_0_8px_rgba(59,130,246,0.18)]",
+                                                            nodeTone,
+                                                        )}
+                                                        style={{ fontSize: `${valueFontSize}px`, lineHeight: 1.05 }}
+                                                    >
+                                                        <div className="truncate">{value}</div>
+                                                        <div
+                                                            className="mt-1 truncate font-medium opacity-85"
+                                                            style={{ fontSize: `${indexFontSize}px` }}
+                                                        >
+                                                            {absoluteIndex}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </motion.div>
                                 );
