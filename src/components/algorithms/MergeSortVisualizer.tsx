@@ -20,15 +20,18 @@ const DEPTH_COLORS = [
     { bar: "from-amber-400 to-amber-500",     border: "border-amber-400/60",    text: "text-amber-100",    badge: "bg-amber-400/20 border-amber-400/40",        label: "Left (depth 3)"  },
 ];
 
-const COMPARE_COLOR  = "from-yellow-300 to-yellow-400 border-yellow-300/70 shadow-[0_0_18px_rgba(250,204,21,0.35)]";
-const PLACE_COLOR    = "from-emerald-400 to-emerald-500 border-emerald-400/70 shadow-[0_0_18px_rgba(52,211,153,0.35)]";
-const ACTIVE_COLOR   = "from-sky-400 to-sky-500 border-sky-400/70 shadow-[0_0_14px_rgba(56,189,248,0.3)]";
-const SORTED_COLOR   = "from-emerald-400/90 to-emerald-500 border-emerald-400/50 shadow-[0_0_12px_rgba(52,211,153,0.22)]";
-const DEFAULT_COLOR  = "from-white/20 to-white/5 border-white/10";
+const COMPARE_COLOR  = "bg-yellow-400 text-yellow-950 border-yellow-300 shadow-[0_0_18px_rgba(250,204,21,0.5)]";
+const PLACE_COLOR    = "bg-emerald-400 text-emerald-950 border-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.5)]";
+const ACTIVE_COLOR   = "bg-violet-400 text-violet-950 border-violet-300 shadow-[0_0_14px_rgba(167,139,250,0.5)]";
+const SORTED_COLOR   = "bg-emerald-500 text-emerald-950 border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.22)]";
+const LEFT_COLOR     = "bg-sky-400 text-sky-950 border-sky-300 shadow-[0_0_10px_rgba(56,189,248,0.2)]";
+const RIGHT_COLOR    = "bg-rose-400 text-rose-950 border-rose-300 shadow-[0_0_10px_rgba(251,113,133,0.2)]";
+const RANGE_COLOR    = "bg-white/20 text-white border-white/30";
+const DEFAULT_COLOR  = "bg-white/[0.04] text-white/50 border-white/10";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function getBarColor(
+function getBoxStyle(
     index: number,
     actionLabel: string,
     activeIndices: number[],
@@ -37,44 +40,24 @@ function getBarColor(
     mid: number | null | undefined,
     isFinalStep: boolean,
 ) {
-    if (isFinalStep) {
-        return SORTED_COLOR;
-    }
+    if (isFinalStep) return SORTED_COLOR;
 
     const action = actionLabel.trim().toLowerCase();
     const isActive = activeIndices.includes(index);
 
-    if (action === "compare" && isActive) {
-        return COMPARE_COLOR;
-    }
+    if (action === "compare" && isActive) return COMPARE_COLOR;
+    if (action === "place" && isActive) return PLACE_COLOR;
+    if (isActive) return ACTIVE_COLOR;
 
-    if (action === "place" && isActive) {
-        return PLACE_COLOR;
-    }
-
-    if (isActive) {
-        return ACTIVE_COLOR;
-    }
-
-    // Shade left / right halves differently during merge
     if (action === "merge_start" || action === "compare" || action === "place" || action === "merge_complete") {
         if (typeof mid === "number") {
-            if (index >= left && index <= mid) {
-                return "from-sky-400/40 to-sky-500/20 border-sky-400/40";
-            }
-            if (index > mid && index <= right) {
-                return "from-rose-400/40 to-rose-500/20 border-rose-400/40";
-            }
+            if (index >= left && index <= mid) return LEFT_COLOR;
+            if (index > mid && index <= right) return RIGHT_COLOR;
         }
-        if (index >= left && index <= right) {
-            return "from-violet-400/35 to-violet-500/15 border-violet-400/35";
-        }
+        if (index >= left && index <= right) return RANGE_COLOR;
     }
 
-    // Highlight the active sub-array range for split / recursive steps
-    if (index >= left && index <= right) {
-        return "from-white/15 to-white/5 border-white/20";
-    }
+    if (index >= left && index <= right) return RANGE_COLOR;
 
     return DEFAULT_COLOR;
 }
@@ -170,11 +153,6 @@ function MergeSortVisualizer({
     const depth = meta?.recursionDepth ?? 0;
     const mergeBuffer = meta?.mergeBuffer ?? null;
 
-    const globalMax = useMemo(
-        () => Math.max(...steps.flatMap((s) => s.arrayState), 1),
-        [steps],
-    );
-
     const depthPalette = DEPTH_COLORS[Math.min(depth, DEPTH_COLORS.length - 1)];
 
     // Phase label for the info strip
@@ -214,17 +192,17 @@ function MergeSortVisualizer({
 
             {/* ── Legend ────────────────────────────────────────────────────── */}
             <div className="flex flex-wrap gap-2">
-                <DepthBadge depth={0} label="Left half" />
+                <DepthBadge depth={0} label="Left half (sky)" />
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-400/40 bg-rose-400/15 px-2.5 py-0.5 text-[11px] text-rose-100">
-                    <span className="h-2 w-2 rounded-full bg-gradient-to-b from-rose-400 to-rose-500" />
-                    Right half
+                    <span className="h-2 w-2 rounded-full bg-rose-400" />
+                    Right half (rose)
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-300/40 bg-yellow-300/10 px-2.5 py-0.5 text-[11px] text-yellow-100">
-                    <span className="h-2 w-2 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                    <span className="h-2 w-2 rounded-full bg-yellow-400" />
                     Comparing
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2.5 py-0.5 text-[11px] text-emerald-100">
-                    <span className="h-2 w-2 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
                     Placed / Sorted
                 </span>
             </div>
@@ -260,11 +238,11 @@ function MergeSortVisualizer({
                     </div>
                 ) : null}
 
-                {/* Bars */}
-                <div className="flex min-h-48 items-end gap-1.5 overflow-x-auto rounded-xl px-1 pb-1 pt-4 sm:gap-2 sm:min-h-56">
+                {/* Elements */}
+                <div className="flex min-h-[140px] flex-wrap items-end justify-center gap-2 rounded-xl px-2 pb-6 pt-12 sm:min-h-[160px] sm:gap-3">
                     <AnimatePresence initial={false}>
                         {arrayState.map((value, index) => {
-                            const barColor = getBarColor(
+                            const boxStyle = getBoxStyle(
                                 index,
                                 actionLabel,
                                 activeIndices,
@@ -273,45 +251,39 @@ function MergeSortVisualizer({
                                 mid,
                                 isFinalStep,
                             );
-                            const height = `${Math.max((value / globalMax) * 100, 8)}%`;
                             const isActive = activeIndices.includes(index);
                             const isPlace  = actionLabel === "place" && meta?.placeIndex === index;
 
+                            // Calculate physical separation based on merges (simulate physical splitting)
+                            let marginStyle = {};
+                            if (typeof mid === "number" && index === mid && (isMergeParse || actionLabel === "split" || actionLabel === "compare")) {
+                                marginStyle = { marginRight: "1rem" };
+                            }
+
                             return (
                                 <motion.div
-                                    key={`ms-bar-${index}`}
-                                    layout
-                                    className="flex min-w-9 flex-1 flex-col items-center justify-end gap-1.5"
+                                    key={`ms-box-${index}`}
+                                    layout="position"
+                                    style={marginStyle}
+                                    className="flex flex-col items-center gap-2"
                                 >
-                                    <motion.span
-                                        animate={shouldReduceMotion ? {} : { y: isActive ? -2 : 0 }}
-                                        transition={{ duration: 0.18 }}
-                                        className="text-xs font-medium text-text-secondary"
+                                    <motion.div
+                                        animate={shouldReduceMotion ? {} : {
+                                            y: isActive ? -24 : 0,
+                                            scale: isPlace ? [1, 1.15, 1] : (isActive ? 1.08 : 1),
+                                        }}
+                                        transition={shouldReduceMotion ? { duration: 0 } : {
+                                            y: { type: "spring", stiffness: 350, damping: 20 },
+                                            scale: { duration: 0.35, ease: "easeInOut" },
+                                        }}
+                                        className={cn(
+                                            "flex h-12 w-12 items-center justify-center rounded-lg border text-lg font-bold transition-[background-color,border-color,color] duration-300 sm:h-14 sm:w-14 sm:text-xl",
+                                            boxStyle,
+                                        )}
+                                        aria-label={`Index ${index}, value ${value}`}
                                     >
                                         {value}
-                                    </motion.span>
-
-                                    <div className="relative flex h-48 w-full items-end sm:h-52">
-                                        <motion.div
-                                            layout="position"
-                                            animate={shouldReduceMotion ? { height } : {
-                                                height,
-                                                y: isActive ? -5 : 0,
-                                                scale: isPlace ? [1, 1.12, 1] : (isActive ? 1.04 : 1),
-                                            }}
-                                            transition={shouldReduceMotion ? { duration: 0 } : {
-                                                height: { duration: 0.3, ease: "easeInOut" },
-                                                y:      { duration: 0.2, ease: "easeOut"  },
-                                                scale:  { duration: 0.4, ease: "easeInOut" },
-                                            }}
-                                            className={cn(
-                                                "w-full rounded-t-xl border bg-gradient-to-b transition-[background-color,box-shadow,border-color] duration-300",
-                                                barColor,
-                                            )}
-                                            aria-label={`Index ${index}, value ${value}`}
-                                        />
-                                    </div>
-
+                                    </motion.div>
                                     <span className="text-[10px] text-text-secondary">{index}</span>
                                 </motion.div>
                             );
