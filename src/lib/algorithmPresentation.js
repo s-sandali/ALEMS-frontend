@@ -300,6 +300,31 @@ int main() {
 }`,
         },
     ],
+        "insertion sort": [
+                {
+                        id: "pseudocode",
+                        label: "Pseudocode",
+                        language: "PSEUDOCODE",
+                        syncsWithTrace: true,
+                        traceLineMap: {
+                                1: 1,
+                                2: [2, 3],
+                                3: 4,
+                                4: 5,
+                                5: 6,
+                                6: 7,
+                                7: 8,
+                        },
+                        code: `function insertionSort(arr)
+    for i ← 1 to length(arr) - 1
+        key ← arr[i], j ← i - 1
+        while j ≥ 0 and arr[j] > key
+            arr[j + 1] ← arr[j]
+            j ← j - 1
+        arr[j + 1] ← key
+    return arr`,
+                },
+        ],
     "binary search": [
         {
             id: "pseudocode",

@@ -437,6 +437,20 @@ function getQuickSortPracticeAction(step: AlgorithmSimulationStep | undefined) {
     return action;
 }
 
+function getInsertionSortPracticeAction(step: AlgorithmSimulationStep | undefined) {
+    const action = (step?.insertionSort?.action ?? step?.actionLabel ?? "").trim().toLowerCase();
+
+    if (action === "compare" || action === "shift" || action === "insert") {
+        return action;
+    }
+
+    if (action === "complete" || action === "early_exit") {
+        return "complete";
+    }
+
+    return "compare";
+}
+
 function getSearchWindow(step: AlgorithmSimulationStep | undefined, totalValues: number) {
     if (totalValues <= 0) {
         return { low: 0, high: -1, midpoint: null };
@@ -790,6 +804,7 @@ function AlgorithmVisualizer({
         : (currentStep?.search?.state ?? currentStep?.actionLabel ?? "Waiting for steps");
     const heapStepMeta = currentStep?.heap ?? null;
     const quickSortMeta = currentStep?.quickSort ?? null;
+    const insertionSortMeta = currentStep?.insertionSort ?? null;
     const quickSortRange = useMemo(
         () => getQuickSortRange(currentStep),
         [currentStep],
@@ -801,6 +816,7 @@ function AlgorithmVisualizer({
         ? quickSortMeta.pivotIndex
         : null;
     const hasQuickSortMetadata = Boolean(quickSortMeta) || isQuickSortPivotPlaced;
+    const hasInsertionSortMetadata = Boolean(insertionSortMeta);
     const heapComparison = useMemo(
         () => formatHeapComparison(currentStep),
         [currentStep],
@@ -809,7 +825,12 @@ function AlgorithmVisualizer({
         () => getQuickSortPracticeAction(currentStep),
         [currentStep],
     );
+    const insertionSortPracticeAction = useMemo(
+        () => getInsertionSortPracticeAction(currentStep),
+        [currentStep],
+    );
     const isQuickSortStep = hasQuickSortMetadata && algorithmType === "sort";
+    const isInsertionSortStep = hasInsertionSortMetadata && algorithmType === "sort";
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
     const heapIdentityData = useMemo(() => {
         if (!isHeapStep || steps.length === 0) {
@@ -1099,9 +1120,15 @@ function AlgorithmVisualizer({
                                                 : (quickSortPracticeAction === "swap"
                                                     ? "Use the bottom array strip to validate the next swap"
                                                     : "Use the bottom array strip to follow the next quick sort action"))
+                                        : (isInsertionSortStep
+                                            ? (insertionSortPracticeAction === "insert"
+                                                ? "Select one bar to validate the insertion position"
+                                                : (insertionSortPracticeAction === "shift"
+                                                    ? "Select source and destination bars to validate the shift"
+                                                    : "Select two bars to validate the comparison"))
                                         : (isHeapStep
                                             ? "Click two heap nodes to validate a swap"
-                                            : "Click two bars to validate a swap"))}
+                                            : "Click two bars to validate a swap"))) }
                                 </span>
                             ) : null}
                         </div>
@@ -1140,6 +1167,25 @@ function AlgorithmVisualizer({
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-white/70 to-white/90" />
                                     Active Frame
+                                </span>
+                            </>
+                        ) : isInsertionSortStep ? (
+                            <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    Compare
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
+                                    Shift
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-400 to-sky-500" />
+                                    Insert
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                                    Sorted Prefix
                                 </span>
                             </>
                         ) : isHeapStep ? (
@@ -1220,6 +1266,30 @@ function AlgorithmVisualizer({
                             </span>
                             <span>
                                 Quick Sort Step: <span className="text-text-primary">{formatActionLabel(currentStep?.actionLabel ?? "--")}</span>
+                            </span>
+                        </div>
+                    ) : hasInsertionSortMetadata ? (
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                            <span>
+                                Key: <span className="text-text-primary">{insertionSortMeta?.key ?? "--"}</span>
+                            </span>
+                            <span>
+                                Current Index: <span className="text-text-primary">{insertionSortMeta?.currentIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Compare Index: <span className="text-text-primary">{insertionSortMeta?.compareIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Insert Position: <span className="text-text-primary">{insertionSortMeta?.insertPosition ?? "--"}</span>
+                            </span>
+                            <span>
+                                Shift: <span className="text-text-primary">{insertionSortMeta?.shiftFrom ?? "--"} → {insertionSortMeta?.shiftTo ?? "--"}</span>
+                            </span>
+                            <span>
+                                Sorted Boundary: <span className="text-text-primary">{insertionSortMeta?.boundary ?? "--"}</span>
+                            </span>
+                            <span>
+                                Insertion Step: <span className="text-text-primary">{formatActionLabel(currentStep?.actionLabel ?? "--")}</span>
                             </span>
                         </div>
                     ) : null}

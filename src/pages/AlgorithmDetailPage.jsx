@@ -200,6 +200,20 @@ function getQuickSortPracticeAction(step) {
     return normalized;
 }
 
+function getInsertionSortPracticeAction(step) {
+    const normalized = (step?.insertionSort?.action ?? step?.actionLabel ?? "").trim().toLowerCase();
+
+    if (normalized === "compare" || normalized === "shift" || normalized === "insert") {
+        return normalized;
+    }
+
+    if (normalized === "complete" || normalized === "early_exit") {
+        return "complete";
+    }
+
+    return "compare";
+}
+
 export default function AlgorithmDetailPage() {
     const playbackSpeeds = [0.5, 1, 2, 4];
     const basePlaybackIntervalMs = 1400;
@@ -374,6 +388,7 @@ export default function AlgorithmDetailPage() {
     const algorithmType = simulationAlgorithmKey === "binary_search" ? "search" : "sort";
     const isSearchMode = algorithmType === "search";
     const isQuickSortMode = simulationAlgorithmKey === "quick_sort";
+    const isInsertionSortMode = simulationAlgorithmKey === "insertion_sort";
     const activeLine = steps[currentStepIndex]?.lineNumber ?? 0;
     const lineToStepIndexMap = useMemo(
         () => steps.reduce((accumulator, step, index) => {
@@ -393,6 +408,10 @@ export default function AlgorithmDetailPage() {
     );
 
     function getCurrentSortPracticeAction(step) {
+        if (isInsertionSortMode) {
+            return getInsertionSortPracticeAction(step);
+        }
+
         if (!isQuickSortMode) {
             return "swap";
         }
@@ -409,15 +428,45 @@ export default function AlgorithmDetailPage() {
         return "swap";
     }
 
+    function getRequiredSelectionCount(action) {
+        if (action === "insert") {
+            return 1;
+        }
+
+        return 2;
+    }
+
     function getSortPracticeCopy(action) {
         if (action === "compare") {
             return {
-                feedback: "Select two array cells to validate the comparison.",
-                pending: "Select one more array cell to validate the comparison.",
+                feedback: "Select two bars to validate the comparison.",
+                pending: "Select one more bar to validate the comparison.",
                 validating: "Validating comparison...",
-                hint: "The backend will confirm whether this comparison is the next valid quick sort move.",
+                hint: "The backend will confirm whether this comparison is the next valid move.",
                 success: "Correct comparison.",
                 failure: "Incorrect comparison.",
+            };
+        }
+
+        if (action === "shift") {
+            return {
+                feedback: "Select source and destination bars to validate the shift.",
+                pending: "Select the destination bar to validate the shift.",
+                validating: "Validating shift...",
+                hint: "The backend will confirm whether this shift is the next valid move.",
+                success: "Correct shift.",
+                failure: "Incorrect shift.",
+            };
+        }
+
+        if (action === "insert") {
+            return {
+                feedback: "Select the target bar where the key should be inserted.",
+                pending: "Select the insertion target bar.",
+                validating: "Validating insert...",
+                hint: "The backend will confirm whether this insert position is correct.",
+                success: "Correct insert.",
+                failure: "Incorrect insert.",
             };
         }
 
@@ -752,6 +801,7 @@ export default function AlgorithmDetailPage() {
 
         const expectedAction = getCurrentSortPracticeAction(steps[currentStepIndex]);
         const copy = getSortPracticeCopy(expectedAction);
+        const requiredSelections = getRequiredSelectionCount(expectedAction);
 
         if (selectedIndices.includes(index)) {
             setSelectedIndices((previousIndices) => previousIndices.filter((value) => value !== index));
@@ -759,16 +809,22 @@ export default function AlgorithmDetailPage() {
         }
 
         if (selectedIndices.length === 0) {
-            setSelectedIndices([index]);
+            const firstSelection = [index];
+            setSelectedIndices(firstSelection);
             setFeedbackIndices([]);
             setIsCorrect(null);
-            setFeedbackMessage(copy.pending);
+            setFeedbackMessage(requiredSelections > 1 ? copy.pending : copy.validating);
             setHintMessage(copy.hint);
+
+            if (requiredSelections === 1) {
+                await validatePracticeSortAction(expectedAction, firstSelection);
+            }
+
             return;
         }
 
         const attemptedIndices = [...selectedIndices, index]
-            .slice(0, 2)
+            .slice(0, requiredSelections)
             .sort((leftIndex, rightIndex) => leftIndex - rightIndex);
 
         setSelectedIndices(attemptedIndices);
