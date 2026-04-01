@@ -186,6 +186,20 @@ function getNextSearchDecision(steps, currentIndex) {
     return null;
 }
 
+function getQuickSortPracticeAction(step) {
+    const normalized = (step?.quickSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
+
+    if (normalized === "pivot_swap" || normalized === "swap") {
+        return "swap";
+    }
+
+    if (normalized === "compare") {
+        return "compare";
+    }
+
+    return normalized;
+}
+
 export default function AlgorithmDetailPage() {
     const playbackSpeeds = [0.5, 1, 2, 4];
     const basePlaybackIntervalMs = 1400;
@@ -359,6 +373,7 @@ export default function AlgorithmDetailPage() {
     const simulationAlgorithmKey = algorithm ? getSimulationAlgorithmKey(algorithm.name) : "";
     const algorithmType = simulationAlgorithmKey === "binary_search" ? "search" : "sort";
     const isSearchMode = algorithmType === "search";
+    const isQuickSortMode = simulationAlgorithmKey === "quick_sort";
     const activeLine = steps[currentStepIndex]?.lineNumber ?? 0;
     const lineToStepIndexMap = useMemo(
         () => steps.reduce((accumulator, step, index) => {
@@ -377,21 +392,75 @@ export default function AlgorithmDetailPage() {
         [currentStepIndex, isSearchMode, steps],
     );
 
+    function getCurrentSortPracticeAction(step) {
+        if (!isQuickSortMode) {
+            return "swap";
+        }
+
+        const quickSortAction = getQuickSortPracticeAction(step);
+        if (quickSortAction === "compare") {
+            return "compare";
+        }
+
+        if (quickSortAction === "complete") {
+            return "complete";
+        }
+
+        return "swap";
+    }
+
+    function getSortPracticeCopy(action) {
+        if (action === "compare") {
+            return {
+                feedback: "Select two array cells to validate the comparison.",
+                pending: "Select one more array cell to validate the comparison.",
+                validating: "Validating comparison...",
+                hint: "The backend will confirm whether this comparison is the next valid quick sort move.",
+                success: "Correct comparison.",
+                failure: "Incorrect comparison.",
+            };
+        }
+
+        return {
+            feedback: isQuickSortMode
+                ? "Select two array cells to validate the swap."
+                : "Select two bars to attempt the next swap.",
+            pending: isQuickSortMode
+                ? "Select one more array cell to validate the swap."
+                : "Select one more bar to validate the swap.",
+            validating: "Validating swap...",
+            hint: "The backend will confirm whether this swap is the next valid move.",
+            success: "Correct swap.",
+            failure: "Incorrect step.",
+        };
+    }
+
+    function getPracticeModeCopy(step) {
+        if (isSearchMode) {
+            return {
+                feedback: "Choose Go Left, Go Right, or Found based on the midpoint.",
+                hint: "Use a sorted list, compare the midpoint to the target, then choose which half to discard.",
+            };
+        }
+
+        const action = getCurrentSortPracticeAction(step);
+        const copy = getSortPracticeCopy(action);
+
+        return {
+            feedback: copy.feedback,
+            hint: copy.hint,
+        };
+    }
+
     function resetPracticeState(inputArray, nextStepIndex = 0) {
+        const practiceCopy = getPracticeModeCopy(steps[nextStepIndex]);
+
         setCurrentArray(inputArray);
         setPracticeSessionId("");
         setSelectedIndices([]);
         setFeedbackIndices([]);
-        setFeedbackMessage(
-            isSearchMode
-                ? "Choose Go Left, Go Right, or Found based on the midpoint."
-                : "Select two bars to attempt the next swap.",
-        );
-        setHintMessage(
-            isSearchMode
-                ? "Use a sorted list, compare the midpoint to the target, then choose which half to discard."
-                : "Each swap is validated by the backend before the array updates.",
-        );
+        setFeedbackMessage(practiceCopy.feedback);
+        setHintMessage(practiceCopy.hint);
         setIsCorrect(null);
         setSuggestedIndices([]);
         setIsValidatingStep(false);
@@ -426,17 +495,19 @@ export default function AlgorithmDetailPage() {
         const sessionStep = Array.isArray(session?.steps)
             ? session.steps[session.currentStepIndex]
             : null;
-        const normalizedAction = (sessionStep?.search?.state ?? sessionStep?.actionLabel ?? "").trim().toLowerCase();
+        const normalizedAction = isSearchMode
+            ? (sessionStep?.search?.state ?? sessionStep?.actionLabel ?? "").trim().toLowerCase()
+            : getCurrentSortPracticeAction(sessionStep);
         const isComplete = normalizedAction === "complete"
             || normalizedAction === "early_exit"
             || isTerminalSearchAction(normalizedAction);
+        const practiceCopy = getPracticeModeCopy(sessionStep);
 
         setPracticeCompleted(isComplete);
         setHintMessage(isComplete
             ? "No more actions are needed."
-            : (isSearchMode
-                ? "Use a sorted list, compare the midpoint to the target, then choose which half to discard."
-                : "Each swap is validated by the backend before the array updates."));
+            : practiceCopy.hint);
+        setFeedbackMessage(isComplete ? "Practice complete." : practiceCopy.feedback);
 
         return session;
     }
@@ -519,10 +590,12 @@ export default function AlgorithmDetailPage() {
         setFeedbackVersion((previousValue) => previousValue + 1);
     }
 
-    async function validatePracticeSwap(indices) {
+    async function validatePracticeSortAction(actionType, indices) {
         if (!algorithm || !practiceSessionId) {
             return;
         }
+
+        const copy = getSortPracticeCopy(actionType);
 
         setIsPlaying(false);
         setShowCompletionToast(false);
@@ -530,12 +603,14 @@ export default function AlgorithmDetailPage() {
         setIsValidatingStep(true);
         setFeedbackIndices(indices);
         setSuggestedIndices([]);
+        setFeedbackMessage(copy.validating);
+        setHintMessage(copy.hint);
 
         try {
             const validationResponse = await SimulationService.validateStep(
                 practiceSessionId,
                 {
-                    type: "swap",
+                    type: actionType,
                     indices,
                 },
                 getToken,
@@ -551,7 +626,7 @@ export default function AlgorithmDetailPage() {
             const wasCorrect = Boolean(validationResponse?.correct);
 
             setIsCorrect(wasCorrect);
-            setFeedbackMessage(validationResponse?.message || (wasCorrect ? "Correct swap." : "Incorrect step."));
+            setFeedbackMessage(validationResponse?.message || (wasCorrect ? copy.success : copy.failure));
             setHintMessage(validationResponse?.hint || "");
             setSuggestedIndices(nextSuggestedIndices);
             setFeedbackVersion((previousValue) => previousValue + 1);
@@ -675,6 +750,9 @@ export default function AlgorithmDetailPage() {
             return;
         }
 
+        const expectedAction = getCurrentSortPracticeAction(steps[currentStepIndex]);
+        const copy = getSortPracticeCopy(expectedAction);
+
         if (selectedIndices.includes(index)) {
             setSelectedIndices((previousIndices) => previousIndices.filter((value) => value !== index));
             return;
@@ -684,8 +762,8 @@ export default function AlgorithmDetailPage() {
             setSelectedIndices([index]);
             setFeedbackIndices([]);
             setIsCorrect(null);
-            setFeedbackMessage("Select one more bar to validate the swap.");
-            setHintMessage("The backend will confirm whether this swap is the next valid move.");
+            setFeedbackMessage(copy.pending);
+            setHintMessage(copy.hint);
             return;
         }
 
@@ -694,7 +772,7 @@ export default function AlgorithmDetailPage() {
             .sort((leftIndex, rightIndex) => leftIndex - rightIndex);
 
         setSelectedIndices(attemptedIndices);
-        await validatePracticeSwap(attemptedIndices);
+        await validatePracticeSortAction(expectedAction, attemptedIndices);
     }
 
     function handleArraySizeChange(nextSize) {
@@ -997,7 +1075,7 @@ export default function AlgorithmDetailPage() {
                         className="fixed bottom-6 right-6 z-50 rounded-2xl border border-accent/20 bg-surface/95 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl"
                     >
                         <p className="text-sm font-semibold text-text-primary">
-                            {mode === "practice" ? "Practice complete" : "Search complete"}
+                            {mode === "practice" ? "Practice complete" : "Simulation complete"}
                         </p>
                         <p className="mt-1 text-xs text-text-secondary">
                             {mode === "practice"
