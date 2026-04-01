@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
@@ -24,7 +24,9 @@ type MergeTreeNode = {
     yPercent: number;
 };
 
-const BAR_SLOT_WIDTH_PX = 56;
+const BAR_SLOT_WIDTH_PX = 46;
+const TREE_CONTENT_WIDTH_RATIO = 0.84;
+const TREE_TARGET_LEAF_WIDTH_PX = 52;
 
 const COMPARE_COLOR  = "bg-yellow-400 text-yellow-950 border-yellow-300 shadow-[0_0_18px_rgba(250,204,21,0.5)]";
 const PLACE_COLOR    = "bg-emerald-400 text-emerald-950 border-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.5)]";
@@ -60,6 +62,10 @@ function formatLabel(label: string) {
 
 function rangeId(left: number, right: number) {
     return `${left}-${right}`;
+}
+
+function clamp(value: number, min: number, max: number) {
+    return Math.min(Math.max(value, min), max);
 }
 
 function describeMergeSortLine(lineNumber?: number) {
@@ -220,6 +226,8 @@ function MergeSortVisualizer({
     className,
 }: MergeSortVisualizerProps) {
     const shouldReduceMotion = useReducedMotion();
+    const treeViewportRef = useRef<HTMLDivElement | null>(null);
+    const [treeViewportWidth, setTreeViewportWidth] = useState(0);
 
     const safeIndex = steps.length === 0
         ? 0
@@ -245,6 +253,26 @@ function MergeSortVisualizer({
     const mergeBuffer = meta?.mergeBuffer ?? null;
 
     const tree = useMemo(() => buildMergeTree(arrayState.length), [arrayState.length]);
+
+    useEffect(() => {
+        const element = treeViewportRef.current;
+        if (!element) return;
+
+        const update = () => {
+            setTreeViewportWidth(element.clientWidth);
+        };
+
+        update();
+
+        if (typeof ResizeObserver === "undefined") {
+            window.addEventListener("resize", update);
+            return () => window.removeEventListener("resize", update);
+        }
+
+        const observer = new ResizeObserver(update);
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, []);
 
     const mergeProgress = useMemo(() => {
         const splitRanges = new Set<string>();
@@ -372,6 +400,20 @@ function MergeSortVisualizer({
         };
     }, [actionLabel, previousStep, meta, arrayState]);
 
+    const treeScaleX = useMemo(() => {
+        const totalLength = Math.max(1, arrayState.length);
+        if (treeViewportWidth <= 0) {
+            return 1;
+        }
+
+        const currentLeafWidth = (treeViewportWidth * TREE_CONTENT_WIDTH_RATIO) / totalLength;
+        if (currentLeafWidth <= 0) {
+            return 1;
+        }
+
+        return clamp(TREE_TARGET_LEAF_WIDTH_PX / currentLeafWidth, 0.6, 1);
+    }, [arrayState.length, treeViewportWidth]);
+
     // Phase label for the info strip
     const phaseText = useMemo(() => {
         switch (actionLabel) {
@@ -427,8 +469,14 @@ function MergeSortVisualizer({
                         : "Divide phase: recursion expands level by level."}
                 </div>
 
-                <div className="relative overflow-hidden">
-                    <div className="relative h-[300px] w-full">
+                <div className="relative overflow-hidden" ref={treeViewportRef}>
+                    <div
+                        className="relative h-[300px] w-full"
+                        style={{
+                            transform: `scaleX(${treeScaleX})`,
+                            transformOrigin: "top center",
+                        }}
+                    >
                         <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
                             {tree.nodes.flatMap((node) => {
                                 if (node.depth > visibleDepth || suppressedNodes.has(node.id)) return [];
@@ -472,15 +520,31 @@ function MergeSortVisualizer({
                                     return null;
                                 }
 
-                                const values = arrayState.slice(node.left, node.right + 1);
                                 const segmentLength = Math.max(1, node.right - node.left + 1);
                                 const totalLength = Math.max(1, arrayState.length);
-                                const widthPercent = Math.min(88, Math.max(2.2, (segmentLength / totalLength) * 88));
-                                const valueFontSize = Math.max(8, Math.min(16, 14 - Math.floor(totalLength / 10)));
-                                const indexFontSize = Math.max(7, valueFontSize - 2);
+                                const widthPercent = Math.min(72, Math.max(1.8, (segmentLength / totalLength) * 72));
+                                const halfWidthPercent = widthPercent / 2;
+                                const leftPercent = clamp(node.xPercent, halfWidthPercent + 1, 99 - halfWidthPercent);
+                                const valueFontSize = Math.max(7, Math.min(13, 12 - Math.floor(totalLength / 12)));
+                                const indexFontSize = Math.max(6, valueFontSize - 2);
                                 const isActiveRange = activeRangeId === node.id;
                                 const isMerged = mergeProgress.mergedRanges.has(node.id);
                                 const isOnActivePath = activePath.has(node.id);
+
+                                const orderedIndices = Array.from({ length: segmentLength }, (_, localIndex) => node.left + localIndex);
+                                if (isActiveRange && compareSwap) {
+                                    const leftPos = orderedIndices.indexOf(compareSwap.leftIndex);
+                                    const rightPos = orderedIndices.indexOf(compareSwap.rightIndex);
+                                    if (leftPos >= 0 && rightPos >= 0) {
+                                        [orderedIndices[leftPos], orderedIndices[rightPos]] = [orderedIndices[rightPos], orderedIndices[leftPos]];
+                                    }
+                                } else if (isActiveRange && placeSwap) {
+                                    const sourcePos = orderedIndices.indexOf(placeSwap.sourceIndex);
+                                    const targetPos = orderedIndices.indexOf(placeSwap.targetIndex);
+                                    if (sourcePos >= 0 && targetPos >= 0) {
+                                        [orderedIndices[sourcePos], orderedIndices[targetPos]] = [orderedIndices[targetPos], orderedIndices[sourcePos]];
+                                    }
+                                }
 
                                 const nodeTone = isMerged
                                     ? "border-emerald-300/70 bg-emerald-400/20 text-emerald-100"
@@ -505,24 +569,35 @@ function MergeSortVisualizer({
                                         transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" }}
                                         className="absolute -translate-x-1/2 -translate-y-1/2"
                                         style={{
-                                            left: `${node.xPercent}%`,
+                                            left: `${leftPercent}%`,
                                             top: `${node.yPercent}%`,
                                             width: `${widthPercent}%`,
                                         }}
                                     >
-                                        <div
+                                        <motion.div
+                                            layout
                                             className="grid gap-1"
                                             style={{ gridTemplateColumns: `repeat(${segmentLength}, minmax(0, 1fr))` }}
                                         >
-                                            {values.map((value, localIndex) => {
-                                                const absoluteIndex = node.left + localIndex;
+                                            {orderedIndices.map((absoluteIndex) => {
+                                                const value = arrayState[absoluteIndex];
+                                                const isGraphActive = activeIndices.includes(absoluteIndex);
+                                                const isGraphPlaced = actionLabel === "place" && meta?.placeIndex === absoluteIndex;
 
                                                 return (
-                                                    <div
+                                                    <motion.div
+                                                        layout
                                                         key={`${node.id}-${absoluteIndex}`}
+                                                        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.32, ease: "easeInOut" }}
+                                                        animate={shouldReduceMotion ? {} : {
+                                                            y: isGraphActive ? -4 : 0,
+                                                            scale: isGraphPlaced ? [1, 1.08, 1] : isGraphActive ? 1.04 : 1,
+                                                        }}
                                                         className={cn(
-                                                            "rounded-md border px-1 py-1 text-center font-semibold shadow-[0_0_8px_rgba(59,130,246,0.18)]",
+                                                            "rounded-md border px-0.5 py-0.5 text-center font-semibold shadow-[0_0_8px_rgba(59,130,246,0.18)]",
                                                             nodeTone,
+                                                            isGraphActive && "border-yellow-300/85 bg-yellow-300/15",
+                                                            isGraphPlaced && "border-emerald-300/85 bg-emerald-300/20",
                                                         )}
                                                         style={{ fontSize: `${valueFontSize}px`, lineHeight: 1.05 }}
                                                     >
@@ -533,10 +608,10 @@ function MergeSortVisualizer({
                                                         >
                                                             {absoluteIndex}
                                                         </div>
-                                                    </div>
+                                                    </motion.div>
                                                 );
                                             })}
-                                        </div>
+                                        </motion.div>
                                     </motion.div>
                                 );
                             })}
@@ -548,7 +623,7 @@ function MergeSortVisualizer({
             <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
 
                 {/* Elements */}
-                <div className="flex min-h-[140px] flex-nowrap items-end justify-center gap-2 overflow-x-auto rounded-xl px-2 pb-6 pt-12 sm:min-h-[160px] sm:gap-3">
+                <div className="flex min-h-[140px] flex-nowrap items-end justify-center gap-1.5 overflow-x-auto rounded-xl px-2 pb-6 pt-12 sm:min-h-[160px] sm:gap-2">
                     <AnimatePresence initial={false}>
                         {(() => {
                             const valCounts = new Map<number, number>();
@@ -619,7 +694,7 @@ function MergeSortVisualizer({
                                                 scale: { duration: 0.35, ease: "easeInOut" },
                                             }}
                                             className={cn(
-                                                "flex h-12 w-12 items-center justify-center rounded-lg border text-lg font-bold transition-[background-color,border-color,color] duration-300 sm:h-14 sm:w-14 sm:text-xl",
+                                                "flex h-10 w-10 items-center justify-center rounded-lg border text-base font-bold transition-[background-color,border-color,color] duration-300 sm:h-11 sm:w-11 sm:text-lg",
                                                 finalBoxStyle,
                                             )}
                                             aria-label={`Index ${index}, value ${value}`}
