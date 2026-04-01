@@ -366,6 +366,11 @@ function getPracticeTone(feedbackTone: PracticeFeedbackTone, practiceCompleted: 
     };
 }
 
+const actionLabelAliases: Record<string, string> = {
+    pivotplaced: "Pivot Placed",
+    partition_complete: "Pivot Placed",
+};
+
 function formatActionLabel(actionLabel: string) {
     const normalizedLabel = actionLabel.trim().toLowerCase();
     if (actionLabelAliases[normalizedLabel]) {
@@ -784,7 +789,18 @@ function AlgorithmVisualizer({
         ? practiceTone.actionLabel
         : (currentStep?.search?.state ?? currentStep?.actionLabel ?? "Waiting for steps");
     const heapStepMeta = currentStep?.heap ?? null;
-    const quickSortStepMeta = currentStep?.quickSort ?? null;
+    const quickSortMeta = currentStep?.quickSort ?? null;
+    const quickSortRange = useMemo(
+        () => getQuickSortRange(currentStep),
+        [currentStep],
+    );
+    const normalizedActionLabel = (currentStep?.actionLabel ?? "").trim().toLowerCase();
+    const isQuickSortPivotPlaced = isQuickSortPivotPlacedAction(currentStep?.actionLabel);
+    const isQuickSortCompareOrSwap = normalizedActionLabel.includes("compare") || normalizedActionLabel.includes("swap");
+    const quickSortPivotIndex = isQuickSortPivotPlaced && typeof quickSortMeta?.pivotIndex === "number"
+        ? quickSortMeta.pivotIndex
+        : null;
+    const hasQuickSortMetadata = Boolean(quickSortMeta) || isQuickSortPivotPlaced;
     const heapComparison = useMemo(
         () => formatHeapComparison(currentStep),
         [currentStep],
@@ -793,7 +809,7 @@ function AlgorithmVisualizer({
         () => getQuickSortPracticeAction(currentStep),
         [currentStep],
     );
-    const isQuickSortStep = Boolean(quickSortStepMeta) && algorithmType === "sort";
+    const isQuickSortStep = hasQuickSortMetadata && algorithmType === "sort";
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
     const heapIdentityData = useMemo(() => {
         if (!isHeapStep || steps.length === 0) {
