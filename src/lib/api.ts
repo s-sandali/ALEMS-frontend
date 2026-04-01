@@ -19,6 +19,38 @@ export type AlgorithmSimulationStep = {
     actionLabel: string;
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
+    recursion?: RecursionStepModel | null;
+};
+
+type RecursionPrimitive = string | number | boolean | null;
+
+export type RecursionFrameModel = {
+    id?: string | number | null;
+    functionName?: string | null;
+    label?: string | null;
+    state?: string | null;
+    depth?: number | null;
+    arguments?: Record<string, RecursionPrimitive> | null;
+    params?: Record<string, RecursionPrimitive> | null;
+    leftIndex?: number | null;
+    rightIndex?: number | null;
+    lowIndex?: number | null;
+    highIndex?: number | null;
+    startIndex?: number | null;
+    endIndex?: number | null;
+    midpointIndex?: number | null;
+    pivotIndex?: number | null;
+    returnValue?: RecursionPrimitive | number[] | string[] | null;
+    result?: RecursionPrimitive | number[] | string[] | null;
+};
+
+export type RecursionStepModel = {
+    event?: string | null;
+    state?: string | null;
+    depth?: number | null;
+    currentFrameId?: string | number | null;
+    frames?: RecursionFrameModel[] | null;
+    stack?: RecursionFrameModel[] | null;
 };
 
 export type HeapStepModel = {
