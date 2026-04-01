@@ -5,6 +5,7 @@ import type { Transition } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
+import QuickSortTreeVisualizer from "./QuickSortTreeVisualizer";
 
 type LearningMode = "auto" | "practice";
 type PracticeFeedbackTone = "correct" | "incorrect" | null;
@@ -389,6 +390,20 @@ function getSearchState(step: AlgorithmSimulationStep | undefined) {
     return (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
 }
 
+function getQuickSortPracticeAction(step: AlgorithmSimulationStep | undefined) {
+    const action = (step?.quickSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
+
+    if (action === "pivot_swap" || action === "swap") {
+        return "swap";
+    }
+
+    if (action === "compare") {
+        return "compare";
+    }
+
+    return action;
+}
+
 function getSearchWindow(step: AlgorithmSimulationStep | undefined, totalValues: number) {
     if (totalValues <= 0) {
         return { low: 0, high: -1, midpoint: null };
@@ -741,10 +756,16 @@ function AlgorithmVisualizer({
         ? practiceTone.actionLabel
         : (currentStep?.search?.state ?? currentStep?.actionLabel ?? "Waiting for steps");
     const heapStepMeta = currentStep?.heap ?? null;
+    const quickSortStepMeta = currentStep?.quickSort ?? null;
     const heapComparison = useMemo(
         () => formatHeapComparison(currentStep),
         [currentStep],
     );
+    const quickSortPracticeAction = useMemo(
+        () => getQuickSortPracticeAction(currentStep),
+        [currentStep],
+    );
+    const isQuickSortStep = Boolean(quickSortStepMeta) && algorithmType === "sort";
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
     const heapIdentityData = useMemo(() => {
         if (!isHeapStep || steps.length === 0) {
@@ -1028,9 +1049,15 @@ function AlgorithmVisualizer({
                                 <span className="text-sm text-sky-100/80">
                                     {algorithmType === "search"
                                         ? "Use Go Left, Go Right, or Found to decide the next move"
+                                        : (isQuickSortStep
+                                            ? (quickSortPracticeAction === "compare"
+                                                ? "Use the bottom array strip to validate the next comparison"
+                                                : (quickSortPracticeAction === "swap"
+                                                    ? "Use the bottom array strip to validate the next swap"
+                                                    : "Use the bottom array strip to follow the next quick sort action"))
                                         : (isHeapStep
                                             ? "Click two heap nodes to validate a swap"
-                                            : "Click two bars to validate a swap")}
+                                            : "Click two bars to validate a swap"))}
                                 </span>
                             ) : null}
                         </div>
@@ -1050,6 +1077,25 @@ function AlgorithmVisualizer({
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Found
+                                </span>
+                            </>
+                        ) : isQuickSortStep ? (
+                            <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                                    Left Partition
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    Pivot
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-400 to-sky-500" />
+                                    Right Partition
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-white/70 to-white/90" />
+                                    Active Frame
                                 </span>
                             </>
                         ) : isHeapStep ? (
@@ -1125,7 +1171,7 @@ function AlgorithmVisualizer({
                         </div>
                     ) : null}
 
-                    {recursionStackFrames.length > 0 ? (
+                    {recursionStackFrames.length > 0 && !isQuickSortStep ? (
                         <div className="mb-4 rounded-2xl border border-fuchsia-300/15 bg-fuchsia-300/[0.06] px-4 py-3">
                             <div className="mb-3 flex items-center justify-between gap-3 text-xs text-fuchsia-100/85">
                                 <span className="font-semibold uppercase tracking-[0.18em] text-fuchsia-100">Recursion Stack</span>
@@ -1266,6 +1312,20 @@ function AlgorithmVisualizer({
                                 )}
                             </div>
                         </div>
+                    ) : isQuickSortStep ? (
+                        <QuickSortTreeVisualizer
+                            steps={steps}
+                            currentStepIndex={currentStepIndex}
+                            mode={mode}
+                            values={values}
+                            selectedIndices={selectedIndices}
+                            suggestedIndices={suggestedIndices}
+                            feedbackIndices={feedbackIndices}
+                            feedbackTone={feedbackTone}
+                            isInteractionDisabled={isInteractionDisabled}
+                            onBarClick={onBarClick}
+                            shouldReduceMotion={Boolean(shouldReduceMotion)}
+                        />
                     ) : isHeapStep ? (
                         <div>
                             <div className="mb-3 flex items-center justify-between text-xs text-text-secondary">
