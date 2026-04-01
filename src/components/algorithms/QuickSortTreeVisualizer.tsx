@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 
 import type { AlgorithmSimulationStep, RecursionFrameModel } from "@/lib/api";
@@ -708,19 +709,6 @@ export default function QuickSortTreeVisualizer({
                             viewBox="0 0 100 100"
                             preserveAspectRatio="none"
                         >
-                            <defs>
-                                <marker
-                                    id="qs-arrow"
-                                    markerWidth="5"
-                                    markerHeight="4"
-                                    refX="5"
-                                    refY="2"
-                                    orient="auto"
-                                    markerUnits="strokeWidth"
-                                >
-                                    <polygon points="0 0, 5 2, 0 4" fill="rgba(251,113,133,0.75)" />
-                                </marker>
-                            </defs>
                             {treeLayout.edges.map((edge) => {
                                 const d = `M ${toXPct(edge.x1)} ${toYPct(edge.y1)} L ${toXPct(edge.x2)} ${toYPct(edge.y2)}`;
 
@@ -738,11 +726,42 @@ export default function QuickSortTreeVisualizer({
                                         stroke="rgba(251,113,133,0.48)"
                                         strokeWidth="0.9"
                                         strokeLinecap="round"
-                                        markerEnd="url(#qs-arrow)"
                                     />
                                 );
                             })}
                         </svg>
+
+                        {treeLayout.edges.map((edge) => {
+                            const x2 = toXPct(edge.x2);
+                            const y2 = toYPct(edge.y2);
+                            const dx = toXPct(edge.x2) - toXPct(edge.x1);
+                            const dy = toYPct(edge.y2) - toYPct(edge.y1);
+                            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+                            return (
+                                <motion.div
+                                    key={`${edge.id}-icon`}
+                                    initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.85 }}
+                                    animate={{
+                                        opacity: 1,
+                                        scale: 1,
+                                        left: `${x2}%`,
+                                        top: `${y2}%`,
+                                        rotate: angle,
+                                    }}
+                                    transition={shouldReduceMotion ? { duration: 0 } : {
+                                        opacity: { duration: 0.18, ease: "easeOut" },
+                                        scale: { duration: 0.18, ease: "easeOut" },
+                                        left: springTransition,
+                                        top: springTransition,
+                                        rotate: springTransition,
+                                    }}
+                                    className="pointer-events-none absolute z-[5] -ml-[7px] -mt-[7px] text-rose-300/80"
+                                >
+                                    <ArrowRight size={14} strokeWidth={2.2} />
+                                </motion.div>
+                            );
+                        })}
 
                         {/* Tree nodes */}
                         {nodesToRender.map((node) => {
