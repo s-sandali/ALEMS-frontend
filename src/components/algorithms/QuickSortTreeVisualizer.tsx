@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { LayoutGroup, motion } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 
 import type { AlgorithmSimulationStep, RecursionFrameModel } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -71,36 +71,101 @@ function reconcileCells(prev: VisualCell[], nextValues: number[], create: (v: nu
     });
 }
 
-const NODE_CELL_WIDTH = 36;
+// ─── Layout constants ──────────────────────────────────────────────────────────
+const NODE_CELL_WIDTH = 40;
 const NODE_CELL_GAP = 4;
-const NODE_HORIZONTAL_PADDING = 20;
-const NODE_MIN_WIDTH = 96;
-const SIBLING_GAP = 20;
-const TREE_TOP_PADDING = 16;
-const TREE_SIDE_PADDING = 28;
-const LEVEL_HEIGHT = 96;
-const NODE_CARD_HEIGHT = 68;
-const STAGE_MAX_WIDTH = 1200;
-const TREE_AREA_FRACTION = 0.68;
+const NODE_HORIZONTAL_PADDING = 28;
+const NODE_MIN_WIDTH = 80;
+const SIBLING_GAP = 24;
+const TREE_TOP_PADDING = 20;
+const TREE_SIDE_PADDING = 32;
+const LEVEL_HEIGHT = 108;
+const NODE_CARD_HEIGHT = 72;
+const STAGE_MAX_WIDTH = 1400;
 
 const springTransition = {
     type: "spring" as const,
-    stiffness: 360,
-    damping: 30,
+    stiffness: 340,
+    damping: 28,
     mass: 0.9,
 };
 
-function arraysEqual(left: number[], right: number[]) {
-    if (left.length !== right.length) {
-        return false;
-    }
+// ─── Step status text ──────────────────────────────────────────────────────────
+function getStatusText(step: AlgorithmSimulationStep | undefined): string {
+    if (!step) return "";
 
-    for (let index = 0; index < left.length; index += 1) {
-        if (left[index] !== right[index]) {
-            return false;
+    const action = (step.actionLabel ?? "").trim().toLowerCase();
+    const qs = step.quickSort;
+    const pivot = qs?.pivot;
+    const range = qs?.range;
+    const active = step.activeIndices ?? [];
+    const arr = step.arrayState;
+
+    if (action === "recursive_call") {
+        if (Array.isArray(range) && range.length >= 2) {
+            return `Sorting subarray  [ ${range[0]} → ${range[1]} ]`;
         }
+        return "Recursive call";
     }
 
+    if (action === "base_case") {
+        return "Base case — subarray has ≤ 1 element, already sorted";
+    }
+
+    if (action === "partition_start") {
+        return `Partitioning — pivot selected: ${pivot ?? "?"}`;
+    }
+
+    if (action === "pivot_placed") {
+        return `Pivot ${pivot ?? "?"} placed at its final sorted position`;
+    }
+
+    if (action === "compare") {
+        const [i] = active;
+        if (typeof i === "number" && typeof arr[i] === "number") {
+            const val = arr[i];
+            if (typeof pivot === "number") {
+                const side = val <= pivot ? "LEFT" : "RIGHT";
+                const rel = val <= pivot ? "≤" : ">";
+                return `${val} ${rel} pivot (${pivot}) → append to ${side}`;
+            }
+        }
+        return "Comparing element with pivot…";
+    }
+
+    if (action === "swap" || action === "pivot_swap") {
+        const [i, j] = active;
+        if (typeof i === "number" && typeof j === "number") {
+            const a = arr[i];
+            const b = arr[j];
+            if (typeof a === "number" && typeof b === "number") {
+                return `Swapping  ${a}  ↔  ${b}`;
+            }
+        }
+        return "Swapping elements…";
+    }
+
+    if (action === "sort_left_complete") return "Left partition fully sorted ✓";
+    if (action === "sort_right_complete") return "Right partition fully sorted ✓";
+
+    if (action === "return") {
+        if (Array.isArray(range) && range.length >= 2) {
+            return `Subarray [ ${range[0]} .. ${range[1]} ] is fully sorted`;
+        }
+        return "Returning from recursive call";
+    }
+
+    if (action === "complete" || action === "done") return "Array is fully sorted!";
+
+    return action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+function arraysEqual(left: number[], right: number[]) {
+    if (left.length !== right.length) return false;
+    for (let i = 0; i < left.length; i += 1) {
+        if (left[i] !== right[i]) return false;
+    }
     return true;
 }
 
@@ -112,11 +177,7 @@ function getStack(step: AlgorithmSimulationStep | undefined) {
 
 function normalizeFrameId(frame: RecursionFrameModel | undefined, fallback: string) {
     const rawId = frame?.id;
-
-    if (typeof rawId === "string" || typeof rawId === "number") {
-        return String(rawId);
-    }
-
+    if (typeof rawId === "string" || typeof rawId === "number") return String(rawId);
     return fallback;
 }
 
@@ -131,94 +192,70 @@ function getFrameBounds(frame: RecursionFrameModel | undefined, fallbackRange: n
         : (typeof frame?.highIndex === "number"
             ? frame.highIndex
             : (typeof frame?.endIndex === "number" ? frame.endIndex : fallbackRange?.[1]));
-
-    if (typeof low !== "number" || typeof high !== "number") {
-        return null;
-    }
-
+    if (typeof low !== "number" || typeof high !== "number") return null;
     return { low, high };
 }
 
 function getCurrentFrame(step: AlgorithmSimulationStep | undefined) {
     const stack = getStack(step);
-    if (stack.length === 0) {
-        return null;
-    }
-
+    if (stack.length === 0) return null;
     const currentFrameId = step?.recursion?.currentFrameId;
     if (currentFrameId !== null && currentFrameId !== undefined) {
-        const matched = stack.find((frame, index) => normalizeFrameId(frame, `frame-${index}`) === String(currentFrameId));
-        if (matched) {
-            return matched;
-        }
+        const matched = stack.find((frame, index) =>
+            normalizeFrameId(frame, `frame-${index}`) === String(currentFrameId),
+        );
+        if (matched) return matched;
     }
-
     return stack[stack.length - 1] ?? null;
 }
 
-function resolveVisualStepIndex(steps: AlgorithmSimulationStep[], currentStepIndex: number, values: number[], mode: LearningMode) {
+function resolveVisualStepIndex(
+    steps: AlgorithmSimulationStep[],
+    currentStepIndex: number,
+    values: number[],
+    mode: LearningMode,
+) {
     const safeIndex = steps.length === 0
         ? 0
         : Math.min(Math.max(currentStepIndex, 0), steps.length - 1);
 
-    if (mode !== "practice") {
-        return safeIndex;
-    }
+    if (mode !== "practice") return safeIndex;
 
-    for (let stepIndex = safeIndex; stepIndex >= 0; stepIndex -= 1) {
-        const candidate = steps[stepIndex];
+    for (let s = safeIndex; s >= 0; s -= 1) {
+        const candidate = steps[s];
         if (Array.isArray(candidate?.arrayState) && arraysEqual(candidate.arrayState, values)) {
-            return stepIndex;
+            return s;
         }
     }
-
     return safeIndex;
 }
 
-function attachChild(parentNode: QuickSortTreeNodeModel | undefined, childNodeId: string, low: number, high: number) {
-    if (!parentNode) {
-        return;
-    }
-
+function attachChild(
+    parentNode: QuickSortTreeNodeModel | undefined,
+    childNodeId: string,
+    low: number,
+    high: number,
+) {
+    if (!parentNode) return;
     if (typeof parentNode.pivotIndex === "number") {
-        if (high < parentNode.pivotIndex) {
-            parentNode.leftChildId = childNodeId;
-            return;
-        }
-
-        if (low > parentNode.pivotIndex) {
-            parentNode.rightChildId = childNodeId;
-            return;
-        }
+        if (high < parentNode.pivotIndex) { parentNode.leftChildId = childNodeId; return; }
+        if (low > parentNode.pivotIndex) { parentNode.rightChildId = childNodeId; return; }
     }
-
-    if (!parentNode.leftChildId) {
-        parentNode.leftChildId = childNodeId;
-        return;
-    }
-
-    if (!parentNode.rightChildId) {
-        parentNode.rightChildId = childNodeId;
-    }
+    if (!parentNode.leftChildId) { parentNode.leftChildId = childNodeId; return; }
+    if (!parentNode.rightChildId) { parentNode.rightChildId = childNodeId; }
 }
 
-function markChildComplete(parentNode: QuickSortTreeNodeModel | undefined, range: number[] | undefined, nodesById: Map<string, QuickSortTreeNodeModel>) {
-    if (!parentNode || !Array.isArray(range) || range.length < 2) {
-        return;
-    }
-
+function markChildComplete(
+    parentNode: QuickSortTreeNodeModel | undefined,
+    range: number[] | undefined,
+    nodesById: Map<string, QuickSortTreeNodeModel>,
+) {
+    if (!parentNode || !Array.isArray(range) || range.length < 2) return;
     const [low, high] = range;
-
     [parentNode.leftChildId, parentNode.rightChildId].forEach((childId) => {
-        if (!childId) {
-            return;
-        }
-
+        if (!childId) return;
         const childNode = nodesById.get(childId);
-        if (!childNode) {
-            return;
-        }
-
+        if (!childNode) return;
         if (childNode.low === low && childNode.high === high && childNode.state !== "base_case") {
             childNode.state = "complete";
         }
@@ -239,9 +276,13 @@ function buildQuickSortTree(steps: AlgorithmSimulationStep[], uptoIndex: number)
 
         if (action === "recursive_call" && currentFrameId && bounds) {
             const existingNode = nodesById.get(currentFrameId);
-            const currentFrameIndex = stack.findIndex((frame, index) => normalizeFrameId(frame, `frame-${index}`) === currentFrameId);
+            const currentFrameIndex = stack.findIndex(
+                (frame, index) => normalizeFrameId(frame, `frame-${index}`) === currentFrameId,
+            );
             const parentFrame = currentFrameIndex > 0 ? stack[currentFrameIndex - 1] : null;
-            const parentFrameId = parentFrame ? normalizeFrameId(parentFrame, `frame-${currentFrameIndex - 1}`) : null;
+            const parentFrameId = parentFrame
+                ? normalizeFrameId(parentFrame, `frame-${currentFrameIndex - 1}`)
+                : null;
             const parentNode = parentFrameId ? nodesById.get(parentFrameId) : undefined;
             const elements = step.arrayState.slice(bounds.low, bounds.high + 1);
 
@@ -249,7 +290,9 @@ function buildQuickSortTree(steps: AlgorithmSimulationStep[], uptoIndex: number)
                 id: currentFrameId,
                 low: bounds.low,
                 high: bounds.high,
-                depth: typeof currentFrame?.depth === "number" ? currentFrame.depth : (step.quickSort?.recursionDepth ?? 0),
+                depth: typeof currentFrame?.depth === "number"
+                    ? currentFrame.depth
+                    : (step.quickSort?.recursionDepth ?? 0),
                 elements,
                 pivotIndex: null,
                 pivotValue: null,
@@ -272,33 +315,27 @@ function buildQuickSortTree(steps: AlgorithmSimulationStep[], uptoIndex: number)
             continue;
         }
 
-        if (!currentNode) {
-            continue;
-        }
+        if (!currentNode) continue;
 
-        if (action === "base_case") {
-            currentNode.state = "base_case";
-            continue;
-        }
-
-        if (action === "partition_start") {
-            currentNode.state = "partitioning";
-            continue;
-        }
+        if (action === "base_case") { currentNode.state = "base_case"; continue; }
+        if (action === "partition_start") { currentNode.state = "partitioning"; continue; }
 
         if (action === "pivot_placed" && bounds) {
-            const pivotIndex = typeof step.quickSort?.pivotIndex === "number" ? step.quickSort.pivotIndex : null;
+            const pivotIndex = typeof step.quickSort?.pivotIndex === "number"
+                ? step.quickSort.pivotIndex
+                : null;
             const elements = step.arrayState.slice(bounds.low, bounds.high + 1);
             currentNode.pivotIndex = pivotIndex;
             currentNode.pivotValue = typeof step.quickSort?.pivot === "number"
                 ? step.quickSort.pivot
                 : (typeof pivotIndex === "number" ? (step.arrayState[pivotIndex] ?? null) : null);
             currentNode.elements = elements;
-
             if (typeof pivotIndex === "number") {
                 const localPivotIndex = pivotIndex - bounds.low;
                 currentNode.leftPartition = localPivotIndex > 0 ? elements.slice(0, localPivotIndex) : [];
-                currentNode.rightPartition = localPivotIndex < elements.length - 1 ? elements.slice(localPivotIndex + 1) : [];
+                currentNode.rightPartition = localPivotIndex < elements.length - 1
+                    ? elements.slice(localPivotIndex + 1)
+                    : [];
             } else {
                 currentNode.leftPartition = [];
                 currentNode.rightPartition = [];
@@ -319,19 +356,19 @@ function buildQuickSortTree(steps: AlgorithmSimulationStep[], uptoIndex: number)
     return nodesById;
 }
 
+// ─── Tree layout ───────────────────────────────────────────────────────────────
 function getNodeCardWidth(node: QuickSortTreeNodeModel) {
     const contentWidth = (node.elements.length * NODE_CELL_WIDTH)
         + (Math.max(node.elements.length - 1, 0) * NODE_CELL_GAP)
         + NODE_HORIZONTAL_PADDING;
-
     return Math.max(NODE_MIN_WIDTH, contentWidth);
 }
 
 function createTreeLayout(nodesById: Map<string, QuickSortTreeNodeModel>) {
     const nodeList = Array.from(nodesById.values());
     const roots = nodeList
-        .filter((node) => !node.parentId || !nodesById.has(node.parentId))
-        .sort((left, right) => left.depth - right.depth || left.low - right.low || left.high - right.high);
+        .filter((n) => !n.parentId || !nodesById.has(n.parentId))
+        .sort((a, b) => a.depth - b.depth || a.low - b.low || a.high - b.high);
 
     if (roots.length === 0) {
         return {
@@ -348,50 +385,41 @@ function createTreeLayout(nodesById: Map<string, QuickSortTreeNodeModel>) {
 
     function measure(nodeId: string): number {
         const node = nodesById.get(nodeId);
-        if (!node) {
-            return 0;
-        }
-
+        if (!node) return 0;
         maxDepth = Math.max(maxDepth, node.depth);
         const nodeWidth = getNodeCardWidth(node);
         nodeWidths.set(nodeId, nodeWidth);
-
         const leftWidth = node.leftChildId ? measure(node.leftChildId) : 0;
         const rightWidth = node.rightChildId ? measure(node.rightChildId) : 0;
         let childrenWidth: number;
         if (leftWidth > 0 && rightWidth > 0) {
             childrenWidth = leftWidth + SIBLING_GAP + rightWidth;
         } else if (leftWidth > 0 || rightWidth > 0) {
-            // Single child: allocate space so the child is visibly offset from the parent
             childrenWidth = nodeWidth + 2 * SIBLING_GAP + Math.max(leftWidth, rightWidth);
         } else {
             childrenWidth = 0;
         }
         const subtreeWidth = Math.max(nodeWidth, childrenWidth);
-
         subtreeWidths.set(nodeId, subtreeWidth);
         return subtreeWidth;
     }
 
     const rootWidths = roots.map((root) => measure(root.id));
-    const totalRootsWidth = rootWidths.reduce((sum, width) => sum + width, 0);
+    const totalRootsWidth = rootWidths.reduce((sum, w) => sum + w, 0);
     const totalRootGaps = Math.max(roots.length - 1, 0) * SIBLING_GAP;
-    const naturalWidth = totalRootsWidth + totalRootGaps + (TREE_SIDE_PADDING * 2);
+    const naturalWidth = totalRootsWidth + totalRootGaps + TREE_SIDE_PADDING * 2;
     const stageWidth = Math.min(Math.max(naturalWidth, 720), STAGE_MAX_WIDTH);
-    const stageHeight = TREE_TOP_PADDING + ((maxDepth + 1) * LEVEL_HEIGHT) + 12;
+    const stageHeight = TREE_TOP_PADDING + (maxDepth + 1) * LEVEL_HEIGHT + 12;
     const layoutNodes = new Map<string, QuickSortRenderableNode>();
     const edges: QuickSortTreeLayout["edges"] = [];
 
     function positionNode(nodeId: string, leftEdge: number) {
         const node = nodesById.get(nodeId);
-        if (!node) {
-            return;
-        }
-
+        if (!node) return;
         const subtreeWidth = subtreeWidths.get(nodeId) ?? getNodeCardWidth(node);
         const nodeWidth = nodeWidths.get(nodeId) ?? getNodeCardWidth(node);
-        const x = leftEdge + (subtreeWidth / 2);
-        const y = TREE_TOP_PADDING + (node.depth * LEVEL_HEIGHT);
+        const x = leftEdge + subtreeWidth / 2;
+        const y = TREE_TOP_PADDING + node.depth * LEVEL_HEIGHT;
 
         layoutNodes.set(nodeId, {
             id: node.id,
@@ -413,17 +441,14 @@ function createTreeLayout(nodesById: Map<string, QuickSortTreeNodeModel>) {
         const rightSubtreeWidth = node.rightChildId ? (subtreeWidths.get(node.rightChildId) ?? 0) : 0;
 
         if (node.leftChildId && node.rightChildId) {
-            // Both children: center them symmetrically below the parent
             const childrenWidth = leftSubtreeWidth + SIBLING_GAP + rightSubtreeWidth;
             const childStart = x - childrenWidth / 2;
             positionNode(node.leftChildId, childStart);
             positionNode(node.rightChildId, childStart + leftSubtreeWidth + SIBLING_GAP);
         } else if (node.rightChildId) {
-            // Single right child: offset to the right of the parent center
             const childCenterX = x + nodeWidth / 2 + SIBLING_GAP;
             positionNode(node.rightChildId, childCenterX - rightSubtreeWidth / 2);
         } else if (node.leftChildId) {
-            // Single left child: offset to the left of the parent center
             const childCenterX = x - nodeWidth / 2 - SIBLING_GAP;
             positionNode(node.leftChildId, childCenterX - leftSubtreeWidth / 2);
         }
@@ -437,20 +462,11 @@ function createTreeLayout(nodesById: Map<string, QuickSortTreeNodeModel>) {
 
     layoutNodes.forEach((node) => {
         const sourceModel = nodesById.get(node.id);
-        if (!sourceModel) {
-            return;
-        }
-
+        if (!sourceModel) return;
         [sourceModel.leftChildId, sourceModel.rightChildId].forEach((childId) => {
-            if (!childId) {
-                return;
-            }
-
+            if (!childId) return;
             const child = layoutNodes.get(childId);
-            if (!child) {
-                return;
-            }
-
+            if (!child) return;
             edges.push({
                 id: `${node.id}-${child.id}`,
                 x1: node.x,
@@ -461,29 +477,17 @@ function createTreeLayout(nodesById: Map<string, QuickSortTreeNodeModel>) {
         });
     });
 
-    return {
-        nodes: Array.from(layoutNodes.values()),
-        edges,
-        stageWidth,
-        stageHeight,
-    };
+    return { nodes: Array.from(layoutNodes.values()), edges, stageWidth, stageHeight };
 }
 
 function normalizePracticeAction(step: AlgorithmSimulationStep | undefined) {
     const rawAction = (step?.quickSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
-
-    if (rawAction === "pivot_swap" || rawAction === "swap") {
-        return "swap";
-    }
-
-    if (rawAction === "compare") {
-        return "compare";
-    }
-
+    if (rawAction === "pivot_swap" || rawAction === "swap") return "swap";
+    if (rawAction === "compare") return "compare";
     return rawAction;
 }
 
-
+// ─── Component ─────────────────────────────────────────────────────────────────
 export default function QuickSortTreeVisualizer({
     steps,
     currentStepIndex,
@@ -508,24 +512,25 @@ export default function QuickSortTreeVisualizer({
     );
     const currentFrameId = visualStep?.recursion?.currentFrameId;
     const normalizedAction = normalizePracticeAction(visualStep);
-const selectedIndexSet = useMemo(() => new Set(selectedIndices), [selectedIndices]);
+    const selectedIndexSet = useMemo(() => new Set(selectedIndices), [selectedIndices]);
     const suggestedIndexSet = useMemo(() => new Set(suggestedIndices), [suggestedIndices]);
     const feedbackIndexSet = useMemo(() => new Set(feedbackIndices), [feedbackIndices]);
     const isPracticeMode = mode === "practice";
-    const currentPartitionRange = Array.isArray(visualStep?.quickSort?.range) && visualStep.quickSort.range.length === 2
+    const currentPartitionRange = Array.isArray(visualStep?.quickSort?.range)
+        && visualStep.quickSort.range.length === 2
         ? visualStep.quickSort.range
         : null;
-    const pivotIndex = typeof visualStep?.quickSort?.pivotIndex === "number" ? visualStep.quickSort.pivotIndex : null;
+    const pivotIndex = typeof visualStep?.quickSort?.pivotIndex === "number"
+        ? visualStep.quickSort.pivotIndex
+        : null;
 
+    // Practice mode interactive array
     const nextCellIdRef = useRef(0);
     const createCell = (v: number): VisualCell => ({ id: `qs-cell-${nextCellIdRef.current++}`, value: v });
     const [visualCells, setVisualCells] = useState<VisualCell[]>(() => values.map((v) => createCell(v)));
 
     useLayoutEffect(() => {
-        if (values.length === 0) {
-            setVisualCells([]);
-            return;
-        }
+        if (values.length === 0) { setVisualCells([]); return; }
         setVisualCells((prev) => {
             if (prev.length === 0 || prev.length !== values.length || (!isPracticeMode && visualStepIndex === 0)) {
                 return values.map((v) => createCell(v));
@@ -535,13 +540,20 @@ const selectedIndexSet = useMemo(() => new Set(selectedIndices), [selectedIndice
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visualStepIndex, isPracticeMode, values]);
 
+    // Coordinate mapping
+    // Auto mode: status bar ~48px, practice mode: array panel ~128px
+    const BOTTOM_PANEL_PX = isPracticeMode ? 128 : 52;
+    const CONTAINER_PX = 480; // 30rem
+    const treeAreaFraction = (CONTAINER_PX - BOTTOM_PANEL_PX) / CONTAINER_PX;
+
     const safeStageWidth = Math.max(treeLayout.stageWidth, 1);
     const safeStageHeight = Math.max(treeLayout.stageHeight, 1);
     const toXPct = (x: number) => (x / safeStageWidth) * 100;
-    const toYPct = (y: number) => (y / safeStageHeight) * TREE_AREA_FRACTION * 100;
+    const toYPct = (y: number) => (y / safeStageHeight) * treeAreaFraction * 100;
 
     return (
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+            {/* Header */}
             <div className="mb-3 flex items-center justify-between gap-3 text-xs text-text-secondary">
                 <span>Quick Sort Recursion Tree</span>
                 <div className="flex flex-wrap items-center gap-2">
@@ -558,14 +570,29 @@ const selectedIndexSet = useMemo(() => new Set(selectedIndices), [selectedIndice
                 </div>
             </div>
 
+            {/* Main container */}
             <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#111214] h-[30rem]">
                 {treeLayout.nodes.length > 0 ? (
                     <>
+                        {/* SVG edges */}
                         <svg
-                            className="absolute inset-0 h-full w-full"
+                            className="absolute inset-0 h-full w-full pointer-events-none"
                             viewBox="0 0 100 100"
                             preserveAspectRatio="none"
                         >
+                            <defs>
+                                <marker
+                                    id="qs-arrow"
+                                    markerWidth="5"
+                                    markerHeight="4"
+                                    refX="5"
+                                    refY="2"
+                                    orient="auto"
+                                    markerUnits="strokeWidth"
+                                >
+                                    <polygon points="0 0, 5 2, 0 4" fill="rgba(251,113,133,0.75)" />
+                                </marker>
+                            </defs>
                             {treeLayout.edges.map((edge) => (
                                 <motion.line
                                     key={edge.id}
@@ -582,13 +609,15 @@ const selectedIndexSet = useMemo(() => new Set(selectedIndices), [selectedIndice
                                         x2: springTransition,
                                         y2: springTransition,
                                     }}
-                                    stroke="rgba(148,163,184,0.55)"
-                                    strokeWidth="1"
+                                    stroke="rgba(251,113,133,0.45)"
+                                    strokeWidth="0.9"
                                     strokeLinecap="round"
+                                    markerEnd="url(#qs-arrow)"
                                 />
                             ))}
                         </svg>
 
+                        {/* Tree nodes */}
                         {treeLayout.nodes.map((node) => {
                             const xPct = toXPct(node.x);
                             const yPct = toYPct(node.y);
@@ -599,7 +628,7 @@ const selectedIndexSet = useMemo(() => new Set(selectedIndices), [selectedIndice
                             return (
                                 <motion.div
                                     key={node.id}
-                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    initial={{ opacity: 0, scale: 0.88 }}
                                     animate={{
                                         opacity: 1,
                                         scale: 1,
@@ -607,15 +636,15 @@ const selectedIndexSet = useMemo(() => new Set(selectedIndices), [selectedIndice
                                         top: `${yPct}%`,
                                     }}
                                     transition={shouldReduceMotion ? { duration: 0 } : {
-                                        opacity: { duration: 0.25, ease: "easeOut" },
-                                        scale: { duration: 0.25, ease: "easeOut" },
+                                        opacity: { duration: 0.28, ease: "easeOut" },
+                                        scale: { duration: 0.28, ease: "easeOut" },
                                         left: springTransition,
                                         top: springTransition,
                                     }}
                                     className="absolute z-10"
                                     style={{
                                         width: `${node.width}px`,
-                                        transform: "translateX(-50%)",
+                                        marginLeft: `-${Math.round(node.width / 2)}px`,
                                     }}
                                 >
                                     <QuickSortTreeNode
@@ -629,84 +658,88 @@ const selectedIndexSet = useMemo(() => new Set(selectedIndices), [selectedIndice
                             );
                         })}
 
-                        <div className="absolute inset-x-0 bottom-0 px-3 pb-3">
-                            <div className="mb-2 flex items-center justify-between text-xs text-text-secondary">
-                                <span>Array view</span>
-                                <span>
-                                    {isPracticeMode
-                                        ? "Click to compare / swap"
-                                        : "Current snapshot"}
-                                </span>
-                            </div>
-
-                            <LayoutGroup id={`qs-array-${visualStepIndex}`}>
-                                <div className="flex flex-wrap items-end justify-center gap-2">
-                                    {visualCells.map((cell, index) => {
-                                        const isSelected = selectedIndexSet.has(index);
-                                        const isSuggested = suggestedIndexSet.has(index);
-                                        const isFeedbackTarget = feedbackIndexSet.has(index);
-                                        const isPivot = !isPracticeMode && pivotIndex === index;
-                                        const isWithinCurrentPartition = !isPracticeMode
-                                            && currentPartitionRange !== null
-                                            && index >= currentPartitionRange[0]
-                                            && index <= currentPartitionRange[1];
-                                        const isComplete = !isPracticeMode && normalizedAction === "complete";
-                                        const isInteractive = isPracticeMode && typeof onBarClick === "function";
-
-                                        return (
-                                            <motion.div
-                                                key={cell.id}
-                                                layout
-                                                transition={shouldReduceMotion ? { duration: 0 } : springTransition}
-                                                className="flex flex-col items-center gap-1"
-                                            >
-                                                <motion.button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (isInteractive && !isInteractionDisabled) {
-                                                            onBarClick(index);
-                                                        }
-                                                    }}
-                                                    disabled={!isInteractive || isInteractionDisabled}
-                                                    animate={shouldReduceMotion
-                                                        ? {}
-                                                        : (isSelected ? { scale: [1, 1.06, 1], y: -3 } : { scale: 1, y: 0 })}
-                                                    transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.24, ease: "easeInOut" }}
-                                                    className={cn(
-                                                        "flex h-12 w-12 items-center justify-center rounded-2xl border text-sm font-semibold transition-colors duration-300",
-                                                        !isInteractive && "cursor-default",
-                                                        isInteractive && !isInteractionDisabled && "cursor-pointer",
-                                                        isInteractionDisabled && "cursor-not-allowed opacity-80",
-                                                        // Auto mode — binary search colour scheme
-                                                        !isPracticeMode && isComplete && "border-emerald-400/60 bg-emerald-400/20 text-emerald-100 shadow-[0_0_18px_rgba(52,211,153,0.28)]",
-                                                        !isPracticeMode && !isComplete && isPivot && "border-accent/60 bg-accent/25 text-accent shadow-[0_0_18px_rgba(213,255,64,0.28)]",
-                                                        !isPracticeMode && !isComplete && !isPivot && isWithinCurrentPartition && "border-accent/35 bg-accent/10 text-white",
-                                                        !isPracticeMode && !isComplete && !isPivot && !isWithinCurrentPartition && "border-white/10 bg-white/[0.04] text-white/75",
-                                                        // Practice mode
-                                                        isPracticeMode && isFeedbackTarget && feedbackTone === "correct" && "border-emerald-400/60 bg-emerald-500/18 text-emerald-100",
-                                                        isPracticeMode && isFeedbackTarget && feedbackTone === "incorrect" && "border-red-400/60 bg-red-500/18 text-red-100",
-                                                        isPracticeMode && isSelected && "border-sky-400/60 bg-sky-500/18 text-sky-100",
-                                                        isPracticeMode && isSuggested && !isSelected && "border-accent/60 bg-accent/14 text-accent",
-                                                        isPracticeMode && !isFeedbackTarget && !isSelected && !isSuggested && "border-white/10 bg-white/[0.04] text-white",
-                                                    )}
-                                                    aria-label={`Array index ${index}, value ${cell.value}`}
-                                                    aria-pressed={isInteractive ? isSelected : undefined}
-                                                >
-                                                    {cell.value}
-                                                </motion.button>
-                                                <motion.span
-                                                    layout="position"
-                                                    transition={shouldReduceMotion ? { duration: 0 } : springTransition}
-                                                    className="text-[10px] text-text-secondary"
-                                                >
-                                                    {index}
-                                                </motion.span>
-                                            </motion.div>
-                                        );
-                                    })}
+                        {/* Bottom panel */}
+                        {isPracticeMode ? (
+                            <div className="absolute inset-x-0 bottom-0 border-t border-white/8 bg-[#0f1113]/95 px-3 pb-3 pt-2 backdrop-blur-sm">
+                                <div className="mb-1.5 flex items-center justify-between text-xs text-text-secondary">
+                                    <span>Array view</span>
+                                    <span>Click to compare / swap</span>
                                 </div>
-                            </LayoutGroup>
-                        </div>
+                                <LayoutGroup id={`qs-array-${visualStepIndex}`}>
+                                    <div className="flex flex-wrap items-end justify-center gap-1.5">
+                                        {visualCells.map((cell, index) => {
+                                            const isSelected = selectedIndexSet.has(index);
+                                            const isSuggested = suggestedIndexSet.has(index);
+                                            const isFeedbackTarget = feedbackIndexSet.has(index);
+                                            const isPivot = pivotIndex === index;
+                                            const isWithinRange = currentPartitionRange !== null
+                                                && index >= currentPartitionRange[0]
+                                                && index <= currentPartitionRange[1];
+                                            const isInteractive = typeof onBarClick === "function";
+
+                                            return (
+                                                <motion.div
+                                                    key={cell.id}
+                                                    layout
+                                                    transition={shouldReduceMotion ? { duration: 0 } : springTransition}
+                                                    className="flex flex-col items-center gap-0.5"
+                                                >
+                                                    <motion.button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (isInteractive && !isInteractionDisabled) onBarClick(index);
+                                                        }}
+                                                        disabled={!isInteractive || isInteractionDisabled}
+                                                        animate={shouldReduceMotion ? {} : (isSelected ? { scale: [1, 1.06, 1], y: -3 } : { scale: 1, y: 0 })}
+                                                        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.24, ease: "easeInOut" }}
+                                                        className={cn(
+                                                            "flex h-10 w-10 items-center justify-center rounded-xl border text-xs font-semibold transition-colors duration-200",
+                                                            !isInteractive && "cursor-default",
+                                                            isInteractive && !isInteractionDisabled && "cursor-pointer",
+                                                            isInteractionDisabled && "cursor-not-allowed opacity-80",
+                                                            isFeedbackTarget && feedbackTone === "correct" && "border-emerald-400/60 bg-emerald-500/18 text-emerald-100",
+                                                            isFeedbackTarget && feedbackTone === "incorrect" && "border-red-400/60 bg-red-500/18 text-red-100",
+                                                            !isFeedbackTarget && isSelected && "border-sky-400/60 bg-sky-500/18 text-sky-100",
+                                                            !isFeedbackTarget && !isSelected && isSuggested && "border-accent/60 bg-accent/14 text-accent",
+                                                            !isFeedbackTarget && !isSelected && !isSuggested && isPivot && "border-accent/60 bg-accent/25 text-accent",
+                                                            !isFeedbackTarget && !isSelected && !isSuggested && !isPivot && isWithinRange && "border-amber-500/50 bg-amber-500/15 text-amber-100",
+                                                            !isFeedbackTarget && !isSelected && !isSuggested && !isPivot && !isWithinRange && "border-white/10 bg-white/[0.04] text-white/70",
+                                                        )}
+                                                        aria-label={`Array index ${index}, value ${cell.value}`}
+                                                        aria-pressed={isInteractive ? isSelected : undefined}
+                                                    >
+                                                        {cell.value}
+                                                    </motion.button>
+                                                    <motion.span
+                                                        layout="position"
+                                                        transition={shouldReduceMotion ? { duration: 0 } : springTransition}
+                                                        className="text-[9px] text-text-secondary"
+                                                    >
+                                                        {index}
+                                                    </motion.span>
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </div>
+                                </LayoutGroup>
+                            </div>
+                        ) : (
+                            // Auto mode — status text bar
+                            <div className="absolute inset-x-0 bottom-0 flex min-h-[3.25rem] items-center justify-center border-t border-white/8 bg-[#0f1113]/95 px-5 backdrop-blur-sm">
+                                <AnimatePresence mode="wait">
+                                    <motion.p
+                                        key={visualStepIndex}
+                                        initial={{ opacity: 0, y: 5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -5 }}
+                                        transition={{ duration: 0.18, ease: "easeOut" }}
+                                        className="text-center text-sm text-text-secondary"
+                                    >
+                                        {getStatusText(visualStep)}
+                                    </motion.p>
+                                </AnimatePresence>
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="flex h-full items-center justify-center text-sm text-text-secondary">
