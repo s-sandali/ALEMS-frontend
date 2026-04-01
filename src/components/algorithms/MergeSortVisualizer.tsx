@@ -11,6 +11,21 @@ type MergeSortVisualizerProps = {
     className?: string;
 };
 
+type MergeTreeNode = {
+    id: string;
+    left: number;
+    right: number;
+    depth: number;
+    parentId: string | null;
+    childIds: string[];
+    isLeaf: boolean;
+    xSlot: number;
+    xPercent: number;
+    yPercent: number;
+};
+
+const BAR_SLOT_WIDTH_PX = 56;
+
 const COMPARE_COLOR  = "bg-yellow-400 text-yellow-950 border-yellow-300 shadow-[0_0_18px_rgba(250,204,21,0.5)]";
 const PLACE_COLOR    = "bg-emerald-400 text-emerald-950 border-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.5)]";
 const SORTED_COLOR   = "bg-emerald-500 text-emerald-950 border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.22)]";
@@ -41,6 +56,130 @@ function formatLabel(label: string) {
         .filter(Boolean)
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(" ");
+}
+
+function rangeId(left: number, right: number) {
+    return `${left}-${right}`;
+}
+
+function describeMergeSortLine(lineNumber?: number) {
+    switch (lineNumber) {
+        case 1:
+            return "Start merge sort on the full array.";
+        case 2:
+            return "Call mergeSort on the current range.";
+        case 3:
+            return "Stop splitting when the range has one element.";
+        case 4:
+            return "Split the current range into left and right halves.";
+        case 5:
+            return "Recursively sort the left half.";
+        case 6:
+            return "Recursively sort the right half.";
+        case 7:
+            return "Start merging the two sorted halves.";
+        case 8:
+            return "Compare candidates from each half.";
+        case 9:
+            return "Place the chosen value into its target index.";
+        case 10:
+            return "Merge for this range is complete.";
+        case 11:
+            return "Return the sorted range to the caller.";
+        case 12:
+            return "Sorting is complete.";
+        default:
+            return "Following merge sort pseudocode.";
+    }
+}
+
+function compactRangeValues(values: number[]) {
+    if (values.length <= 4) {
+        return values.join("  ");
+    }
+
+    return `${values[0]}  ${values[1]}  ...  ${values[values.length - 2]}  ${values[values.length - 1]}`;
+}
+
+function buildMergeTree(length: number) {
+    if (length <= 0) {
+        return {
+            nodes: [] as MergeTreeNode[],
+            nodeById: new Map<string, MergeTreeNode>(),
+            maxDepth: 0,
+        };
+    }
+
+    const nodeById = new Map<string, MergeTreeNode>();
+    const nodes: MergeTreeNode[] = [];
+    let leafCursor = 0;
+    let maxDepth = 0;
+
+    const createNode = (left: number, right: number, depth: number, parentId: string | null): string => {
+        const id = rangeId(left, right);
+        maxDepth = Math.max(maxDepth, depth);
+
+        if (left === right) {
+            const leafNode: MergeTreeNode = {
+                id,
+                left,
+                right,
+                depth,
+                parentId,
+                childIds: [],
+                isLeaf: true,
+                xSlot: leafCursor++,
+                xPercent: 0,
+                yPercent: 0,
+            };
+            nodes.push(leafNode);
+            nodeById.set(id, leafNode);
+            return id;
+        }
+
+        const mid = left + Math.floor((right - left) / 2);
+        const leftChildId = createNode(left, mid, depth + 1, id);
+        const rightChildId = createNode(mid + 1, right, depth + 1, id);
+        const leftChild = nodeById.get(leftChildId)!;
+        const rightChild = nodeById.get(rightChildId)!;
+
+        const node: MergeTreeNode = {
+            id,
+            left,
+            right,
+            depth,
+            parentId,
+            childIds: [leftChildId, rightChildId],
+            isLeaf: false,
+            xSlot: (leftChild.xSlot + rightChild.xSlot) / 2,
+            xPercent: 0,
+            yPercent: 0,
+        };
+
+        nodes.push(node);
+        nodeById.set(id, node);
+        return id;
+    };
+
+    createNode(0, length - 1, 0, null);
+
+    const totalLeafCount = Math.max(leafCursor, 1);
+    const normalizedDepth = Math.max(maxDepth, 1);
+
+    for (const node of nodes) {
+        node.xPercent = totalLeafCount === 1
+            ? 50
+            : (node.xSlot / (totalLeafCount - 1)) * 100;
+        node.yPercent = 9 + (node.depth / normalizedDepth) * 74;
+    }
+
+    nodes.sort((a, b) => a.depth - b.depth || a.left - b.left || a.right - b.right);
+
+    return {
+        nodes,
+        nodeById,
+        maxDepth,
+    };
 }
 
 // ── Main merge buffer row ──────────────────────────────────────────────────────
@@ -99,16 +238,101 @@ function MergeSortVisualizer({
     const actionLabel = (currentStep?.actionLabel ?? "").trim().toLowerCase();
     const activeIndices = currentStep?.activeIndices ?? [];
     const arrayState = currentStep?.arrayState ?? [];
+    const lineNumber = currentStep?.lineNumber;
 
     const isFinalStep = actionLabel === "complete";
     const isComparePase = actionLabel === "compare";
     const isMergeParse = actionLabel.startsWith("merge");
+    const isMergePhase = actionLabel === "compare" || actionLabel === "place" || actionLabel.startsWith("merge") || actionLabel === "complete";
 
     const left  = meta?.left  ?? 0;
     const right = meta?.right ?? Math.max(arrayState.length - 1, 0);
     const mid   = meta?.mid ?? null;
     const depth = meta?.recursionDepth ?? 0;
     const mergeBuffer = meta?.mergeBuffer ?? null;
+
+    const tree = useMemo(() => buildMergeTree(arrayState.length), [arrayState.length]);
+
+    const mergeProgress = useMemo(() => {
+        const splitRanges = new Set<string>();
+        const placeCounts = new Map<string, number>();
+        const mergedRanges = new Set<string>();
+
+        for (let i = 0; i <= safeIndex; i++) {
+            const step = steps[i];
+            const stepMeta = step?.mergeSort;
+            if (!stepMeta) continue;
+
+            const id = rangeId(stepMeta.left, stepMeta.right);
+            const normalizedAction = (step.actionLabel ?? "").trim().toLowerCase();
+
+            if (normalizedAction === "split") {
+                splitRanges.add(id);
+            }
+
+            if (normalizedAction === "place") {
+                const nextCount = (placeCounts.get(id) ?? 0) + 1;
+                placeCounts.set(id, nextCount);
+
+                const segmentLength = stepMeta.right - stepMeta.left + 1;
+                if (nextCount >= segmentLength) {
+                    mergedRanges.add(id);
+                }
+            }
+        }
+
+        if (isFinalStep) {
+            for (const node of tree.nodes) {
+                mergedRanges.add(node.id);
+            }
+        }
+
+        return { splitRanges, mergedRanges };
+    }, [steps, safeIndex, isFinalStep, tree.nodes]);
+
+    const activeRangeId = useMemo(() => {
+        if (!meta) return null;
+        return rangeId(meta.left, meta.right);
+    }, [meta]);
+
+    const activePath = useMemo(() => {
+        const path = new Set<string>();
+        if (!activeRangeId) return path;
+
+        let cursor: string | null = activeRangeId;
+        while (cursor) {
+            path.add(cursor);
+            cursor = tree.nodeById.get(cursor)?.parentId ?? null;
+        }
+
+        return path;
+    }, [activeRangeId, tree.nodeById]);
+
+    const visibleDepth = useMemo(() => {
+        if (tree.nodes.length === 0) return 0;
+        if (isMergePhase) return tree.maxDepth;
+        if (actionLabel === "split") return Math.min(depth + 1, tree.maxDepth);
+        if (actionLabel === "start") return 0;
+        return tree.maxDepth;
+    }, [tree.nodes.length, tree.maxDepth, isMergePhase, actionLabel, depth]);
+
+    const suppressedNodes = useMemo(() => {
+        const hidden = new Set<string>();
+        if (!isMergePhase) return hidden;
+
+        for (const node of tree.nodes) {
+            let parentId = node.parentId;
+            while (parentId) {
+                if (mergeProgress.mergedRanges.has(parentId) && !activePath.has(node.id)) {
+                    hidden.add(node.id);
+                    break;
+                }
+                parentId = tree.nodeById.get(parentId)?.parentId ?? null;
+            }
+        }
+
+        return hidden;
+    }, [isMergePhase, tree.nodes, tree.nodeById, mergeProgress.mergedRanges, activePath]);
 
     const compareSwap = useMemo(() => {
         if (actionLabel !== "compare" || activeIndices.length < 2) {
@@ -123,7 +347,7 @@ function MergeSortVisualizer({
         return {
             leftIndex,
             rightIndex,
-            delta: (rightIndex - leftIndex) * 56,
+            delta: (rightIndex - leftIndex) * BAR_SLOT_WIDTH_PX,
         };
     }, [actionLabel, activeIndices]);
 
@@ -151,7 +375,7 @@ function MergeSortVisualizer({
         return {
             sourceIndex,
             targetIndex,
-            delta: (targetIndex - sourceIndex) * 56,
+            delta: (targetIndex - sourceIndex) * BAR_SLOT_WIDTH_PX,
         };
     }, [actionLabel, previousStep, meta, arrayState]);
 
@@ -181,6 +405,9 @@ function MergeSortVisualizer({
             {/* ── Phase info strip ───────────────────────────────────────────── */}
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-xs text-text-secondary">
                 <span className="font-medium text-text-primary">{phaseText}</span>
+                <span>
+                    Line <span className="text-text-primary">{lineNumber ?? "--"}</span>: {describeMergeSortLine(lineNumber)}
+                </span>
             </div>
 
             {/* ── Legend ────────────────────────────────────────────────────── */}
@@ -193,6 +420,111 @@ function MergeSortVisualizer({
                     <span className="h-2 w-2 rounded-full bg-emerald-400" />
                     Placed / Sorted
                 </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/40 bg-sky-400/10 px-2.5 py-0.5 text-[11px] text-sky-100">
+                    <span className="h-2 w-2 rounded-full bg-sky-300" />
+                    Divide then merge collapse
+                </span>
+            </div>
+
+            {/* ── Divide / Merge tree ───────────────────────────────────────── */}
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
+                <div className="mb-3 text-xs text-text-secondary">
+                    {isMergePhase
+                        ? "Merge phase: lower levels collapse as ranges finish merging."
+                        : "Divide phase: recursion expands level by level."}
+                </div>
+
+                <div className="relative overflow-x-auto">
+                    <div className="relative h-[340px] min-w-[720px]">
+                        <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
+                            {tree.nodes.flatMap((node) => {
+                                if (node.depth > visibleDepth || suppressedNodes.has(node.id)) return [];
+                                const parentVisible = !suppressedNodes.has(node.id);
+                                if (!parentVisible) return [];
+
+                                return node.childIds
+                                    .map((childId) => {
+                                        const child = tree.nodeById.get(childId);
+                                        if (!child) return null;
+                                        if (child.depth > visibleDepth || suppressedNodes.has(child.id)) return null;
+
+                                        const edgeKey = `${node.id}-${child.id}`;
+                                        const edgeStrong = activePath.has(node.id) && activePath.has(child.id);
+
+                                        return (
+                                            <motion.line
+                                                key={edgeKey}
+                                                initial={false}
+                                                animate={{
+                                                    x1: `${node.xPercent}%`,
+                                                    y1: `${node.yPercent}%`,
+                                                    x2: `${child.xPercent}%`,
+                                                    y2: `${child.yPercent}%`,
+                                                    opacity: edgeStrong ? 0.95 : 0.42,
+                                                }}
+                                                transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.34, ease: "easeInOut" }}
+                                                stroke={edgeStrong ? "rgba(125,211,252,0.95)" : "rgba(255,255,255,0.35)"}
+                                                strokeWidth={edgeStrong ? "1.8" : "1.2"}
+                                                strokeLinecap="round"
+                                            />
+                                        );
+                                    })
+                                    .filter(Boolean);
+                            })}
+                        </svg>
+
+                        <AnimatePresence initial={false}>
+                            {tree.nodes.map((node) => {
+                                if (node.depth > visibleDepth || suppressedNodes.has(node.id)) {
+                                    return null;
+                                }
+
+                                const values = arrayState.slice(node.left, node.right + 1);
+                                const displayText = compactRangeValues(values);
+                                const width = Math.min(240, Math.max(52, values.length * 42));
+                                const isActiveRange = activeRangeId === node.id;
+                                const isMerged = mergeProgress.mergedRanges.has(node.id);
+                                const isOnActivePath = activePath.has(node.id);
+
+                                return (
+                                    <motion.div
+                                        key={node.id}
+                                        initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.85, y: -8 }}
+                                        animate={shouldReduceMotion ? {
+                                            opacity: 1,
+                                            scale: 1,
+                                            y: 0,
+                                        } : {
+                                            opacity: isMergePhase && !isOnActivePath && !isMerged ? 0.58 : 1,
+                                            scale: isActiveRange ? 1.08 : isMerged ? 1.04 : 1,
+                                            y: 0,
+                                        }}
+                                        exit={shouldReduceMotion ? {} : { opacity: 0, scale: 0.8, y: 10 }}
+                                        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" }}
+                                        className={cn(
+                                            "absolute -translate-x-1/2 -translate-y-1/2 rounded-lg border px-2 py-2 text-center text-sm font-semibold shadow-[0_0_10px_rgba(59,130,246,0.2)]",
+                                            isMerged
+                                                ? "border-emerald-300/70 bg-emerald-400/20 text-emerald-100"
+                                                : isActiveRange
+                                                    ? "border-sky-300/80 bg-sky-400/25 text-sky-50"
+                                                    : "border-blue-200/45 bg-blue-500/40 text-blue-50",
+                                        )}
+                                        style={{
+                                            left: `${node.xPercent}%`,
+                                            top: `${node.yPercent}%`,
+                                            width,
+                                        }}
+                                    >
+                                        <div className="truncate">{displayText}</div>
+                                        <div className="mt-1 text-[10px] font-medium text-white/80">
+                                            [{node.left}..{node.right}]
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
+                    </div>
+                </div>
             </div>
 
             <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
