@@ -28,54 +28,17 @@ type QuickSortTreeNodeProps = {
     shouldReduceMotion: boolean;
 };
 
-function getCellClassName(
-    node: QuickSortRenderableNode,
-    absoluteIndex: number,
-    isCurrentFrame: boolean,
-    isComparing: boolean,
-    isSwapping: boolean,
-) {
-    const hasPivot = typeof node.pivotIndex === "number";
-    const isPivotCell = hasPivot && node.pivotIndex === absoluteIndex;
-    const isLeftPartition = hasPivot && node.pivotIndex !== null && absoluteIndex < node.pivotIndex;
-    const isRightPartition = hasPivot && node.pivotIndex !== null && absoluteIndex > node.pivotIndex;
-    const isBaseCase = node.state === "base_case";
+type TileRole = "left" | "pivot" | "right" | "neutral" | "complete";
 
-    // Compare/swap states take priority — show live action
-    if (isSwapping) {
-        return "border-red-300/70 bg-red-400/20 text-red-50";
-    }
-
-    if (isComparing) {
-        return "border-yellow-300/65 bg-yellow-300/18 text-yellow-50";
-    }
-
-    // Pivot uses accent (matches binary search midpoint)
-    if (isPivotCell) {
-        return "border-accent/65 bg-accent/22 text-accent shadow-[0_0_12px_rgba(213,255,64,0.2)]";
-    }
-
-    if (isBaseCase || (!hasPivot && node.elements.length <= 1)) {
-        return "border-emerald-400/55 bg-emerald-500/16 text-emerald-100";
-    }
-
-    if (isLeftPartition) {
-        return "border-emerald-400/50 bg-emerald-500/14 text-emerald-100";
-    }
-
-    if (isRightPartition) {
-        return "border-sky-400/50 bg-sky-500/14 text-sky-100";
-    }
-
-    if (isCurrentFrame || node.state === "partitioning" || node.state === "active") {
-        return "border-white/20 bg-white/[0.08] text-white";
-    }
-
-    if (node.state === "complete") {
-        return "border-white/12 bg-white/[0.04] text-white/80";
-    }
-
-    return "border-white/10 bg-white/[0.03] text-white/75";
+function getTileClass(role: TileRole, isSwapping: boolean, isComparing: boolean): string {
+    if (isSwapping) return "border-red-300/70 bg-red-400/20 text-red-50";
+    if (isComparing) return "border-yellow-300/65 bg-yellow-300/15 text-yellow-50";
+    if (role === "pivot") return "border-accent/65 bg-accent/22 text-accent shadow-[0_0_10px_rgba(213,255,64,0.25)]";
+    if (role === "left") return "border-emerald-400/55 bg-emerald-500/16 text-emerald-100";
+    if (role === "right") return "border-sky-400/55 bg-sky-500/16 text-sky-100";
+    if (role === "complete") return "border-emerald-400/60 bg-emerald-400/20 text-emerald-100";
+    // neutral — amber/brown (unsorted)
+    return "border-amber-500/55 bg-amber-500/15 text-amber-100";
 }
 
 export default function QuickSortTreeNode({
@@ -88,43 +51,87 @@ export default function QuickSortTreeNode({
     const activeSet = new Set(activeGlobalIndices);
     const isSwapAction = actionType === "swap" || actionType === "pivot_swap";
     const isCompareAction = actionType === "compare";
+    const hasPartition = typeof node.pivotIndex === "number";
+    const isComplete = node.state === "complete" || node.state === "base_case";
 
+    function renderTile(value: number, absoluteIndex: number, role: TileRole) {
+        const isActive = activeSet.has(absoluteIndex);
+        const isSwapping = isCurrentFrame && isSwapAction && isActive;
+        const isComparing = isCurrentFrame && isCompareAction && isActive;
+        const shouldPulse = !shouldReduceMotion && (isSwapping || isComparing || role === "pivot");
+
+        return (
+            <motion.div
+                key={`${node.id}-tile-${absoluteIndex}`}
+                animate={shouldPulse ? { scale: [1, 1.12, 1] } : {}}
+                transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.35, ease: "easeInOut" }}
+                className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-xl border text-xs font-bold transition-colors duration-300",
+                    getTileClass(role, isSwapping, isComparing),
+                )}
+            >
+                {value}
+            </motion.div>
+        );
+    }
+
+    const cardBorder = isComplete
+        ? (isCurrentFrame
+            ? "border-emerald-400/40 shadow-[0_0_14px_rgba(52,211,153,0.1)]"
+            : "border-emerald-400/20")
+        : (isCurrentFrame
+            ? (hasPartition
+                ? "border-white/25 shadow-[0_0_14px_rgba(255,255,255,0.06)]"
+                : "border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.12)]")
+            : "border-white/10");
+
+    if (isComplete) {
+        return (
+            <div className={cn("rounded-xl border px-3 py-2.5 bg-[#0f1113]", cardBorder)}>
+                <div className="flex items-center justify-center gap-1">
+                    {node.elements.map((value, offset) =>
+                        renderTile(value, node.low + offset, "complete"),
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    if (hasPartition && typeof node.pivotIndex === "number") {
+        const pivotIdx = node.pivotIndex;
+        const pivotLocalIndex = pivotIdx - node.low;
+        const leftElements = node.elements.slice(0, pivotLocalIndex);
+        const pivotValue = node.elements[pivotLocalIndex];
+        const rightElements = node.elements.slice(pivotLocalIndex + 1);
+
+        return (
+            <div className={cn("rounded-xl border px-3 py-2.5 bg-[#0f1113]", cardBorder)}>
+                <div className="flex items-center justify-center gap-1">
+                    {leftElements.map((value, i) =>
+                        renderTile(value, node.low + i, "left"),
+                    )}
+                    {leftElements.length > 0 && (
+                        <div className="mx-1 h-7 w-px shrink-0 bg-white/12" />
+                    )}
+                    {renderTile(pivotValue, pivotIdx, "pivot")}
+                    {rightElements.length > 0 && (
+                        <div className="mx-1 h-7 w-px shrink-0 bg-white/12" />
+                    )}
+                    {rightElements.map((value, i) =>
+                        renderTile(value, pivotIdx + 1 + i, "right"),
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // Active / not yet partitioned — amber/brown neutral
     return (
-        <div
-            className={cn(
-                "rounded-xl border bg-[#111214] px-2.5 py-2",
-                isCurrentFrame
-                    ? "border-white/25 shadow-[0_0_14px_rgba(255,255,255,0.05)]"
-                    : "border-white/10",
-            )}
-        >
-            
+        <div className={cn("rounded-xl border px-3 py-2.5 bg-[#0f1113]", cardBorder)}>
             <div className="flex items-center justify-center gap-1">
-                {node.elements.map((value, offset) => {
-                    const absoluteIndex = node.low + offset;
-                    const isPivot = node.pivotIndex === absoluteIndex;
-                    const isActive = activeSet.has(absoluteIndex);
-                    const isComparing = isCurrentFrame && isCompareAction && isActive;
-                    const isSwapping = isCurrentFrame && isSwapAction && isActive;
-
-                    const baseAnimate = isPivot ? { scale: [1, 1.08, 1] } : { scale: 1 };
-                    const actionAnimate = isComparing || isSwapping ? { scale: [1, 1.1, 1] } : baseAnimate;
-                    const cellAnimate = shouldReduceMotion ? {} : actionAnimate;
-
-                    return (
-                        <motion.div
-                            key={`${node.id}-${absoluteIndex}-${value}`}
-                            animate={cellAnimate}
-                            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.32, ease: "easeInOut" }}
-                            className={cn(
-                                "flex h-9 w-9 items-center justify-center rounded-lg border text-xs font-semibold transition-colors duration-300",
-                                getCellClassName(node, absoluteIndex, isCurrentFrame, isComparing, isSwapping),
-                            )}
-                        >
-                            {value}
-                        </motion.div>
-                    );
-                })}
+                {node.elements.map((value, offset) =>
+                    renderTile(value, node.low + offset, "neutral"),
+                )}
             </div>
         </div>
     );
