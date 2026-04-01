@@ -81,6 +81,11 @@ const activeBarTransition: Transition = {
     scale: { duration: 0.22, ease: "easeOut" },
 };
 
+const actionLabelAliases: Record<string, string> = {
+    pivotplaced: "Pivot Placed",
+    partition_complete: "Pivot Placed",
+};
+
 function getStepTone(step: AlgorithmSimulationStep | undefined) {
     const action = (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
 
@@ -176,11 +181,39 @@ function getPracticeTone(feedbackTone: PracticeFeedbackTone, practiceCompleted: 
 }
 
 function formatActionLabel(actionLabel: string) {
+    const normalizedLabel = actionLabel.trim().toLowerCase();
+    if (actionLabelAliases[normalizedLabel]) {
+        return actionLabelAliases[normalizedLabel];
+    }
+
     return actionLabel
         .split(/[_\s]+/)
         .filter(Boolean)
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join(" ");
+}
+
+function getQuickSortRange(step: AlgorithmSimulationStep | undefined) {
+    const maybeRange = step?.quickSort?.range;
+    if (!Array.isArray(maybeRange) || maybeRange.length < 2) {
+        return null;
+    }
+
+    const low = Number(maybeRange[0]);
+    const high = Number(maybeRange[1]);
+    if (!Number.isFinite(low) || !Number.isFinite(high)) {
+        return null;
+    }
+
+    return {
+        low: Math.min(low, high),
+        high: Math.max(low, high),
+    };
+}
+
+function isQuickSortPivotPlacedAction(actionLabel: string | undefined) {
+    const normalized = (actionLabel ?? "").trim().toLowerCase();
+    return normalized === "pivotplaced" || normalized === "partition_complete";
 }
 
 function getSearchActiveIndices(step: AlgorithmSimulationStep | undefined) {
@@ -551,6 +584,18 @@ function AlgorithmVisualizer({
         ? practiceTone.actionLabel
         : (currentStep?.search?.state ?? currentStep?.actionLabel ?? "Waiting for steps");
     const heapStepMeta = currentStep?.heap ?? null;
+    const quickSortMeta = currentStep?.quickSort ?? null;
+    const quickSortRange = useMemo(
+        () => getQuickSortRange(currentStep),
+        [currentStep],
+    );
+    const normalizedActionLabel = (currentStep?.actionLabel ?? "").trim().toLowerCase();
+    const isQuickSortPivotPlaced = isQuickSortPivotPlacedAction(currentStep?.actionLabel);
+    const isQuickSortCompareOrSwap = normalizedActionLabel.includes("compare") || normalizedActionLabel.includes("swap");
+    const quickSortPivotIndex = isQuickSortPivotPlaced && typeof quickSortMeta?.pivotIndex === "number"
+        ? quickSortMeta.pivotIndex
+        : null;
+    const hasQuickSortMetadata = Boolean(quickSortMeta) || isQuickSortPivotPlaced;
     const heapComparison = useMemo(
         () => formatHeapComparison(currentStep),
         [currentStep],
@@ -905,6 +950,21 @@ function AlgorithmVisualizer({
                                 Parent/Child: <span className="text-text-primary">{heapComparison}</span>
                             </span>
                         </div>
+                    ) : hasQuickSortMetadata ? (
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                            <span>
+                                Partition Range: <span className="text-text-primary">{quickSortRange ? `${quickSortRange.low}..${quickSortRange.high}` : "--"}</span>
+                            </span>
+                            <span>
+                                Pivot: <span className="text-text-primary">{isQuickSortCompareOrSwap && typeof quickSortMeta?.pivot === "number" ? quickSortMeta.pivot : "--"}</span>
+                            </span>
+                            <span>
+                                Pivot Final Index: <span className="text-text-primary">{isQuickSortPivotPlaced ? (quickSortPivotIndex ?? "--") : "--"}</span>
+                            </span>
+                            <span>
+                                Quick Sort Step: <span className="text-text-primary">{formatActionLabel(currentStep?.actionLabel ?? "--")}</span>
+                            </span>
+                        </div>
                     ) : null}
 
                     {isPracticeMode && hintMessage ? (
@@ -1238,6 +1298,13 @@ function AlgorithmVisualizer({
                                     const isSuggested = suggestedIndexSet.has(index);
                                     const isFeedbackTarget = feedbackIndexSet.has(index);
                                     const isDiscarded = discardedIndexSet.has(index);
+                                    const isInQuickSortRange = Boolean(
+                                        quickSortRange
+                                        && index >= quickSortRange.low
+                                        && index <= quickSortRange.high,
+                                    );
+                                    const isQuickSortPivotPlacementIndex = typeof quickSortPivotIndex === "number"
+                                        && index === quickSortPivotIndex;
                                     const height = `${Math.max((bar.value / globalMax) * 100, 8)}%`;
                                     const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
                                     const shouldPulseMidpoint = !isPracticeMode && isSearchMidpoint && isActive && !shouldReduceMotion;
@@ -1320,6 +1387,8 @@ function AlgorithmVisualizer({
                                                     className={cn(
                                                         "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
                                                         isSorted && "border-emerald-400/40 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
+                                                        isInQuickSortRange && !isHeapStep && "border-sky-300/40 from-sky-400/40 to-sky-500/20 shadow-[0_0_12px_rgba(56,189,248,0.18)]",
+                                                        isQuickSortPivotPlacementIndex && "border-emerald-300/70 from-emerald-300 to-emerald-500 shadow-[0_0_24px_rgba(52,211,153,0.35)]",
                                                         !isPracticeMode && isActive && tone.activeBarClassName,
                                                         !isPracticeMode && isActive && "border-transparent",
                                                         isSuggested && isPracticeMode && "border-accent/50 from-accent/80 to-accent/50 shadow-[0_0_18px_rgba(213,255,64,0.25)]",
@@ -1338,6 +1407,8 @@ function AlgorithmVisualizer({
                                                 className={cn(
                                                     "text-[11px] text-text-secondary transition-colors duration-300",
                                                     isSorted && "text-emerald-200",
+                                                    isInQuickSortRange && !isSorted && "text-sky-100",
+                                                    isQuickSortPivotPlacementIndex && "text-emerald-100",
                                                     isSelected && "text-sky-50",
                                                     isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
                                                     isFeedbackTarget && feedbackTone === "incorrect" && "text-red-100",
