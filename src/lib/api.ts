@@ -448,10 +448,12 @@ export type QuizAttemptQuestionResult = {
 export type QuizAttemptResult = {
     attemptId: number;
     quizId: number;
-    score: number;           // percentage 0–100
-    passed: boolean;
+    score: number;           // percentage 0–100 (rounded)
+    correctCount: number;    // raw number of correct answers
     totalQuestions: number;
-    correctCount: number;
+    xpEarned: number;        // 0 on retries — XP only awarded on first attempt
+    passed: boolean;
+    isFirstAttempt: boolean; // false on retries, UI shows "no XP awarded" message
     results: QuizAttemptQuestionResult[];
 };
 
