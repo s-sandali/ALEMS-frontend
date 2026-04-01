@@ -297,6 +297,18 @@ function getSortedIndices(step: AlgorithmSimulationStep | undefined, totalValues
     return new Set<number>();
 }
 
+function getSafeStepIndex(index: number | null | undefined, totalValues: number) {
+    if (typeof index !== "number") {
+        return null;
+    }
+
+    if (index < 0 || index >= totalValues) {
+        return null;
+    }
+
+    return index;
+}
+
 function formatHeapComparison(step: AlgorithmSimulationStep | undefined) {
     const compared = step?.heap?.comparedIndices;
     if (!compared || compared.length < 2) {
@@ -575,6 +587,18 @@ function AlgorithmVisualizer({
             ? (practiceCompleted ? new Set(Array.from({ length: values.length }, (_, index) => index)) : new Set<number>())
             : getSortedIndices(currentStep, values.length)),
         [currentStep, isPracticeMode, practiceCompleted, values.length],
+    );
+    const insertionKeyIndex = useMemo(
+        () => getSafeStepIndex(currentStep?.keyIndex, values.length),
+        [currentStep?.keyIndex, values.length],
+    );
+    const insertionCompareIndex = useMemo(
+        () => getSafeStepIndex(currentStep?.compareIndex, values.length),
+        [currentStep?.compareIndex, values.length],
+    );
+    const insertionPositionIndex = useMemo(
+        () => getSafeStepIndex(currentStep?.insertPosition, values.length),
+        [currentStep?.insertPosition, values.length],
     );
 
     const practiceTone = getPracticeTone(feedbackTone, practiceCompleted);
@@ -1294,6 +1318,9 @@ function AlgorithmVisualizer({
                                 visualBars.map((bar, index) => {
                                     const isActive = activeIndices.has(index);
                                     const isSorted = sortedIndices.has(index);
+                                    const isKeyElement = !isPracticeMode && index === insertionKeyIndex;
+                                    const isCompareElement = !isPracticeMode && index === insertionCompareIndex;
+                                    const isInsertionPosition = !isPracticeMode && index === insertionPositionIndex;
                                     const isSelected = selectedIndexSet.has(index);
                                     const isSuggested = suggestedIndexSet.has(index);
                                     const isFeedbackTarget = feedbackIndexSet.has(index);
@@ -1358,6 +1385,9 @@ function AlgorithmVisualizer({
                                                 transition={{ duration: 0.2 }}
                                                 className={cn(
                                                     "text-xs font-medium text-text-secondary transition-colors duration-300",
+                                                    isKeyElement && "text-yellow-100",
+                                                    isCompareElement && "text-red-100",
+                                                    isInsertionPosition && "text-sky-100",
                                                     isSorted && "text-emerald-200",
                                                     isSelected && "text-sky-50",
                                                     isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
@@ -1395,6 +1425,9 @@ function AlgorithmVisualizer({
                                                         isSelected && isPracticeMode && "border-sky-300/50 from-sky-400/90 to-sky-500 shadow-[0_0_18px_rgba(56,189,248,0.26)]",
                                                         isFeedbackTarget && feedbackTone === "correct" && "border-emerald-400/50 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.26)]",
                                                         isFeedbackTarget && feedbackTone === "incorrect" && "border-red-400/50 from-red-400/90 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.3)]",
+                                                        isKeyElement && "border-yellow-300/70 from-yellow-300 to-yellow-500 shadow-[0_0_22px_rgba(250,204,21,0.32)]",
+                                                        isCompareElement && "border-red-300/75 from-red-300 to-red-500 shadow-[0_0_22px_rgba(248,113,113,0.34)]",
+                                                        isInsertionPosition && "border-sky-300/75 from-sky-300 to-sky-500 shadow-[0_0_22px_rgba(56,189,248,0.34)]",
                                                     )}
                                                     aria-label={`Index ${index}, value ${bar.value}`}
                                                     aria-current={isActive || isSelected ? "true" : undefined}
@@ -1406,6 +1439,9 @@ function AlgorithmVisualizer({
                                                 transition={{ duration: 0.2 }}
                                                 className={cn(
                                                     "text-[11px] text-text-secondary transition-colors duration-300",
+                                                    isKeyElement && "text-yellow-100",
+                                                    isCompareElement && "text-red-100",
+                                                    isInsertionPosition && "text-sky-100",
                                                     isSorted && "text-emerald-200",
                                                     isInQuickSortRange && !isSorted && "text-sky-100",
                                                     isQuickSortPivotPlacementIndex && "text-emerald-100",
