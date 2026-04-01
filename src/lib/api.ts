@@ -20,6 +20,35 @@ export type AlgorithmSimulationStep = {
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
     quickSort?: QuickSortStepModel | null;
+    mergeSort?: MergeSortStepModel | null;
+    recursion?: RecursionStepModel | null;
+};
+
+export type RecursionStepModel = {
+    state?: string | null;
+    depth: number;
+    currentFrameId?: number | null;
+    stack: RecursionFrameModel[];
+};
+
+export type RecursionFrameModel = {
+    id: number;
+    functionName: string;
+    depth: number;
+    state: string;
+    leftIndex: number;
+    rightIndex: number;
+    returnValue?: string | null;
+};
+
+export type MergeSortStepModel = {
+    type: string;
+    left: number;
+    right: number;
+    mid?: number | null;
+    recursionDepth: number;
+    mergeBuffer?: number[] | null;
+    placeIndex?: number | null;
 };
 
 export type QuickSortStepModel = {
