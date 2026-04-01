@@ -54,6 +54,13 @@ export type RecursionStepModel = {
     stack?: RecursionFrameModel[] | null;
 };
 
+export type QuickSortStepModel = {
+    type?: string | null;
+    pivot?: number | null;
+    pivotIndex?: number | null;
+    range?: number[] | null;
+};
+
 export type HeapStepModel = {
     phase: string;
     heapBoundaryEnd: number;
