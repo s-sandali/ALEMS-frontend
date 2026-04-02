@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
@@ -25,8 +25,14 @@ type MergeTreeNode = {
 };
 
 const BAR_SLOT_WIDTH_PX = 46;
-const TREE_CONTENT_WIDTH_RATIO = 0.84;
-const TREE_TARGET_LEAF_WIDTH_PX = 52;
+const ARRAY_BOX_SIZE_PX = 40;
+const ARRAY_BOX_GAP_PX = Math.max(6, BAR_SLOT_WIDTH_PX - ARRAY_BOX_SIZE_PX);
+const TREE_CANVAS_HEIGHT_PX = 500;
+const TREE_NODE_HEIGHT_PX = 48;
+const TREE_NODE_ANCHOR_OFFSET_Y = 18;
+const TREE_LEVEL_GAP_UNITS = 70;
+const TREE_TOP_OFFSET_UNITS = 26;
+const ARRAY_ROW_Y_PX = 380;
 
 const COMPARE_COLOR  = "bg-yellow-400 text-yellow-950 border-yellow-300 shadow-[0_0_18px_rgba(250,204,21,0.5)]";
 const PLACE_COLOR    = "bg-emerald-400 text-emerald-950 border-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.5)]";
@@ -64,8 +70,8 @@ function rangeId(left: number, right: number) {
     return `${left}-${right}`;
 }
 
-function clamp(value: number, min: number, max: number) {
-    return Math.min(Math.max(value, min), max);
+function roundToThree(value: number) {
+    return Math.round(value * 1000) / 1000;
 }
 
 function describeMergeSortLine(lineNumber?: number) {
@@ -110,12 +116,19 @@ function buildMergeTree(length: number) {
 
     const nodeById = new Map<string, MergeTreeNode>();
     const nodes: MergeTreeNode[] = [];
-    let leafCursor = 0;
     let maxDepth = 0;
 
-    const createNode = (left: number, right: number, depth: number, parentId: string | null): string => {
+    const createNode = (
+        left: number,
+        right: number,
+        depth: number,
+        parentId: string | null,
+        intervalStart: number,
+        intervalEnd: number,
+    ): string => {
         const id = rangeId(left, right);
         maxDepth = Math.max(maxDepth, depth);
+        const intervalMid = (intervalStart + intervalEnd) / 2;
 
         if (left === right) {
             const leafNode: MergeTreeNode = {
@@ -126,8 +139,8 @@ function buildMergeTree(length: number) {
                 parentId,
                 childIds: [],
                 isLeaf: true,
-                xSlot: leafCursor++,
-                xPercent: 0,
+                xSlot: left,
+                xPercent: intervalMid * 100,
                 yPercent: 0,
             };
             nodes.push(leafNode);
@@ -136,8 +149,8 @@ function buildMergeTree(length: number) {
         }
 
         const mid = left + Math.floor((right - left) / 2);
-        const leftChildId = createNode(left, mid, depth + 1, id);
-        const rightChildId = createNode(mid + 1, right, depth + 1, id);
+        const leftChildId = createNode(left, mid, depth + 1, id, intervalStart, intervalMid);
+        const rightChildId = createNode(mid + 1, right, depth + 1, id, intervalMid, intervalEnd);
         const leftChild = nodeById.get(leftChildId)!;
         const rightChild = nodeById.get(rightChildId)!;
 
@@ -150,7 +163,7 @@ function buildMergeTree(length: number) {
             childIds: [leftChildId, rightChildId],
             isLeaf: false,
             xSlot: (leftChild.xSlot + rightChild.xSlot) / 2,
-            xPercent: 0,
+            xPercent: intervalMid * 100,
             yPercent: 0,
         };
 
@@ -159,16 +172,11 @@ function buildMergeTree(length: number) {
         return id;
     };
 
-    createNode(0, length - 1, 0, null);
+    createNode(0, length - 1, 0, null, 0, 1);
 
-    const totalLeafCount = Math.max(leafCursor, 1);
     const normalizedDepth = Math.max(maxDepth, 1);
-    const horizontalPadding = 7;
 
     for (const node of nodes) {
-        node.xPercent = totalLeafCount === 1
-            ? 50
-            : horizontalPadding + (node.xSlot / (totalLeafCount - 1)) * (100 - horizontalPadding * 2);
         node.yPercent = 9 + (node.depth / normalizedDepth) * 74;
     }
 
@@ -226,8 +234,8 @@ function MergeSortVisualizer({
     className,
 }: MergeSortVisualizerProps) {
     const shouldReduceMotion = useReducedMotion();
-    const treeViewportRef = useRef<HTMLDivElement | null>(null);
-    const [treeViewportWidth, setTreeViewportWidth] = useState(0);
+    const visualizerRootRef = useRef<HTMLDivElement | null>(null);
+    const [visualizerWidth, setVisualizerWidth] = useState(0);
 
     const safeIndex = steps.length === 0
         ? 0
@@ -253,26 +261,6 @@ function MergeSortVisualizer({
     const mergeBuffer = meta?.mergeBuffer ?? null;
 
     const tree = useMemo(() => buildMergeTree(arrayState.length), [arrayState.length]);
-
-    useEffect(() => {
-        const element = treeViewportRef.current;
-        if (!element) return;
-
-        const update = () => {
-            setTreeViewportWidth(element.clientWidth);
-        };
-
-        update();
-
-        if (typeof ResizeObserver === "undefined") {
-            window.addEventListener("resize", update);
-            return () => window.removeEventListener("resize", update);
-        }
-
-        const observer = new ResizeObserver(update);
-        observer.observe(element);
-        return () => observer.disconnect();
-    }, []);
 
     const mergeProgress = useMemo(() => {
         const splitRanges = new Set<string>();
@@ -337,23 +325,7 @@ function MergeSortVisualizer({
         return tree.maxDepth;
     }, [tree.nodes.length, tree.maxDepth, isMergePhase, actionLabel, depth]);
 
-    const suppressedNodes = useMemo(() => {
-        const hidden = new Set<string>();
-        if (!isMergePhase) return hidden;
-
-        for (const node of tree.nodes) {
-            let parentId = node.parentId;
-            while (parentId) {
-                if (mergeProgress.mergedRanges.has(parentId) && !activePath.has(node.id)) {
-                    hidden.add(node.id);
-                    break;
-                }
-                parentId = tree.nodeById.get(parentId)?.parentId ?? null;
-            }
-        }
-
-        return hidden;
-    }, [isMergePhase, tree.nodes, tree.nodeById, mergeProgress.mergedRanges, activePath]);
+    const suppressedNodes = useMemo(() => new Set<string>(), []);
 
     const compareSwap = useMemo(() => {
         if (actionLabel !== "compare" || activeIndices.length < 2) {
@@ -400,19 +372,70 @@ function MergeSortVisualizer({
         };
     }, [actionLabel, previousStep, meta, arrayState]);
 
-    const treeScaleX = useMemo(() => {
+    useLayoutEffect(() => {
+        const root = visualizerRootRef.current;
+        if (!root) return;
+
+        const updateWidth = () => {
+            const rect = root.getBoundingClientRect();
+            setVisualizerWidth(rect.width);
+        };
+
+        updateWidth();
+
+        if (typeof ResizeObserver === "undefined") {
+            window.addEventListener("resize", updateWidth);
+            return () => window.removeEventListener("resize", updateWidth);
+        }
+
+        const observer = new ResizeObserver(updateWidth);
+        observer.observe(root);
+        return () => observer.disconnect();
+    }, []);
+
+    const treeLayout = useMemo(() => {
+        const layoutById = new Map<string, { centerX: number; width: number; centerY: number }>();
         const totalLength = Math.max(1, arrayState.length);
-        if (treeViewportWidth <= 0) {
-            return 1;
+        const viewportWidth = Math.max(1, visualizerWidth);
+        const centerX = viewportWidth / 2;
+        const slotWidth = BAR_SLOT_WIDTH_PX;
+        const totalWidth = totalLength * slotWidth;
+        const startX = centerX - (totalWidth / 2);
+        const baseCellWidth = ARRAY_BOX_SIZE_PX;
+        const nodeInternalGap = ARRAY_BOX_GAP_PX;
+        const nodesByDepth = new Map<number, MergeTreeNode[]>();
+
+        for (const node of tree.nodes) {
+            const group = nodesByDepth.get(node.depth) ?? [];
+            group.push(node);
+            nodesByDepth.set(node.depth, group);
         }
 
-        const currentLeafWidth = (treeViewportWidth * TREE_CONTENT_WIDTH_RATIO) / totalLength;
-        if (currentLeafWidth <= 0) {
-            return 1;
+        for (const group of nodesByDepth.values()) {
+            group.sort((a, b) => a.left - b.left || a.right - b.right);
         }
 
-        return clamp(TREE_TARGET_LEAF_WIDTH_PX / currentLeafWidth, 0.6, 1);
-    }, [arrayState.length, treeViewportWidth]);
+        for (const node of tree.nodes) {
+            const segmentLength = Math.max(1, node.right - node.left + 1);
+            const widthByValues = segmentLength * baseCellWidth + Math.max(0, segmentLength - 1) * nodeInternalGap;
+            const rangeCenterIndex = (node.left + node.right + 1) / 2;
+            const centerXByRange = startX + (rangeCenterIndex * slotWidth);
+            const widthByRange = segmentLength * slotWidth - nodeInternalGap;
+            const width = Math.max(baseCellWidth, Math.min(widthByValues, widthByRange));
+            const centerY = TREE_TOP_OFFSET_UNITS + (node.depth * TREE_LEVEL_GAP_UNITS);
+
+            layoutById.set(node.id, {
+                centerX: roundToThree(centerXByRange),
+                width: roundToThree(width),
+                centerY: roundToThree(centerY),
+            });
+        }
+
+        return {
+            layoutById,
+            nodeInternalGap,
+        };
+    }, [tree.nodes, arrayState.length, visualizerWidth]);
 
     // Phase label for the info strip
     const phaseText = useMemo(() => {
@@ -445,49 +468,44 @@ function MergeSortVisualizer({
                 </span>
             </div>
 
-            {/* ── Legend ────────────────────────────────────────────────────── */}
-            <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-300/40 bg-yellow-300/10 px-2.5 py-0.5 text-[11px] text-yellow-100">
-                    <span className="h-2 w-2 rounded-full bg-yellow-400" />
-                    Comparing
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2.5 py-0.5 text-[11px] text-emerald-100">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                    Placed / Sorted
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/40 bg-sky-400/10 px-2.5 py-0.5 text-[11px] text-sky-100">
-                    <span className="h-2 w-2 rounded-full bg-sky-300" />
-                    Divide then merge collapse
-                </span>
-            </div>
-
             {/* ── Divide / Merge tree ───────────────────────────────────────── */}
             <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
                 <div className="mb-3 text-xs text-text-secondary">
                     {isMergePhase
-                        ? "Merge phase: lower levels collapse as ranges finish merging."
+                        ? "Merge phase: merge decisions animate while all groups remain visible."
                         : "Divide phase: recursion expands level by level."}
                 </div>
 
-                <div className="relative overflow-hidden" ref={treeViewportRef}>
-                    <div
-                        className="relative h-[300px] w-full"
-                        style={{
-                            transform: `scaleX(${treeScaleX})`,
-                            transformOrigin: "top center",
-                        }}
-                    >
-                        <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
+                <div className="relative overflow-hidden">
+                    <div className="relative h-[500px] w-full" ref={visualizerRootRef}>
+                        <svg
+                            className="absolute inset-0 h-full w-full"
+                            viewBox={`0 0 ${Math.max(1, visualizerWidth)} ${TREE_CANVAS_HEIGHT_PX}`}
+                            preserveAspectRatio="none"
+                        >
+                            <line
+                                x1={Math.max(1, visualizerWidth) / 2}
+                                y1={0}
+                                x2={Math.max(1, visualizerWidth) / 2}
+                                y2={TREE_CANVAS_HEIGHT_PX}
+                                stroke="rgba(125,211,252,0.26)"
+                                strokeWidth="1"
+                                strokeDasharray="4 4"
+                            />
                             {tree.nodes.flatMap((node) => {
                                 if (node.depth > visibleDepth || suppressedNodes.has(node.id)) return [];
                                 const parentVisible = !suppressedNodes.has(node.id);
                                 if (!parentVisible) return [];
+                                const nodeLayout = treeLayout.layoutById.get(node.id);
+                                if (!nodeLayout) return [];
 
                                 return node.childIds
                                     .map((childId) => {
                                         const child = tree.nodeById.get(childId);
                                         if (!child) return null;
                                         if (child.depth > visibleDepth || suppressedNodes.has(child.id)) return null;
+                                        const childLayout = treeLayout.layoutById.get(child.id);
+                                        if (!childLayout) return null;
 
                                         const edgeKey = `${node.id}-${child.id}`;
                                         const edgeStrong = activePath.has(node.id) && activePath.has(child.id);
@@ -497,10 +515,10 @@ function MergeSortVisualizer({
                                                 key={edgeKey}
                                                 initial={false}
                                                 animate={{
-                                                    x1: `${node.xPercent}%`,
-                                                    y1: `${node.yPercent}%`,
-                                                    x2: `${child.xPercent}%`,
-                                                    y2: `${child.yPercent}%`,
+                                                    x1: nodeLayout.centerX,
+                                                    y1: nodeLayout.centerY + TREE_NODE_ANCHOR_OFFSET_Y,
+                                                    x2: childLayout.centerX,
+                                                    y2: childLayout.centerY - TREE_NODE_ANCHOR_OFFSET_Y,
                                                     opacity: edgeStrong ? 0.95 : 0.42,
                                                 }}
                                                 transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.34, ease: "easeInOut" }}
@@ -514,17 +532,23 @@ function MergeSortVisualizer({
                             })}
                         </svg>
 
+                        <div className="absolute left-0 right-0" style={{ top: `${ARRAY_ROW_Y_PX - 24}px` }}>
+                            <div className="h-px w-full bg-white/10" />
+                        </div>
+
                         <AnimatePresence initial={false}>
                             {tree.nodes.map((node) => {
                                 if (node.depth > visibleDepth || suppressedNodes.has(node.id)) {
                                     return null;
                                 }
 
+                                const nodeLayout = treeLayout.layoutById.get(node.id);
+                                if (!nodeLayout) {
+                                    return null;
+                                }
+
                                 const segmentLength = Math.max(1, node.right - node.left + 1);
                                 const totalLength = Math.max(1, arrayState.length);
-                                const widthPercent = Math.min(72, Math.max(1.8, (segmentLength / totalLength) * 72));
-                                const halfWidthPercent = widthPercent / 2;
-                                const leftPercent = clamp(node.xPercent, halfWidthPercent + 1, 99 - halfWidthPercent);
                                 const valueFontSize = Math.max(7, Math.min(13, 12 - Math.floor(totalLength / 12)));
                                 const indexFontSize = Math.max(6, valueFontSize - 2);
                                 const isActiveRange = activeRangeId === node.id;
@@ -567,17 +591,21 @@ function MergeSortVisualizer({
                                         }}
                                         exit={shouldReduceMotion ? {} : { opacity: 0, scale: 0.8, y: 10 }}
                                         transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" }}
-                                        className="absolute -translate-x-1/2 -translate-y-1/2"
+                                        className="absolute"
                                         style={{
-                                            left: `${leftPercent}%`,
-                                            top: `${node.yPercent}%`,
-                                            width: `${widthPercent}%`,
+                                            left: `${nodeLayout.centerX - (nodeLayout.width / 2)}px`,
+                                            top: `${nodeLayout.centerY - (TREE_NODE_HEIGHT_PX / 2)}px`,
+                                            width: `${nodeLayout.width}px`,
+                                            height: `${TREE_NODE_HEIGHT_PX}px`,
                                         }}
                                     >
                                         <motion.div
                                             layout
-                                            className="grid gap-1"
-                                            style={{ gridTemplateColumns: `repeat(${segmentLength}, minmax(0, 1fr))` }}
+                                            className="grid h-full"
+                                            style={{
+                                                gap: `${treeLayout.nodeInternalGap}px`,
+                                                gridTemplateColumns: `repeat(${segmentLength}, ${ARRAY_BOX_SIZE_PX}px)`,
+                                            }}
                                         >
                                             {orderedIndices.map((absoluteIndex) => {
                                                 const value = arrayState[absoluteIndex];
@@ -616,99 +644,98 @@ function MergeSortVisualizer({
                                 );
                             })}
                         </AnimatePresence>
+
+                        <AnimatePresence initial={false}>
+                            {(() => {
+                                const valCounts = new Map<number, number>();
+                                const slotWidth = BAR_SLOT_WIDTH_PX;
+                                const totalWidth = arrayState.length * slotWidth;
+                                const centerX = Math.max(1, visualizerWidth) / 2;
+                                const startX = centerX - (totalWidth / 2);
+                                const slotInset = (slotWidth - ARRAY_BOX_SIZE_PX) / 2;
+
+                                return arrayState.map((value, index) => {
+                                    const count = valCounts.get(value) || 0;
+                                    valCounts.set(value, count + 1);
+                                    const uniqueKey = `ms-val-${value}-${count}`;
+
+                                    const boxStyle = getBoxStyle(
+                                        index,
+                                        actionLabel,
+                                        activeIndices,
+                                        isFinalStep,
+                                    );
+                                    const isActive = activeIndices.includes(index);
+                                    const isPlace  = actionLabel === "place" && meta?.placeIndex === index;
+
+                                    const isMerging = (isComparePase || isMergeParse) && mergeBuffer && mergeBuffer.length > 0;
+                                    const remainingInBuffer = mergeBuffer?.length || 0;
+                                    const totalMergeLength = right - left + 1;
+                                    const placedCount = totalMergeLength - remainingInBuffer;
+                                    const currentK = left + placedCount;
+                                    const isLifted = isMerging && index >= currentK && index <= right;
+
+                                    let finalBoxStyle = boxStyle;
+                                    if (isLifted) {
+                                        finalBoxStyle = "border-dashed border-white/20 bg-transparent text-transparent shadow-none";
+                                    }
+
+                                    const itemX = startX + (index * slotWidth) + slotInset;
+
+                                    return (
+                                        <motion.div
+                                            key={uniqueKey}
+                                            layout="position"
+                                            className="absolute flex flex-col items-center gap-2"
+                                            style={{
+                                                left: `${itemX}px`,
+                                                top: `${ARRAY_ROW_Y_PX}px`,
+                                            }}
+                                        >
+                                            <motion.div
+                                                animate={shouldReduceMotion ? {} : {
+                                                    x: compareSwap
+                                                        ? (index === compareSwap.leftIndex
+                                                            ? compareSwap.delta
+                                                            : index === compareSwap.rightIndex
+                                                                ? -compareSwap.delta
+                                                                : 0)
+                                                        : placeSwap
+                                                            ? (index === placeSwap.sourceIndex
+                                                                ? placeSwap.delta
+                                                                : index === placeSwap.targetIndex
+                                                                    ? -placeSwap.delta
+                                                                    : 0)
+                                                            : 0,
+                                                    y: isActive && !isLifted ? -24 : 0,
+                                                    scale: (isPlace && !isLifted) ? [1, 1.15, 1] : ((isActive && !isLifted) ? 1.08 : 1),
+                                                    opacity: isLifted ? 0.3 : 1,
+                                                }}
+                                                transition={shouldReduceMotion ? { duration: 0 } : {
+                                                    x: { duration: 0.34, ease: "easeInOut" },
+                                                    y: { type: "spring", stiffness: 350, damping: 20 },
+                                                    scale: { duration: 0.35, ease: "easeInOut" },
+                                                }}
+                                                className={cn(
+                                                    "flex items-center justify-center rounded-lg border text-base font-bold transition-[background-color,border-color,color] duration-300 sm:text-lg",
+                                                    finalBoxStyle,
+                                                )}
+                                                style={{
+                                                    width: `${ARRAY_BOX_SIZE_PX}px`,
+                                                    height: `${ARRAY_BOX_SIZE_PX}px`,
+                                                }}
+                                                aria-label={`Index ${index}, value ${value}`}
+                                            >
+                                                {!isLifted && value}
+                                            </motion.div>
+                                            <span className="text-[10px] text-text-secondary">{index}</span>
+                                        </motion.div>
+                                    );
+                                });
+                            })()}
+                        </AnimatePresence>
                     </div>
                 </div>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
-
-                {/* Elements */}
-                <div className="flex min-h-[140px] flex-nowrap items-end justify-center gap-1.5 overflow-x-auto rounded-xl px-2 pb-6 pt-12 sm:min-h-[160px] sm:gap-2">
-                    <AnimatePresence initial={false}>
-                        {(() => {
-                            const valCounts = new Map<number, number>();
-                            
-                            return arrayState.map((value, index) => {
-                                const count = valCounts.get(value) || 0;
-                                valCounts.set(value, count + 1);
-                                const uniqueKey = `ms-val-${value}-${count}`;
-
-                                const boxStyle = getBoxStyle(
-                                    index,
-                                    actionLabel,
-                                    activeIndices,
-                                    isFinalStep,
-                                );
-                                const isActive = activeIndices.includes(index);
-                                const isPlace  = actionLabel === "place" && meta?.placeIndex === index;
-
-                                // Calculate physical separation based on merges (simulate physical splitting)
-                                let marginStyle = {};
-                                if (typeof mid === "number" && index === mid && (isMergeParse || actionLabel === "split" || actionLabel === "compare")) {
-                                    marginStyle = { marginRight: "1rem" };
-                                }
-
-                                // Identify elements currently inside the merge buffer (hide them in the main array)
-                                const isMerging = (isComparePase || isMergeParse) && mergeBuffer && mergeBuffer.length > 0;
-                                const remainingInBuffer = mergeBuffer?.length || 0;
-                                const totalMergeLength = right - left + 1;
-                                const placedCount = totalMergeLength - remainingInBuffer;
-                                const currentK = left + placedCount;
-                                
-                                const isLifted = isMerging && index >= currentK && index <= right;
-                                
-                                let finalBoxStyle = boxStyle;
-                                if (isLifted) {
-                                    finalBoxStyle = "border-dashed border-white/20 bg-transparent text-transparent shadow-none";
-                                }
-
-                                return (
-                                    <motion.div
-                                        key={uniqueKey}
-                                        layout="position"
-                                        style={marginStyle}
-                                        className="flex flex-col items-center gap-2"
-                                    >
-                                        <motion.div
-                                            animate={shouldReduceMotion ? {} : {
-                                                x: compareSwap
-                                                    ? (index === compareSwap.leftIndex
-                                                        ? compareSwap.delta
-                                                        : index === compareSwap.rightIndex
-                                                            ? -compareSwap.delta
-                                                            : 0)
-                                                    : placeSwap
-                                                        ? (index === placeSwap.sourceIndex
-                                                            ? placeSwap.delta
-                                                            : index === placeSwap.targetIndex
-                                                                ? -placeSwap.delta
-                                                                : 0)
-                                                        : 0,
-                                                y: isActive && !isLifted ? -24 : 0,
-                                                scale: (isPlace && !isLifted) ? [1, 1.15, 1] : ((isActive && !isLifted) ? 1.08 : 1),
-                                                opacity: isLifted ? 0.3 : 1
-                                            }}
-                                            transition={shouldReduceMotion ? { duration: 0 } : {
-                                                x: { duration: 0.34, ease: "easeInOut" },
-                                                y: { type: "spring", stiffness: 350, damping: 20 },
-                                                scale: { duration: 0.35, ease: "easeInOut" },
-                                            }}
-                                            className={cn(
-                                                "flex h-10 w-10 items-center justify-center rounded-lg border text-base font-bold transition-[background-color,border-color,color] duration-300 sm:h-11 sm:w-11 sm:text-lg",
-                                                finalBoxStyle,
-                                            )}
-                                            aria-label={`Index ${index}, value ${value}`}
-                                        >
-                                            {!isLifted && value}
-                                        </motion.div>
-                                        <span className="text-[10px] text-text-secondary">{index}</span>
-                                    </motion.div>
-                                );
-                            });
-                        })()}
-                    </AnimatePresence>
-                </div>
-
                 {/* Merge buffer */}
                 {mergeBuffer && mergeBuffer.length > 0 && (isComparePase || isMergeParse) ? (
                     <MergeBufferRow
