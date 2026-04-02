@@ -24,15 +24,15 @@ type MergeTreeNode = {
     yPercent: number;
 };
 
-const BAR_SLOT_WIDTH_PX = 46;
-const ARRAY_BOX_SIZE_PX = 40;
+const BAR_SLOT_WIDTH_PX = 52;
+const ARRAY_BOX_SIZE_PX = 44;
 const ARRAY_BOX_GAP_PX = Math.max(6, BAR_SLOT_WIDTH_PX - ARRAY_BOX_SIZE_PX);
 const TREE_CANVAS_HEIGHT_PX = 500;
 const TREE_NODE_HEIGHT_PX = 48;
 const TREE_NODE_ANCHOR_OFFSET_Y = 18;
-const TREE_LEVEL_GAP_UNITS = 70;
-const TREE_TOP_OFFSET_UNITS = 26;
-const ARRAY_ROW_Y_PX = 380;
+const TREE_LEVEL_GAP_UNITS = 90;
+const TREE_TOP_OFFSET_UNITS = 22;
+const ARRAY_ROW_Y_PX = 410;
 
 const COMPARE_COLOR  = "bg-yellow-400 text-yellow-950 border-yellow-300 shadow-[0_0_18px_rgba(250,204,21,0.5)]";
 const PLACE_COLOR    = "bg-emerald-400 text-emerald-950 border-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.5)]";
@@ -469,7 +469,7 @@ function MergeSortVisualizer({
             </div>
 
             {/* ── Divide / Merge tree ───────────────────────────────────────── */}
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 pb-2 sm:p-4 sm:pb-3">
                 <div className="mb-3 text-xs text-text-secondary">
                     {isMergePhase
                         ? "Merge phase: merge decisions animate while all groups remain visible."
@@ -550,7 +550,7 @@ function MergeSortVisualizer({
                                 const segmentLength = Math.max(1, node.right - node.left + 1);
                                 const totalLength = Math.max(1, arrayState.length);
                                 const valueFontSize = Math.max(7, Math.min(13, 12 - Math.floor(totalLength / 12)));
-                                const indexFontSize = Math.max(6, valueFontSize - 2);
+                                const indexFontSize = Math.max(5, valueFontSize - 3);
                                 const isActiveRange = activeRangeId === node.id;
                                 const isMerged = mergeProgress.mergedRanges.has(node.id);
                                 const isOnActivePath = activePath.has(node.id);
@@ -728,7 +728,7 @@ function MergeSortVisualizer({
                                             >
                                                 {!isLifted && value}
                                             </motion.div>
-                                            <span className="text-[10px] text-text-secondary">{index}</span>
+                                            <span className="text-[9px] text-text-secondary">{index}</span>
                                         </motion.div>
                                     );
                                 });
