@@ -24,14 +24,16 @@ type MergeTreeNode = {
     yPercent: number;
 };
 
-const BAR_SLOT_WIDTH_PX = 52;
-const ARRAY_BOX_SIZE_PX = 44;
-const ARRAY_BOX_GAP_PX = Math.max(6, BAR_SLOT_WIDTH_PX - ARRAY_BOX_SIZE_PX);
+const ARRAY_BOX_SIZE_PX = 48;
+const ARRAY_BOX_GAP_PX = 12;
+const BAR_SLOT_WIDTH_PX = ARRAY_BOX_SIZE_PX + ARRAY_BOX_GAP_PX;
+const CENTER_SPLIT_GAP_PX = 18;
 const TREE_CANVAS_HEIGHT_PX = 500;
-const TREE_NODE_HEIGHT_PX = 48;
-const TREE_NODE_ANCHOR_OFFSET_Y = 18;
+const TREE_NODE_HEIGHT_PX = ARRAY_BOX_SIZE_PX;
+const TREE_EDGE_CLEARANCE_PX = 8;
+const TREE_NODE_ANCHOR_OFFSET_Y = (TREE_NODE_HEIGHT_PX / 2) + TREE_EDGE_CLEARANCE_PX;
 const TREE_LEVEL_GAP_UNITS = 90;
-const TREE_TOP_OFFSET_UNITS = 22;
+const TREE_TOP_OFFSET_UNITS = 48;
 const ARRAY_ROW_Y_PX = 410;
 
 const COMPARE_COLOR  = "bg-yellow-400 text-yellow-950 border-yellow-300 shadow-[0_0_18px_rgba(250,204,21,0.5)]";
@@ -350,17 +352,22 @@ function MergeSortVisualizer({
         }
 
         const targetIndex = meta.placeIndex;
-        const targetValue = arrayState[targetIndex];
-        if (typeof targetValue !== "number") {
+        const previousAction = (previousStep.actionLabel ?? "").trim().toLowerCase();
+        const previousCandidates = previousStep.activeIndices ?? [];
+        if (previousAction !== "compare" || previousCandidates.length < 2) {
             return null;
         }
 
         const previousArray = previousStep.arrayState ?? [];
-        const previousCandidates = (previousStep.activeIndices ?? []).filter(
-            (index) => index !== targetIndex && previousArray[index] === targetValue,
-        );
+        const [leftCandidate, rightCandidate] = [...previousCandidates].sort((a, b) => a - b);
+        const leftValue = previousArray[leftCandidate];
+        const rightValue = previousArray[rightCandidate];
+        if (typeof leftValue !== "number" || typeof rightValue !== "number") {
+            return null;
+        }
 
-        const sourceIndex = previousCandidates[0];
+        // Mirror merge engine selection: when equal, left side wins.
+        const sourceIndex = leftValue <= rightValue ? leftCandidate : rightCandidate;
         if (typeof sourceIndex !== "number" || sourceIndex === targetIndex) {
             return null;
         }
@@ -420,12 +427,19 @@ function MergeSortVisualizer({
             const widthByValues = segmentLength * baseCellWidth + Math.max(0, segmentLength - 1) * nodeInternalGap;
             const rangeCenterIndex = (node.left + node.right + 1) / 2;
             const centerXByRange = startX + (rangeCenterIndex * slotWidth);
+            const splitOffset = segmentLength === totalLength
+                ? 0
+                : centerXByRange < centerX
+                    ? -(CENTER_SPLIT_GAP_PX / 2)
+                    : centerXByRange > centerX
+                        ? (CENTER_SPLIT_GAP_PX / 2)
+                        : 0;
             const widthByRange = segmentLength * slotWidth - nodeInternalGap;
             const width = Math.max(baseCellWidth, Math.min(widthByValues, widthByRange));
             const centerY = TREE_TOP_OFFSET_UNITS + (node.depth * TREE_LEVEL_GAP_UNITS);
 
             layoutById.set(node.id, {
-                centerX: roundToThree(centerXByRange),
+                centerX: roundToThree(centerXByRange + splitOffset),
                 width: roundToThree(width),
                 centerY: roundToThree(centerY),
             });
@@ -483,6 +497,30 @@ function MergeSortVisualizer({
                             viewBox={`0 0 ${Math.max(1, visualizerWidth)} ${TREE_CANVAS_HEIGHT_PX}`}
                             preserveAspectRatio="none"
                         >
+                            <defs>
+                                <marker
+                                    id="merge-arrow-strong"
+                                    markerWidth="8"
+                                    markerHeight="8"
+                                    refX="7"
+                                    refY="4"
+                                    orient="auto"
+                                    markerUnits="strokeWidth"
+                                >
+                                    <path d="M0,0 L8,4 L0,8 Z" fill="rgba(125,211,252,0.95)" />
+                                </marker>
+                                <marker
+                                    id="merge-arrow-normal"
+                                    markerWidth="8"
+                                    markerHeight="8"
+                                    refX="7"
+                                    refY="4"
+                                    orient="auto"
+                                    markerUnits="strokeWidth"
+                                >
+                                    <path d="M0,0 L8,4 L0,8 Z" fill="rgba(255,255,255,0.35)" />
+                                </marker>
+                            </defs>
                             <line
                                 x1={Math.max(1, visualizerWidth) / 2}
                                 y1={0}
@@ -523,8 +561,9 @@ function MergeSortVisualizer({
                                                 }}
                                                 transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.34, ease: "easeInOut" }}
                                                 stroke={edgeStrong ? "rgba(125,211,252,0.95)" : "rgba(255,255,255,0.35)"}
-                                                strokeWidth={edgeStrong ? "1.8" : "1.2"}
+                                                strokeWidth={edgeStrong ? "2.2" : "1.6"}
                                                 strokeLinecap="round"
+                                                markerEnd={edgeStrong ? "url(#merge-arrow-strong)" : "url(#merge-arrow-normal)"}
                                             />
                                         );
                                     })
@@ -548,9 +587,6 @@ function MergeSortVisualizer({
                                 }
 
                                 const segmentLength = Math.max(1, node.right - node.left + 1);
-                                const totalLength = Math.max(1, arrayState.length);
-                                const valueFontSize = Math.max(7, Math.min(13, 12 - Math.floor(totalLength / 12)));
-                                const indexFontSize = Math.max(5, valueFontSize - 3);
                                 const isActiveRange = activeRangeId === node.id;
                                 const isMerged = mergeProgress.mergedRanges.has(node.id);
                                 const isOnActivePath = activePath.has(node.id);
@@ -622,20 +658,18 @@ function MergeSortVisualizer({
                                                             scale: isGraphPlaced ? [1, 1.08, 1] : isGraphActive ? 1.04 : 1,
                                                         }}
                                                         className={cn(
-                                                            "rounded-md border px-0.5 py-0.5 text-center font-semibold shadow-[0_0_8px_rgba(59,130,246,0.18)]",
+                                                            "relative flex h-[48px] w-[48px] items-center justify-center rounded-xl border p-0 text-center shadow-[0_0_8px_rgba(59,130,246,0.18)]",
                                                             nodeTone,
                                                             isGraphActive && "border-yellow-300/85 bg-yellow-300/15",
                                                             isGraphPlaced && "border-emerald-300/85 bg-emerald-300/20",
                                                         )}
-                                                        style={{ fontSize: `${valueFontSize}px`, lineHeight: 1.05 }}
                                                     >
-                                                        <div className="truncate">{value}</div>
-                                                        <div
-                                                            className="mt-1 truncate font-medium opacity-85"
-                                                            style={{ fontSize: `${indexFontSize}px` }}
-                                                        >
+                                                        <span className="text-[20px] font-semibold leading-none">
+                                                            {value}
+                                                        </span>
+                                                        <span className="absolute bottom-1 right-1 text-[10px] font-medium leading-none opacity-60">
                                                             {absoluteIndex}
-                                                        </div>
+                                                        </span>
                                                     </motion.div>
                                                 );
                                             })}
@@ -680,7 +714,13 @@ function MergeSortVisualizer({
                                         finalBoxStyle = "border-dashed border-white/20 bg-transparent text-transparent shadow-none";
                                     }
 
-                                    const itemX = startX + (index * slotWidth) + slotInset;
+                                    const itemCenter = startX + (index * slotWidth) + (slotWidth / 2);
+                                    const splitOffset = itemCenter < centerX
+                                        ? -(CENTER_SPLIT_GAP_PX / 2)
+                                        : itemCenter > centerX
+                                            ? (CENTER_SPLIT_GAP_PX / 2)
+                                            : 0;
+                                    const itemX = startX + (index * slotWidth) + slotInset + splitOffset;
 
                                     return (
                                         <motion.div
@@ -717,7 +757,7 @@ function MergeSortVisualizer({
                                                     scale: { duration: 0.35, ease: "easeInOut" },
                                                 }}
                                                 className={cn(
-                                                    "flex items-center justify-center rounded-lg border text-base font-bold transition-[background-color,border-color,color] duration-300 sm:text-lg",
+                                                    "relative flex items-center justify-center rounded-xl border p-0 transition-[background-color,border-color,color] duration-300",
                                                     finalBoxStyle,
                                                 )}
                                                 style={{
@@ -726,9 +766,15 @@ function MergeSortVisualizer({
                                                 }}
                                                 aria-label={`Index ${index}, value ${value}`}
                                             >
-                                                {!isLifted && value}
+                                                {!isLifted && (
+                                                    <>
+                                                        <span className="text-[20px] font-semibold leading-none">{value}</span>
+                                                        <span className="absolute bottom-1 right-1 text-[10px] font-medium leading-none opacity-60">
+                                                            {index}
+                                                        </span>
+                                                    </>
+                                                )}
                                             </motion.div>
-                                            <span className="text-[9px] text-text-secondary">{index}</span>
                                         </motion.div>
                                     );
                                 });
