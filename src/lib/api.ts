@@ -24,21 +24,35 @@ export type AlgorithmSimulationStep = {
     recursion?: RecursionStepModel | null;
 };
 
-export type RecursionStepModel = {
-    state?: string | null;
-    depth: number;
-    currentFrameId?: number | null;
-    stack: RecursionFrameModel[];
-};
+type RecursionPrimitive = string | number | boolean | null;
 
 export type RecursionFrameModel = {
-    id: number;
-    functionName: string;
-    depth: number;
-    state: string;
-    leftIndex: number;
-    rightIndex: number;
-    returnValue?: string | null;
+    id?: string | number | null;
+    functionName?: string | null;
+    label?: string | null;
+    state?: string | null;
+    depth?: number | null;
+    arguments?: Record<string, RecursionPrimitive> | null;
+    params?: Record<string, RecursionPrimitive> | null;
+    leftIndex?: number | null;
+    rightIndex?: number | null;
+    lowIndex?: number | null;
+    highIndex?: number | null;
+    startIndex?: number | null;
+    endIndex?: number | null;
+    midpointIndex?: number | null;
+    pivotIndex?: number | null;
+    returnValue?: RecursionPrimitive | number[] | string[] | null;
+    result?: RecursionPrimitive | number[] | string[] | null;
+};
+
+export type RecursionStepModel = {
+    event?: string | null;
+    state?: string | null;
+    depth?: number | null;
+    currentFrameId?: string | number | null;
+    frames?: RecursionFrameModel[] | null;
+    stack?: RecursionFrameModel[] | null;
 };
 
 export type MergeSortStepModel = {
@@ -56,6 +70,7 @@ export type QuickSortStepModel = {
     pivot?: number | null;
     pivotIndex?: number | null;
     range?: number[] | null;
+    recursionDepth?: number | null;
 };
 
 export type HeapStepModel = {
