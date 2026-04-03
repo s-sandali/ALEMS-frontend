@@ -20,6 +20,7 @@ export type AlgorithmSimulationStep = {
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
     quickSort?: QuickSortStepModel | null;
+    mergeSort?: MergeSortStepModel | null;
     recursion?: RecursionStepModel | null;
 };
 
@@ -54,6 +55,24 @@ export type RecursionStepModel = {
     stack?: RecursionFrameModel[] | null;
 };
 
+export type MergeSortStepModel = {
+    type: string;
+    left: number;
+    right: number;
+    mid?: number | null;
+    recursionDepth: number;
+    mergeBuffer?: number[] | null;
+    placeIndex?: number | null;
+};
+
+export type QuickSortStepModel = {
+    type?: string | null;
+    pivot?: number | null;
+    pivotIndex?: number | null;
+    range?: number[] | null;
+    recursionDepth?: number | null;
+};
+
 export type HeapStepModel = {
     phase: string;
     heapBoundaryEnd: number;
@@ -68,14 +87,6 @@ export type HeapStepModel = {
     extractedValue?: number | null;
     extractedFromIndex?: number | null;
     sortedTargetIndex?: number | null;
-};
-
-export type QuickSortStepModel = {
-    type?: string | null;
-    pivot?: number | null;
-    pivotIndex?: number | null;
-    range?: number[] | null;
-    recursionDepth?: number | null;
 };
 
 export type SearchStepModel = {
@@ -448,12 +459,10 @@ export type QuizAttemptQuestionResult = {
 export type QuizAttemptResult = {
     attemptId: number;
     quizId: number;
-    score: number;           // percentage 0–100 (rounded)
-    correctCount: number;    // raw number of correct answers
-    totalQuestions: number;
-    xpEarned: number;        // 0 on retries — XP only awarded on first attempt
+    score: number;           // percentage 0–100
     passed: boolean;
-    isFirstAttempt: boolean; // false on retries, UI shows "no XP awarded" message
+    totalQuestions: number;
+    correctCount: number;
     results: QuizAttemptQuestionResult[];
 };
 
