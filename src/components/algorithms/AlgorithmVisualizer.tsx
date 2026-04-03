@@ -866,7 +866,9 @@ function AlgorithmVisualizer({
                                         ? "Use Go Left, Go Right, or Found to decide the next move"
                                         : (isHeapStep
                                             ? "Click two heap nodes to validate a swap"
-                                            : "Click two bars to validate a swap")}
+                                            : (isMergeSortStep
+                                                ? "Click two boxes to validate a swap"
+                                                : "Click two bars to validate a swap"))}
                                 </span>
                             ) : null}
                         </div>
@@ -914,12 +916,12 @@ function AlgorithmVisualizer({
                         ) : isMergeSortStep ? (
                             <>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-400 to-sky-500" />
-                                    Left half
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-blue-400 to-blue-500" />
+                                    Merge Group
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-rose-400 to-rose-500" />
-                                    Right half
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-300 to-sky-400" />
+                                    Active Group
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
@@ -929,6 +931,18 @@ function AlgorithmVisualizer({
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Placed / Sorted
                                 </span>
+                                {isPracticeMode ? (
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                        <span className="h-2.5 w-2.5 rounded-sm border border-sky-200/80 bg-sky-400/20 ring-2 ring-cyan-300/80" />
+                                        Suggested Step
+                                    </span>
+                                ) : null}
+                                {isPracticeMode ? (
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                        <span className="h-2.5 w-2.5 rounded-sm border border-sky-200/80 bg-sky-400/20 ring-2 ring-fuchsia-300/85" />
+                                        Selected
+                                    </span>
+                                ) : null}
                             </>
                         ) : (
                             <>
@@ -1095,6 +1109,13 @@ function AlgorithmVisualizer({
                         <MergeSortVisualizer
                             steps={steps}
                             currentStepIndex={safeIndex}
+                            mode={mode}
+                            practiceArray={values}
+                            selectedIndices={selectedIndices}
+                            suggestedIndices={suggestedIndices}
+                            isInteractionDisabled={isInteractionDisabled}
+                            practiceCompleted={practiceCompleted}
+                            onBarClick={onBarClick}
                         />
                     ) : isHeapStep ? (
                         <div>
