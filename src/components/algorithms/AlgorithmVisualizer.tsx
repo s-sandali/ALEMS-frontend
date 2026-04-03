@@ -233,6 +233,20 @@ function getSearchState(step: AlgorithmSimulationStep | undefined) {
     return (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
 }
 
+function getQuickSortPracticeAction(step: AlgorithmSimulationStep | undefined) {
+    const action = (step?.quickSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
+
+    if (action === "pivot_swap" || action === "swap") {
+        return "swap";
+    }
+
+    if (action === "compare") {
+        return "compare";
+    }
+
+    return action;
+}
+
 function getSearchWindow(step: AlgorithmSimulationStep | undefined, totalValues: number) {
     if (totalValues <= 0) {
         return { low: 0, high: -1, midpoint: null };
@@ -603,6 +617,11 @@ function AlgorithmVisualizer({
         () => formatHeapComparison(currentStep),
         [currentStep],
     );
+    const quickSortPracticeAction = useMemo(
+        () => getQuickSortPracticeAction(currentStep),
+        [currentStep],
+    );
+    const isQuickSortStep = hasQuickSortMetadata && algorithmType === "sort";
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
     const heapIdentityData = useMemo(() => {
         if (!isHeapStep || steps.length === 0) {
@@ -864,11 +883,17 @@ function AlgorithmVisualizer({
                                 <span className="text-sm text-sky-100/80">
                                     {algorithmType === "search"
                                         ? "Use Go Left, Go Right, or Found to decide the next move"
-                                        : (isHeapStep
-                                            ? "Click two heap nodes to validate a swap"
-                                            : (isMergeSortStep
-                                                ? "Click two boxes to validate a swap"
-                                                : "Click two bars to validate a swap"))}
+                                        : (isQuickSortStep
+                                            ? (quickSortPracticeAction === "compare"
+                                                ? "Use the bottom array strip to validate the next comparison"
+                                                : (quickSortPracticeAction === "swap"
+                                                    ? "Use the bottom array strip to validate the next swap"
+                                                    : "Use the bottom array strip to follow the next quick sort action"))
+                                            : (isHeapStep
+                                                ? "Click two heap nodes to validate a swap"
+                                                : (isMergeSortStep
+                                                    ? "Click two boxes to validate a swap"
+                                                    : "Click two bars to validate a swap")))}
                                 </span>
                             ) : null}
                         </div>
