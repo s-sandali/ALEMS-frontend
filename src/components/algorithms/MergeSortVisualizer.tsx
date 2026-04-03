@@ -1,4 +1,4 @@
-import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
@@ -8,6 +8,13 @@ import type { AlgorithmSimulationStep } from "@/lib/api";
 type MergeSortVisualizerProps = {
     steps: AlgorithmSimulationStep[];
     currentStepIndex: number;
+    mode?: "auto" | "practice";
+    practiceArray?: number[];
+    selectedIndices?: number[];
+    suggestedIndices?: number[];
+    isInteractionDisabled?: boolean;
+    practiceCompleted?: boolean;
+    onBarClick?: (index: number) => void;
     className?: string;
 };
 
@@ -22,6 +29,12 @@ type MergeTreeNode = {
     xSlot: number;
     xPercent: number;
     yPercent: number;
+};
+
+type MergeArrayIdentityItem = {
+    id: string;
+    value: number;
+    index: number;
 };
 
 const ARRAY_BOX_SIZE_PX = 48;
@@ -74,6 +87,31 @@ function rangeId(left: number, right: number) {
 
 function roundToThree(value: number) {
     return Math.round(value * 1000) / 1000;
+}
+
+function reconcileMergeArrayIdentityItems(
+    previousItems: MergeArrayIdentityItem[],
+    nextValues: number[],
+    createId: () => string,
+) {
+    const availableByValue = new Map<number, MergeArrayIdentityItem[]>();
+
+    previousItems.forEach((item) => {
+        const queue = availableByValue.get(item.value) ?? [];
+        queue.push(item);
+        availableByValue.set(item.value, queue);
+    });
+
+    return nextValues.map((value, index) => {
+        const queue = availableByValue.get(value);
+        const reused = queue?.shift();
+
+        return {
+            id: reused?.id ?? createId(),
+            value,
+            index,
+        };
+    });
 }
 
 function describeMergeSortLine(lineNumber?: number) {
@@ -233,11 +271,19 @@ function MergeBufferRow({
 function MergeSortVisualizer({
     steps,
     currentStepIndex,
+    mode = "auto",
+    practiceArray = [],
+    selectedIndices = [],
+    suggestedIndices = [],
+    isInteractionDisabled = false,
+    practiceCompleted = false,
+    onBarClick,
     className,
 }: MergeSortVisualizerProps) {
     const shouldReduceMotion = useReducedMotion();
     const visualizerRootRef = useRef<HTMLDivElement | null>(null);
     const [visualizerWidth, setVisualizerWidth] = useState(0);
+    const isPracticeMode = mode === "practice";
 
     const safeIndex = steps.length === 0
         ? 0
@@ -247,11 +293,53 @@ function MergeSortVisualizer({
     const previousStep = safeIndex > 0 ? steps[safeIndex - 1] : null;
     const meta = currentStep?.mergeSort ?? null;
     const actionLabel = (currentStep?.actionLabel ?? "").trim().toLowerCase();
-    const activeIndices = currentStep?.activeIndices ?? [];
-    const arrayState = currentStep?.arrayState ?? [];
+    const stepActiveIndices = currentStep?.activeIndices ?? [];
+    const stepArrayState = currentStep?.arrayState ?? [];
+    const activeIndices = isPracticeMode ? selectedIndices : stepActiveIndices;
+    const arrayState = isPracticeMode ? practiceArray : stepArrayState;
     const lineNumber = currentStep?.lineNumber;
+    const suggestedIndexSet = useMemo(() => new Set(suggestedIndices), [suggestedIndices]);
+    const isInteractiveSwap = isPracticeMode
+        && !isInteractionDisabled
+        && !practiceCompleted
+        && typeof onBarClick === "function";
+    const practiceIdentitySeedRef = useRef(0);
 
-    const isFinalStep = actionLabel === "complete";
+    const createPracticeIdentity = () => `merge-practice-${practiceIdentitySeedRef.current++}`;
+
+    const [practiceIdentityItems, setPracticeIdentityItems] = useState<MergeArrayIdentityItem[]>(() => {
+        return practiceArray.map((value, index) => ({
+            id: createPracticeIdentity(),
+            value,
+            index,
+        }));
+    });
+
+    useEffect(() => {
+        if (!isPracticeMode) {
+            return;
+        }
+
+        setPracticeIdentityItems((previousItems) => {
+            const createId = () => createPracticeIdentity();
+
+            if (previousItems.length === 0) {
+                return practiceArray.map((value, index) => ({
+                    id: createId(),
+                    value,
+                    index,
+                }));
+            }
+
+            return reconcileMergeArrayIdentityItems(previousItems, practiceArray, createId);
+        });
+    }, [practiceArray, isPracticeMode]);
+
+    const practiceIdentityByIndex = useMemo(() => {
+        return new Map(practiceIdentityItems.map((item) => [item.index, item.id]));
+    }, [practiceIdentityItems]);
+
+    const isFinalStep = isPracticeMode ? practiceCompleted : actionLabel === "complete";
     const isComparePase = actionLabel === "compare";
     const isMergeParse = actionLabel.startsWith("merge");
     const isMergePhase = actionLabel === "compare" || actionLabel === "place" || actionLabel.startsWith("merge") || actionLabel === "complete";
@@ -330,6 +418,10 @@ function MergeSortVisualizer({
     const suppressedNodes = useMemo(() => new Set<string>(), []);
 
     const compareSwap = useMemo(() => {
+        if (isPracticeMode) {
+            return null;
+        }
+
         if (actionLabel !== "compare" || activeIndices.length < 2) {
             return null;
         }
@@ -344,9 +436,13 @@ function MergeSortVisualizer({
             rightIndex,
             delta: (rightIndex - leftIndex) * BAR_SLOT_WIDTH_PX,
         };
-    }, [actionLabel, activeIndices]);
+    }, [actionLabel, activeIndices, isPracticeMode]);
 
     const placeSwap = useMemo(() => {
+        if (isPracticeMode) {
+            return null;
+        }
+
         if (actionLabel !== "place" || !previousStep || !meta || typeof meta.placeIndex !== "number") {
             return null;
         }
@@ -377,7 +473,39 @@ function MergeSortVisualizer({
             targetIndex,
             delta: (targetIndex - sourceIndex) * BAR_SLOT_WIDTH_PX,
         };
-    }, [actionLabel, previousStep, meta, arrayState]);
+    }, [actionLabel, previousStep, meta, isPracticeMode]);
+
+    const arrayIdentityAtStep = useMemo(() => {
+        if (isPracticeMode) {
+            return practiceIdentityItems;
+        }
+
+        if (steps.length === 0) {
+            return arrayState.map((value, index) => ({
+                id: `merge-array-initial-${index}`,
+                value,
+                index,
+            }));
+        }
+
+        let idSeed = 0;
+        const createId = () => `merge-array-${idSeed++}`;
+        let previousResolved: MergeArrayIdentityItem[] = [];
+        let resolvedAtCurrent: MergeArrayIdentityItem[] = [];
+
+        for (let stepIndex = 0; stepIndex <= safeIndex; stepIndex += 1) {
+            const stepValues = steps[stepIndex]?.arrayState ?? [];
+            const resolved = reconcileMergeArrayIdentityItems(previousResolved, stepValues, createId);
+
+            if (stepIndex === safeIndex) {
+                resolvedAtCurrent = resolved;
+            }
+
+            previousResolved = resolved;
+        }
+
+        return resolvedAtCurrent;
+    }, [steps, safeIndex, arrayState, isPracticeMode, practiceIdentityItems]);
 
     useLayoutEffect(() => {
         const root = visualizerRootRef.current;
@@ -646,12 +774,16 @@ function MergeSortVisualizer({
                                             {orderedIndices.map((absoluteIndex) => {
                                                 const value = arrayState[absoluteIndex];
                                                 const isGraphActive = activeIndices.includes(absoluteIndex);
+                                                const isSuggested = suggestedIndexSet.has(absoluteIndex);
                                                 const isGraphPlaced = actionLabel === "place" && meta?.placeIndex === absoluteIndex;
+                                                const graphIdentityKey = isPracticeMode
+                                                    ? (practiceIdentityByIndex.get(absoluteIndex) ?? `merge-practice-fallback-${absoluteIndex}`)
+                                                    : `${absoluteIndex}`;
 
                                                 return (
                                                     <motion.div
                                                         layout
-                                                        key={`${node.id}-${absoluteIndex}`}
+                                                        key={`${node.id}-${graphIdentityKey}`}
                                                         transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.32, ease: "easeInOut" }}
                                                         animate={shouldReduceMotion ? {} : {
                                                             y: isGraphActive ? -4 : 0,
@@ -662,7 +794,11 @@ function MergeSortVisualizer({
                                                             nodeTone,
                                                             isGraphActive && "border-yellow-300/85 bg-yellow-300/15",
                                                             isGraphPlaced && "border-emerald-300/85 bg-emerald-300/20",
+                                                            isPracticeMode && isSuggested && !isGraphActive && "ring-2 ring-cyan-300/80 ring-offset-1 ring-offset-transparent",
+                                                            isPracticeMode && isGraphActive && "ring-2 ring-fuchsia-300/85 ring-offset-1 ring-offset-transparent",
+                                                            isInteractiveSwap && "cursor-pointer",
                                                         )}
+                                                        onClick={isInteractiveSwap ? () => onBarClick?.(absoluteIndex) : undefined}
                                                     >
                                                         <span className="text-[20px] font-semibold leading-none">
                                                             {value}
@@ -681,17 +817,14 @@ function MergeSortVisualizer({
 
                         <AnimatePresence initial={false}>
                             {(() => {
-                                const valCounts = new Map<number, number>();
                                 const slotWidth = BAR_SLOT_WIDTH_PX;
-                                const totalWidth = arrayState.length * slotWidth;
+                                const totalWidth = arrayIdentityAtStep.length * slotWidth;
                                 const centerX = Math.max(1, visualizerWidth) / 2;
                                 const startX = centerX - (totalWidth / 2);
                                 const slotInset = (slotWidth - ARRAY_BOX_SIZE_PX) / 2;
 
-                                return arrayState.map((value, index) => {
-                                    const count = valCounts.get(value) || 0;
-                                    valCounts.set(value, count + 1);
-                                    const uniqueKey = `ms-val-${value}-${count}`;
+                                return arrayIdentityAtStep.map((item) => {
+                                    const { id: uniqueKey, value, index } = item;
 
                                     const boxStyle = getBoxStyle(
                                         index,
@@ -700,6 +833,7 @@ function MergeSortVisualizer({
                                         isFinalStep,
                                     );
                                     const isActive = activeIndices.includes(index);
+                                    const isSuggested = suggestedIndexSet.has(index);
                                     const isPlace  = actionLabel === "place" && meta?.placeIndex === index;
 
                                     const isMerging = (isComparePase || isMergeParse) && mergeBuffer && mergeBuffer.length > 0;
@@ -711,7 +845,7 @@ function MergeSortVisualizer({
 
                                     let finalBoxStyle = boxStyle;
                                     if (isLifted) {
-                                        finalBoxStyle = "border-dashed border-white/20 bg-transparent text-transparent shadow-none";
+                                        finalBoxStyle = "border-dashed border-white/25 bg-white/[0.04] text-white/70";
                                     }
 
                                     const itemCenter = startX + (index * slotWidth) + (slotWidth / 2);
@@ -749,7 +883,7 @@ function MergeSortVisualizer({
                                                             : 0,
                                                     y: isActive && !isLifted ? -24 : 0,
                                                     scale: (isPlace && !isLifted) ? [1, 1.15, 1] : ((isActive && !isLifted) ? 1.08 : 1),
-                                                    opacity: isLifted ? 0.3 : 1,
+                                                    opacity: isLifted ? 0.72 : 1,
                                                 }}
                                                 transition={shouldReduceMotion ? { duration: 0 } : {
                                                     x: { duration: 0.34, ease: "easeInOut" },
@@ -759,21 +893,23 @@ function MergeSortVisualizer({
                                                 className={cn(
                                                     "relative flex items-center justify-center rounded-xl border p-0 transition-[background-color,border-color,color] duration-300",
                                                     finalBoxStyle,
+                                                    isPracticeMode && isSuggested && !isActive && "ring-2 ring-cyan-300/80 ring-offset-1 ring-offset-transparent",
+                                                    isPracticeMode && isActive && "ring-2 ring-fuchsia-300/85 ring-offset-1 ring-offset-transparent",
+                                                    isInteractiveSwap && "cursor-pointer",
                                                 )}
                                                 style={{
                                                     width: `${ARRAY_BOX_SIZE_PX}px`,
                                                     height: `${ARRAY_BOX_SIZE_PX}px`,
                                                 }}
                                                 aria-label={`Index ${index}, value ${value}`}
+                                                onClick={isInteractiveSwap ? () => onBarClick?.(index) : undefined}
                                             >
-                                                {!isLifted && (
-                                                    <>
-                                                        <span className="text-[20px] font-semibold leading-none">{value}</span>
-                                                        <span className="absolute bottom-1 right-1 text-[10px] font-medium leading-none opacity-60">
-                                                            {index}
-                                                        </span>
-                                                    </>
-                                                )}
+                                                <>
+                                                    <span className="text-[20px] font-semibold leading-none">{value}</span>
+                                                    <span className="absolute bottom-1 right-1 text-[10px] font-medium leading-none opacity-60">
+                                                        {index}
+                                                    </span>
+                                                </>
                                             </motion.div>
                                         </motion.div>
                                     );
