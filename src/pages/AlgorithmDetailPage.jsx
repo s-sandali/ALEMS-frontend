@@ -497,15 +497,28 @@ export default function AlgorithmDetailPage() {
         const stepAnchor = clampIndex(step?.selectionSort?.currentIndex, arraySnapshot.length);
         const fallbackAnchor = clampIndex(suggestedIndices?.[0], arraySnapshot.length);
         const anchorIndex = stepAnchor ?? fallbackAnchor ?? 0;
-        const minIndex = clampIndex(step?.selectionSort?.minIndex, arraySnapshot.length) ?? anchorIndex;
-        const scanIndex = clampIndex(step?.selectionSort?.candidateIndex, arraySnapshot.length);
-        const isMinLocked = stepType === "select_min" || stepType === "swap";
+        const minIndexFromStep = clampIndex(step?.selectionSort?.minIndex, arraySnapshot.length);
+        const candidateIndexFromStep = clampIndex(step?.selectionSort?.candidateIndex, arraySnapshot.length);
+        const previousStep = safeStepIndex > 0 ? stepCollection?.[safeStepIndex - 1] : null;
+        const previousMinIndex = clampIndex(previousStep?.selectionSort?.minIndex, arraySnapshot.length);
+
+        if (stepType === "select_min") {
+            setSelectionPracticeAnchorIndex(anchorIndex);
+            setSelectionPracticeScanIndex(candidateIndexFromStep);
+            setSelectionPracticeCurrentMinIndex(previousMinIndex ?? anchorIndex);
+            setSelectionPracticeCandidateIndex(minIndexFromStep ?? candidateIndexFromStep ?? null);
+            setSelectionPracticeConfirmedMinIndex(null);
+            return;
+        }
+
+        const resolvedMinIndex = minIndexFromStep ?? anchorIndex;
+        const isMinLocked = stepType === "swap";
 
         setSelectionPracticeAnchorIndex(anchorIndex);
-        setSelectionPracticeScanIndex(scanIndex);
-        setSelectionPracticeCurrentMinIndex(minIndex);
-        setSelectionPracticeCandidateIndex(isMinLocked ? null : minIndex);
-        setSelectionPracticeConfirmedMinIndex(isMinLocked ? minIndex : null);
+        setSelectionPracticeScanIndex(candidateIndexFromStep);
+        setSelectionPracticeCurrentMinIndex(resolvedMinIndex);
+        setSelectionPracticeCandidateIndex(isMinLocked ? null : (candidateIndexFromStep ?? null));
+        setSelectionPracticeConfirmedMinIndex(isMinLocked ? resolvedMinIndex : null);
     }
 
     useEffect(() => {
@@ -1535,6 +1548,7 @@ export default function AlgorithmDetailPage() {
                                 practiceCompleted={practiceCompleted}
                                 isInteractionDisabled={mode !== "practice" || isValidatingStep || practiceCompleted}
                                 selectionPracticeCandidateIndex={selectionPracticeCandidateIndex}
+                                selectionPracticeCurrentMinIndex={selectionPracticeCurrentMinIndex}
                                 selectionPracticeConfirmedMinIndex={selectionPracticeConfirmedMinIndex}
                                 selectionPracticeSwapAnchorIndex={selectionPracticeAnchorIndex}
                                 canSelectionPracticeGoRight={Boolean(
