@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
 import MergeSortVisualizer from "./MergeSortVisualizer";
+import QuickSortTreeVisualizer from "./QuickSortTreeVisualizer";
 
 type LearningMode = "auto" | "practice";
 type PracticeFeedbackTone = "correct" | "incorrect" | null;
@@ -1226,20 +1227,24 @@ function AlgorithmVisualizer({
                         ) : isInsertionSortStep ? (
                             <>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    <span className="h-2.5 w-2.5 rounded-sm border border-yellow-300/60 bg-yellow-400" />
                                     Key / Compare
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-300 to-red-500" />
+                                    <span className="h-2.5 w-2.5 rounded-sm border border-red-300/60 bg-red-500" />
                                     Shift
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-300 to-sky-500" />
+                                    <span className="h-2.5 w-2.5 rounded-sm border border-sky-300/60 bg-sky-400" />
                                     Insert Position
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" />
+                                    <span className="h-2.5 w-2.5 rounded-sm border border-emerald-300/40 bg-emerald-400/40" />
                                     Sorted Prefix
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-sm border border-emerald-300/70 bg-emerald-400" />
+                                    Sorted
                                 </span>
                             </>
                         ) : isHeapStep ? (
@@ -1672,6 +1677,131 @@ function AlgorithmVisualizer({
                             )}
                         </motion.div>
                         </div>
+                    ) : isInsertionSortStep ? (
+                        <motion.div
+                            key={`insertion-tiles-${mode}`}
+                            initial={shouldReduceMotion
+                                ? false
+                                : (feedbackTone === "incorrect"
+                                    ? { x: 0 }
+                                    : (feedbackTone === "correct" ? { scale: 0.995 } : false))}
+                            animate={shouldReduceMotion
+                                ? {}
+                                : (feedbackTone === "incorrect"
+                                    ? { x: [0, -8, 8, -5, 5, 0] }
+                                    : (feedbackTone === "correct"
+                                        ? { scale: [1, 1.015, 1] }
+                                        : { x: 0, scale: 1 }))}
+                            transition={{ duration: 0.36, ease: "easeOut" }}
+                            className="flex min-h-56 flex-wrap items-center overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                            style={{ gap: `${selectionGapPx}px` }}
+                        >
+                            {visualBars.length > 0 ? (
+                                visualBars.map((bar, index) => {
+                                    const isSorted = sortedIndices.has(index);
+                                    const isSelected = selectedIndexSet.has(index);
+                                    const isSuggested = suggestedIndexSet.has(index);
+                                    const isFeedbackTarget = feedbackIndexSet.has(index);
+                                    const isDiscarded = discardedIndexSet.has(index);
+                                    const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
+                                    const isKey = insertionKeyIndex === index;
+                                    const isCompare = insertionCompareIndex === index;
+                                    const isInsertPos = insertionPositionIndex === index;
+                                    const isShift = insertionSortMeta?.shiftFrom === index || insertionSortMeta?.shiftTo === index;
+                                    const isSortedPrefix = insertionSortedBoundary !== null
+                                        && index <= insertionSortedBoundary
+                                        && !isSorted;
+                                    const isLifted = (isKey || isCompare || isInsertPos || isSelected) && !isSorted;
+                                    const baseScale = isSelected ? 1.03 : 1;
+                                    const shouldPulse = !isPracticeMode && (isKey || isCompare) && !shouldReduceMotion;
+                                    const scaleSequence = shouldPulse
+                                        ? [baseScale, 1.06, baseScale]
+                                        : baseScale;
+
+                                    const tileCls = cn(
+                                        "flex items-center justify-center rounded-xl border font-semibold transition-[background-color,border-color,box-shadow] duration-300",
+                                        "border-white/20 bg-slate-900/60 text-slate-100",
+                                        isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
+                                        isSortedPrefix && !isShift && !isInsertPos && !(isKey || isCompare) && "border-emerald-300/40 bg-emerald-400/40 text-emerald-50 shadow-[0_0_14px_rgba(52,211,153,0.18)]",
+                                        (isKey || isCompare) && !isSorted && "border-yellow-300/60 bg-yellow-400 text-yellow-950 shadow-[0_0_18px_rgba(250,204,21,0.3)]",
+                                        isShift && !isSorted && "border-red-300/60 bg-red-500 text-red-50 shadow-[0_0_18px_rgba(248,113,113,0.3)]",
+                                        isInsertPos && !isSorted && !(isKey || isCompare) && "border-sky-300/60 bg-sky-400 text-sky-950 shadow-[0_0_18px_rgba(56,189,248,0.28)]",
+                                        isSuggested && isPracticeMode && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
+                                        isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
+                                        isFeedbackTarget && feedbackTone === "correct" && "border-emerald-300/80 bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.32)]",
+                                        isFeedbackTarget && feedbackTone === "incorrect" && "border-red-300/80 bg-red-500 text-red-50 shadow-[0_0_20px_rgba(248,113,113,0.35)]",
+                                        isDiscarded && "opacity-30 grayscale pointer-events-none",
+                                    );
+
+                                    return (
+                                        <motion.div
+                                            key={bar.id}
+                                            layout
+                                            transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
+                                            className={cn(
+                                                "flex flex-col items-center gap-2",
+                                                isInteractive && "cursor-pointer",
+                                                isInteractionDisabled && "cursor-not-allowed opacity-70",
+                                            )}
+                                            onClick={() => {
+                                                if (isInteractive && !isInteractionDisabled) {
+                                                    onBarClick(index);
+                                                }
+                                            }}
+                                            onKeyDown={(event) => {
+                                                if (!isInteractive || isInteractionDisabled) {
+                                                    return;
+                                                }
+
+                                                if (event.key === "Enter" || event.key === " ") {
+                                                    event.preventDefault();
+                                                    onBarClick(index);
+                                                }
+                                            }}
+                                            role={isInteractive ? "button" : undefined}
+                                            tabIndex={isInteractive && !isInteractionDisabled ? 0 : undefined}
+                                            aria-disabled={isInteractive ? isInteractionDisabled : undefined}
+                                            aria-pressed={isInteractive ? isSelected : undefined}
+                                        >
+                                            <motion.div
+                                                animate={shouldReduceMotion
+                                                    ? {}
+                                                    : {
+                                                        y: isLifted ? -3 : 0,
+                                                        scale: scaleSequence,
+                                                    }}
+                                                transition={{ duration: 0.28, ease: "easeOut" }}
+                                                className={tileCls}
+                                                style={{
+                                                    width: `${selectionTileSizePx}px`,
+                                                    height: `${selectionTileSizePx}px`,
+                                                    fontSize: `${selectionTileFontPx}px`,
+                                                }}
+                                                aria-label={`Index ${index}, value ${bar.value}`}
+                                                aria-current={isLifted || isSelected ? "true" : undefined}
+                                            >
+                                                {bar.value}
+                                            </motion.div>
+                                            <span className={cn(
+                                                "text-[11px] text-text-secondary",
+                                                isSorted && "text-emerald-200",
+                                                isSortedPrefix && !isSorted && "text-emerald-100/70",
+                                                (isKey || isCompare) && !isSorted && "text-yellow-100",
+                                                isShift && !isSorted && "text-red-100",
+                                                isInsertPos && !isSorted && "text-sky-100",
+                                                isSelected && "text-sky-50",
+                                            )}>
+                                                {index}
+                                            </span>
+                                        </motion.div>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-white/10 px-4 py-12 text-sm text-text-secondary">
+                                    No backend simulation steps available yet.
+                                </div>
+                            )}
+                        </motion.div>
                     ) : isMergeSortStep ? (
                         <MergeSortVisualizer
                             steps={steps}
@@ -1894,6 +2024,20 @@ function AlgorithmVisualizer({
                                 </div>
                             </div>
                         </div>
+                    ) : isQuickSortStep ? (
+                        <QuickSortTreeVisualizer
+                            steps={steps}
+                            currentStepIndex={safeIndex}
+                            mode={mode}
+                            values={values ?? []}
+                            selectedIndices={selectedIndices}
+                            suggestedIndices={suggestedIndices}
+                            feedbackIndices={feedbackIndices}
+                            feedbackTone={feedbackTone}
+                            isInteractionDisabled={isInteractionDisabled}
+                            onBarClick={onBarClick}
+                            shouldReduceMotion={shouldReduceMotion}
+                        />
                     ) : (
                         <motion.div
                             key={`bars-${mode}`}
