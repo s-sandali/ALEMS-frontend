@@ -1231,10 +1231,6 @@ function AlgorithmVisualizer({
                                     Key / Compare
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-sm border border-red-300/60 bg-red-500" />
-                                    Shift
-                                </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-sm border border-sky-300/60 bg-sky-400" />
                                     Insert Position
                                 </span>
@@ -1707,7 +1703,6 @@ function AlgorithmVisualizer({
                                     const isKey = insertionKeyIndex === index;
                                     const isCompare = insertionCompareIndex === index;
                                     const isInsertPos = insertionPositionIndex === index;
-                                    const isShift = insertionSortMeta?.shiftFrom === index || insertionSortMeta?.shiftTo === index;
                                     const isSortedPrefix = insertionSortedBoundary !== null
                                         && index <= insertionSortedBoundary
                                         && !isSorted;
@@ -1722,9 +1717,8 @@ function AlgorithmVisualizer({
                                         "flex items-center justify-center rounded-xl border font-semibold transition-[background-color,border-color,box-shadow] duration-300",
                                         "border-white/20 bg-slate-900/60 text-slate-100",
                                         isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
-                                        isSortedPrefix && !isShift && !isInsertPos && !(isKey || isCompare) && "border-emerald-300/40 bg-emerald-400/40 text-emerald-50 shadow-[0_0_14px_rgba(52,211,153,0.18)]",
+                                        isSortedPrefix && !isInsertPos && !(isKey || isCompare) && "border-emerald-300/40 bg-emerald-400/40 text-emerald-50 shadow-[0_0_14px_rgba(52,211,153,0.18)]",
                                         (isKey || isCompare) && !isSorted && "border-yellow-300/60 bg-yellow-400 text-yellow-950 shadow-[0_0_18px_rgba(250,204,21,0.3)]",
-                                        isShift && !isSorted && "border-red-300/60 bg-red-500 text-red-50 shadow-[0_0_18px_rgba(248,113,113,0.3)]",
                                         isInsertPos && !isSorted && !(isKey || isCompare) && "border-sky-300/60 bg-sky-400 text-sky-950 shadow-[0_0_18px_rgba(56,189,248,0.28)]",
                                         isSuggested && isPracticeMode && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
                                         isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
@@ -1787,7 +1781,6 @@ function AlgorithmVisualizer({
                                                 isSorted && "text-emerald-200",
                                                 isSortedPrefix && !isSorted && "text-emerald-100/70",
                                                 (isKey || isCompare) && !isSorted && "text-yellow-100",
-                                                isShift && !isSorted && "text-red-100",
                                                 isInsertPos && !isSorted && "text-sky-100",
                                                 isSelected && "text-sky-50",
                                             )}>
@@ -2036,7 +2029,7 @@ function AlgorithmVisualizer({
                             feedbackTone={feedbackTone}
                             isInteractionDisabled={isInteractionDisabled}
                             onBarClick={onBarClick}
-                            shouldReduceMotion={shouldReduceMotion}
+                            shouldReduceMotion={shouldReduceMotion ?? false}
                         />
                     ) : (
                         <motion.div
