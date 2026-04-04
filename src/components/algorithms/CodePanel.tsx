@@ -47,32 +47,98 @@ export default function CodePanel({
         () => activeSnippet?.code.split("\n") ?? [],
         [activeSnippet],
     );
-    const activeDisplayLines = useMemo(() => {
-        if (!activeSnippet?.syncsWithTrace || activeLine <= 0) {
+    const availableTraceLines = useMemo(() => {
+        if (!lineToStepIndexMap) {
             return [];
         }
 
-        const mappedLine = activeSnippet.traceLineMap?.[activeLine] ?? activeLine;
+        return Object.keys(lineToStepIndexMap)
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value))
+            .sort((left, right) => left - right);
+    }, [lineToStepIndexMap]);
+
+    const maxTraceLine = useMemo(
+        () => availableTraceLines[availableTraceLines.length - 1] ?? 0,
+        [availableTraceLines],
+    );
+
+    function mapTraceToDisplayLine(traceLine: number) {
+        if (codeLines.length === 0) {
+            return 1;
+        }
+
+        if (maxTraceLine <= 1) {
+            return 1;
+        }
+
+        const ratio = Math.min(Math.max(traceLine, 1), maxTraceLine) / maxTraceLine;
+        return Math.min(codeLines.length, Math.max(1, Math.round(ratio * codeLines.length)));
+    }
+
+    function mapDisplayToTraceLine(displayLine: number) {
+        if (availableTraceLines.length === 0 || codeLines.length === 0) {
+            return displayLine;
+        }
+
+        const normalizedDisplay = Math.min(Math.max(displayLine, 1), codeLines.length);
+        const ratio = normalizedDisplay / Math.max(codeLines.length, 1);
+        const targetIndex = Math.min(
+            availableTraceLines.length - 1,
+            Math.max(0, Math.round(ratio * (availableTraceLines.length - 1))),
+        );
+
+        return availableTraceLines[targetIndex];
+    }
+
+    const activeDisplayLines = useMemo(() => {
+        if (!activeSnippet || activeLine <= 0) {
+            return [];
+        }
+
+        if (activeSnippet.syncsWithTrace) {
+            const mappedLine = activeSnippet.traceLineMap?.[activeLine] ?? activeLine;
+            return Array.isArray(mappedLine) ? mappedLine : [mappedLine];
+        }
+
+        if (availableTraceLines.length === 0) {
+            return [];
+        }
+
+        const mappedLine = mapTraceToDisplayLine(activeLine);
         return Array.isArray(mappedLine) ? mappedLine : [mappedLine];
-    }, [activeLine, activeSnippet]);
+    }, [activeLine, activeSnippet, availableTraceLines.length, codeLines.length, maxTraceLine]);
+
     const displayLineToTraceLineMap = useMemo(() => {
-        if (!activeSnippet?.syncsWithTrace || !activeSnippet.traceLineMap) {
+        if (!activeSnippet) {
             return {};
         }
 
-        return Object.entries(activeSnippet.traceLineMap).reduce<Record<number, number>>((accumulator, [traceLine, displayLine]) => {
-            const displayLines = Array.isArray(displayLine) ? displayLine : [displayLine];
+        if (activeSnippet.syncsWithTrace && activeSnippet.traceLineMap) {
+            return Object.entries(activeSnippet.traceLineMap).reduce<Record<number, number>>((accumulator, [traceLine, displayLine]) => {
+                const displayLines = Array.isArray(displayLine) ? displayLine : [displayLine];
 
-            displayLines.forEach((lineNumber) => {
-                accumulator[lineNumber] = Number(traceLine);
-            });
+                displayLines.forEach((lineNumber) => {
+                    accumulator[lineNumber] = Number(traceLine);
+                });
 
+                return accumulator;
+            }, {});
+        }
+
+        if (availableTraceLines.length === 0 || codeLines.length === 0) {
+            return {};
+        }
+
+        return codeLines.reduce<Record<number, number>>((accumulator, _line, index) => {
+            const displayLine = index + 1;
+            accumulator[displayLine] = mapDisplayToTraceLine(displayLine);
             return accumulator;
         }, {});
-    }, [activeSnippet]);
+    }, [activeSnippet, availableTraceLines, codeLines]);
 
     useEffect(() => {
-        if (!activeSnippet?.syncsWithTrace || activeDisplayLines.length === 0) {
+        if (activeDisplayLines.length === 0) {
             return;
         }
 
@@ -102,7 +168,7 @@ export default function CodePanel({
     }
 
     function handleLineClick(displayLineNumber: number) {
-        if (!activeSnippet?.syncsWithTrace || !onSeekToStep || !lineToStepIndexMap) {
+        if (!onSeekToStep || !lineToStepIndexMap) {
             return;
         }
 
@@ -165,8 +231,8 @@ export default function CodePanel({
                     <div className="space-y-[2px]">
                         {codeLines.map((line, index) => {
                             const lineNumber = index + 1;
-                            const isActive = Boolean(activeSnippet?.syncsWithTrace) && activeDisplayLines.includes(lineNumber);
-                            const isClickable = Boolean(activeSnippet?.syncsWithTrace && typeof lineToStepIndexMap === "object" && onSeekToStep);
+                            const isActive = activeDisplayLines.includes(lineNumber);
+                            const isClickable = Boolean(typeof lineToStepIndexMap === "object" && onSeekToStep);
 
                             return (
                                 <button

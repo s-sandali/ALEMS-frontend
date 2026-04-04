@@ -22,6 +22,7 @@ type SimulationControlsProps = {
     simulationError: string;
     feedbackMessage: string;
     hintMessage: string;
+    selectedIndices: number[];
     isCorrect: boolean | null;
     isValidatingStep: boolean;
     practiceCompleted: boolean;
@@ -66,6 +67,7 @@ export default function SimulationControls({
     simulationError,
     feedbackMessage,
     hintMessage,
+    selectedIndices,
     isCorrect,
     isValidatingStep,
     practiceCompleted,
@@ -311,6 +313,11 @@ export default function SimulationControls({
                                                 ? "Watch the search window shrink around the target."
                                                 : "Watch as Auto Mode swaps the elements.")}
                                     </p>
+                                    {isPracticeMode && algorithmType === "sort" ? (
+                                        <p className="mt-2 text-xs text-sky-100/90">
+                                            Selected indexes: {selectedIndices.length > 0 ? selectedIndices.join(", ") : "none"}
+                                        </p>
+                                    ) : null}
                                 </div>
 
                                 <div className="rounded-2xl border border-white/[0.06] bg-bg/60 p-4 text-sm leading-6 text-text-secondary">

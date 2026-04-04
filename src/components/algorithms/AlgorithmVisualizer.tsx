@@ -24,9 +24,18 @@ type AlgorithmVisualizerProps = {
     discardedIndices?: number[];
     feedbackTone?: PracticeFeedbackTone;
     feedbackVersion?: number;
+    recentPracticeAction?: string | null;
     hintMessage?: string;
     practiceCompleted?: boolean;
     isInteractionDisabled?: boolean;
+    selectionPracticeCandidateIndex?: number | null;
+    selectionPracticeCurrentMinIndex?: number | null;
+    selectionPracticeConfirmedMinIndex?: number | null;
+    selectionPracticeSwapAnchorIndex?: number | null;
+    canSelectionPracticeGoRight?: boolean;
+    canSelectionPracticeSelectMin?: boolean;
+    onSelectionPracticeGoRight?: () => void;
+    onSelectionPracticeSelectMin?: () => void;
     onBarClick?: (index: number) => void;
     onSearchDecision?: (decision: SearchDecision) => void;
     className?: string;
@@ -307,7 +316,36 @@ function getSearchTargetValue(steps: AlgorithmSimulationStep[]) {
     return foundStep.arrayState?.[midpointIndex] ?? null;
 }
 
-function reconcileBars(previousBars: VisualBar[], nextValues: number[], createBar: (value: number) => VisualBar) {
+function reconcileBars(
+    previousBars: VisualBar[],
+    nextValues: number[],
+    createBar: (value: number) => VisualBar,
+    preferredSwapIndices?: [number, number] | null,
+) {
+    if (
+        preferredSwapIndices
+        && previousBars.length === nextValues.length
+    ) {
+        const [leftIndex, rightIndex] = preferredSwapIndices;
+        const isValidSwap = Number.isInteger(leftIndex)
+            && Number.isInteger(rightIndex)
+            && leftIndex >= 0
+            && rightIndex >= 0
+            && leftIndex < previousBars.length
+            && rightIndex < previousBars.length
+            && leftIndex !== rightIndex;
+
+        if (isValidSwap) {
+            const swappedBars = previousBars.slice();
+            [swappedBars[leftIndex], swappedBars[rightIndex]] = [swappedBars[rightIndex], swappedBars[leftIndex]];
+
+            return swappedBars.map((bar, index) => ({
+                ...bar,
+                value: nextValues[index],
+            }));
+        }
+    }
+
     const availableBars = new Map<number, VisualBar[]>();
 
     previousBars.forEach((bar) => {
@@ -556,9 +594,18 @@ function AlgorithmVisualizer({
     discardedIndices = [],
     feedbackTone = null,
     feedbackVersion = 0,
+    recentPracticeAction = null,
     hintMessage = "",
     practiceCompleted = false,
     isInteractionDisabled = false,
+    selectionPracticeCandidateIndex = null,
+    selectionPracticeCurrentMinIndex = null,
+    selectionPracticeConfirmedMinIndex = null,
+    selectionPracticeSwapAnchorIndex = null,
+    canSelectionPracticeGoRight = false,
+    canSelectionPracticeSelectMin = false,
+    onSelectionPracticeGoRight,
+    onSelectionPracticeSelectMin,
     onBarClick,
     onSearchDecision,
     className,
@@ -678,6 +725,9 @@ function AlgorithmVisualizer({
     const selectionMinIndex = typeof selectionSortMeta?.minIndex === "number"
         ? selectionSortMeta.minIndex
         : null;
+    const effectiveSelectionMinIndex = isPracticeMode && isSelectionSortStep
+        ? selectionPracticeCurrentMinIndex
+        : selectionMinIndex;
     const selectionCandidateIndex = typeof selectionSortMeta?.candidateIndex === "number"
         ? selectionSortMeta.candidateIndex
         : null;
@@ -687,6 +737,51 @@ function AlgorithmVisualizer({
     const selectionSwapToIndex = typeof selectionSortMeta?.swapTo === "number"
         ? selectionSortMeta.swapTo
         : currentStep?.activeIndices?.[1] ?? null;
+    const selectionActionType = (selectionSortMeta?.type ?? currentStep?.actionLabel ?? "").trim().toLowerCase();
+    const isSelectionSwapPhase = selectionActionType === "swap";
+    const selectionCandidateHighlightIndex = useMemo(() => {
+        if (!isSelectionSortStep) {
+            return null;
+        }
+
+        if (!isPracticeMode) {
+            if (typeof selectionCandidateIndex === "number") {
+                return selectionCandidateIndex;
+            }
+
+            return isSelectionSwapPhase ? selectionSwapToIndex : null;
+        }
+
+        if (selectionActionType === "compare") {
+            if (recentPracticeAction === "scan_min" && Array.isArray(feedbackIndices) && typeof feedbackIndices[0] === "number") {
+                return feedbackIndices[0];
+            }
+
+            return null;
+        }
+
+        if (selectionActionType === "select_min") {
+            return typeof selectionPracticeCandidateIndex === "number"
+                ? selectionPracticeCandidateIndex
+                : null;
+        }
+
+        if (selectionActionType === "swap") {
+            return selectionSwapToIndex;
+        }
+
+        return null;
+    }, [
+        feedbackIndices,
+        isPracticeMode,
+        isSelectionSortStep,
+        isSelectionSwapPhase,
+        recentPracticeAction,
+        selectionActionType,
+        selectionCandidateIndex,
+        selectionPracticeCandidateIndex,
+        selectionSwapToIndex,
+    ]);
     const isQuickSortStep = hasQuickSortMetadata && algorithmType === "sort";
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
     const heapIdentityData = useMemo(() => {
@@ -876,12 +971,124 @@ function AlgorithmVisualizer({
     const isTargetAtMidpoint = typeof searchTarget === "number"
         && typeof midpointValue === "number"
         && searchTarget === midpointValue;
+    const densityLevel = useMemo(() => {
+        if (values.length >= 32) {
+            return "ultra";
+        }
+
+        if (values.length >= 24) {
+            return "dense";
+        }
+
+        if (values.length >= 16) {
+            return "compact";
+        }
+
+        return "normal";
+    }, [values.length]);
+    const barMinWidthPx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 18;
+        }
+
+        if (densityLevel === "dense") {
+            return 24;
+        }
+
+        if (densityLevel === "compact") {
+            return 30;
+        }
+
+        return 40;
+    }, [densityLevel]);
+    const barGapPx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 4;
+        }
+
+        if (densityLevel === "dense") {
+            return 6;
+        }
+
+        return 8;
+    }, [densityLevel]);
+    const selectionTileSizePx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 36;
+        }
+
+        if (densityLevel === "dense") {
+            return 44;
+        }
+
+        if (densityLevel === "compact") {
+            return 52;
+        }
+
+        return 64;
+    }, [densityLevel]);
+    const selectionTileFontPx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 14;
+        }
+
+        if (densityLevel === "dense") {
+            return 16;
+        }
+
+        if (densityLevel === "compact") {
+            return 18;
+        }
+
+        return 22;
+    }, [densityLevel]);
+    const selectionGapPx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 6;
+        }
+
+        if (densityLevel === "dense") {
+            return 8;
+        }
+
+        return 12;
+    }, [densityLevel]);
+    const searchTileSizePx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 42;
+        }
+
+        if (densityLevel === "dense") {
+            return 48;
+        }
+
+        if (densityLevel === "compact") {
+            return 52;
+        }
+
+        return 56;
+    }, [densityLevel]);
+    const searchTileFontPx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 14;
+        }
+
+        if (densityLevel === "dense") {
+            return 16;
+        }
+
+        return 18;
+    }, [densityLevel]);
     const showSearchDecisionControls = algorithmType === "search"
         && isPracticeMode
         && typeof onSearchDecision === "function";
     const isHeapPracticeInteractive = isHeapStep
         && isPracticeMode
         && typeof onBarClick === "function";
+    const showSelectionPracticeControls = isPracticeMode
+        && isSelectionSortStep
+        && typeof onSelectionPracticeGoRight === "function"
+        && typeof onSelectionPracticeSelectMin === "function";
 
     const createBar = (value: number): VisualBar => ({
         id: `visual-bar-${nextBarIdRef.current++}`,
@@ -898,6 +1105,14 @@ function AlgorithmVisualizer({
             return;
         }
 
+        const shouldApplySwapIdentity = isPracticeMode
+            && feedbackTone === "correct"
+            && recentPracticeAction === "swap"
+            && feedbackIndices.length === 2;
+        const swapIndices = shouldApplySwapIdentity
+            ? [feedbackIndices[0], feedbackIndices[1]] as [number, number]
+            : null;
+
         setVisualBars((previousBars) => {
             if (
                 previousBars.length === 0 ||
@@ -907,9 +1122,9 @@ function AlgorithmVisualizer({
                 return values.map((value) => createBar(value));
             }
 
-            return reconcileBars(previousBars, values, createBar);
+            return reconcileBars(previousBars, values, createBar, swapIndices);
         });
-    }, [currentStepIndex, isPracticeMode, values]);
+    }, [currentStepIndex, feedbackIndices, feedbackTone, isPracticeMode, recentPracticeAction, values]);
 
     return (
         <section
@@ -917,6 +1132,7 @@ function AlgorithmVisualizer({
                 "glass overflow-hidden rounded-3xl border border-white/10 p-4 sm:p-6",
                 className,
             )}
+            data-feedback-version={feedbackVersion}
             aria-label="Algorithm step visualizer"
         >
             <div className="flex flex-col gap-4">
@@ -981,7 +1197,7 @@ function AlgorithmVisualizer({
                                         }
 
                                         if (isMergeSortStep || isSelectionSortStep) {
-                                            return "Click two boxes to validate a swap";
+                                            return "Go Right to scan the minimum, Select Min to lock it, then click the swap partner index";
                                         }
 
                                         return "Click two bars to validate a swap";
@@ -1165,7 +1381,7 @@ function AlgorithmVisualizer({
                                 Current i: <span className="text-text-primary">{selectionCurrentIndex ?? "--"}</span>
                             </span>
                             <span>
-                                Current min: <span className="text-text-primary">{selectionMinIndex ?? "--"}</span>
+                                Current min: <span className="text-text-primary">{effectiveSelectionMinIndex ?? "--"}</span>
                             </span>
                             <span>
                                 Candidate j: <span className="text-text-primary">{selectionCandidateIndex ?? "--"}</span>
@@ -1254,7 +1470,7 @@ function AlgorithmVisualizer({
                                 </p>
                             ) : null}
 
-                            <div className="flex flex-wrap items-end justify-center gap-3">
+                            <div className="flex flex-wrap items-end justify-center" style={{ gap: `${selectionGapPx}px` }}>
                                 {values.length > 0 ? (
                                     values.map((value, index) => {
                                         const isActive = activeIndices.has(index);
@@ -1277,12 +1493,17 @@ function AlgorithmVisualizer({
                                                     animate={shouldReduceMotion ? {} : { scale: isMidpoint ? 1.12 : 1 }}
                                                     transition={{ duration: 0.25 }}
                                                     className={cn(
-                                                        "flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-lg font-semibold text-white",
+                                                        "flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] font-semibold text-white",
                                                         isInRange && "border-accent/40 bg-accent/10",
                                                         isMidpoint && "border-accent/60 bg-accent/25 shadow-[0_0_20px_rgba(213,255,64,0.3)]",
                                                         isActive && "ring-2 ring-accent/40",
                                                         isFound && "border-emerald-400/60 bg-emerald-400/20 text-emerald-100 shadow-[0_0_22px_rgba(52,211,153,0.35)]",
                                                     )}
+                                                    style={{
+                                                        width: `${searchTileSizePx}px`,
+                                                        height: `${searchTileSizePx}px`,
+                                                        fontSize: `${searchTileFontPx}px`,
+                                                    }}
                                                 >
                                                     {value}
                                                 </motion.div>
@@ -1300,8 +1521,28 @@ function AlgorithmVisualizer({
                             </div>
                         </div>
                     ) : isSelectionSortStep ? (
+                        <div className="flex flex-col gap-4">
+                            {showSelectionPracticeControls ? (
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => onSelectionPracticeGoRight?.()}
+                                        disabled={!canSelectionPracticeGoRight || isInteractionDisabled}
+                                    >
+                                        Go Right
+                                    </Button>
+                                    <Button
+                                        variant="default"
+                                        onClick={() => onSelectionPracticeSelectMin?.()}
+                                        disabled={!canSelectionPracticeSelectMin || isInteractionDisabled}
+                                    >
+                                        Select Min
+                                    </Button>
+                                </div>
+                            ) : null}
+
                         <motion.div
-                            key={`selection-tiles-${mode}-${feedbackTone ?? "idle"}-${feedbackVersion}`}
+                            key={`selection-tiles-${mode}`}
                             initial={shouldReduceMotion
                                 ? false
                                 : (feedbackTone === "incorrect"
@@ -1315,7 +1556,8 @@ function AlgorithmVisualizer({
                                         ? { scale: [1, 1.015, 1] }
                                         : { x: 0, scale: 1 }))}
                             transition={{ duration: 0.36, ease: "easeOut" }}
-                            className="flex min-h-56 items-center gap-3 overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                            className="flex min-h-56 items-center overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                            style={{ gap: `${selectionGapPx}px` }}
                         >
                             {visualBars.length > 0 ? (
                                 visualBars.map((bar, index) => {
@@ -1325,11 +1567,17 @@ function AlgorithmVisualizer({
                                     const isFeedbackTarget = feedbackIndexSet.has(index);
                                     const isDiscarded = discardedIndexSet.has(index);
                                     const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
-                                    const isMin = selectionMinIndex === index;
+                                    const isMin = effectiveSelectionMinIndex === index;
                                     const isCurrent = selectionCurrentIndex === index;
                                     const isCandidate = selectionCandidateIndex === index;
-                                    const isSwapFrom = selectionSwapFromIndex === index;
-                                    const isSwapTo = selectionSwapToIndex === index;
+                                    const isSwapFrom = isSelectionSwapPhase && selectionSwapFromIndex === index;
+                                    const isPracticeConfirmedMin = isPracticeMode
+                                        && selectionPracticeConfirmedMinIndex === index;
+                                    const isPracticeSwapAnchor = isPracticeMode
+                                        && selectionPracticeSwapAnchorIndex === index;
+                                    const showCandidateHighlight = isSelectionSortStep
+                                        ? selectionCandidateHighlightIndex === index
+                                        : isCandidate;
                                     const shouldPulseCandidate = !isPracticeMode && isCandidate && !isSorted && !isMin && !shouldReduceMotion;
                                     const shouldPulseMin = !isPracticeMode && isMin && !isSorted && !shouldReduceMotion;
                                     const baseScale = isSelected ? 1.03 : 1;
@@ -1337,18 +1585,21 @@ function AlgorithmVisualizer({
                                         ? [baseScale, 1.07, baseScale]
                                         : (shouldPulseMin
                                             ? [baseScale, 1.05, baseScale]
-                                            : baseScale);
+                                            : (showCandidateHighlight && !shouldReduceMotion
+                                                ? [baseScale, 1.06, baseScale]
+                                                : baseScale));
 
                                     const tileClassName = cn(
-                                        "flex h-16 w-16 items-center justify-center rounded-xl border text-xl font-semibold transition-[transform,background-color,border-color,box-shadow] duration-300 sm:h-20 sm:w-20",
+                                        "flex items-center justify-center rounded-xl border font-semibold transition-[transform,background-color,border-color,box-shadow] duration-300",
                                         "border-white/20 bg-slate-900/60 text-slate-100",
                                         isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
-                                        !isPracticeMode && !isSorted && (isMin || isCurrent || isSwapFrom) && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.3)]",
-                                        !isPracticeMode && !isSorted && !isMin && (isCandidate || isSwapTo) && "border-red-200/80 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.34)]",
-                                        isSuggested && isPracticeMode && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
+                                        !isSorted && (isMin || isCurrent || isSwapFrom) && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.3)]",
+                                        !isSorted && !isMin && showCandidateHighlight && "border-red-200/80 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.34)]",
+                                        isPracticeMode && isPracticeConfirmedMin && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.34)]",
+                                        isSuggested && isPracticeMode && !isSelectionSortStep && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
                                         isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
-                                        isFeedbackTarget && feedbackTone === "correct" && "border-emerald-300/80 bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.32)]",
-                                        isFeedbackTarget && feedbackTone === "incorrect" && "border-red-300/80 bg-red-500 text-red-50 shadow-[0_0_20px_rgba(248,113,113,0.35)]",
+                                        isFeedbackTarget && feedbackTone === "correct" && !isSelectionSortStep && "border-emerald-300/80 bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.32)]",
+                                        isFeedbackTarget && feedbackTone === "incorrect" && !isSelectionSortStep && "border-red-300/80 bg-red-500 text-red-50 shadow-[0_0_20px_rgba(248,113,113,0.35)]",
                                         isDiscarded && "opacity-30 grayscale pointer-events-none",
                                     );
 
@@ -1386,13 +1637,18 @@ function AlgorithmVisualizer({
                                                 animate={shouldReduceMotion
                                                     ? {}
                                                     : {
-                                                        y: (isMin || isCandidate || isSelected) && !isSorted ? -3 : 0,
+                                                        y: (isMin || showCandidateHighlight || isSelected || isPracticeConfirmedMin) && !isSorted ? -3 : 0,
                                                         scale: scaleSequence,
                                                     }}
                                                 transition={{ duration: 0.28, ease: "easeOut" }}
                                                 className={tileClassName}
+                                                style={{
+                                                    width: `${selectionTileSizePx}px`,
+                                                    height: `${selectionTileSizePx}px`,
+                                                    fontSize: `${selectionTileFontPx}px`,
+                                                }}
                                                 aria-label={`Index ${index}, value ${bar.value}`}
-                                                aria-current={isMin || isCandidate || isSelected ? "true" : undefined}
+                                                aria-current={isMin || showCandidateHighlight || isSelected || isPracticeSwapAnchor ? "true" : undefined}
                                             >
                                                 {bar.value}
                                             </motion.div>
@@ -1400,7 +1656,8 @@ function AlgorithmVisualizer({
                                                 "text-[11px] text-text-secondary",
                                                 isSorted && "text-emerald-200",
                                                 !isSorted && isMin && "text-sky-100",
-                                                !isSorted && !isMin && isCandidate && "text-red-100",
+                                                !isSorted && !isMin && showCandidateHighlight && "text-red-100",
+                                                !isSorted && isPracticeConfirmedMin && "text-sky-100",
                                             )}
                                             >
                                                 {index}
@@ -1414,6 +1671,7 @@ function AlgorithmVisualizer({
                                 </div>
                             )}
                         </motion.div>
+                        </div>
                     ) : isMergeSortStep ? (
                         <MergeSortVisualizer
                             steps={steps}
@@ -1638,7 +1896,7 @@ function AlgorithmVisualizer({
                         </div>
                     ) : (
                         <motion.div
-                            key={`bars-${mode}-${feedbackTone ?? "idle"}-${feedbackVersion}`}
+                            key={`bars-${mode}`}
                             initial={shouldReduceMotion
                                 ? false
                                 : (feedbackTone === "incorrect"
@@ -1652,7 +1910,8 @@ function AlgorithmVisualizer({
                                         ? { scale: [1, 1.015, 1] }
                                         : { x: 0, scale: 1 }))}
                             transition={{ duration: 0.38, ease: "easeOut" }}
-                            className="flex min-h-64 items-end gap-2 overflow-x-auto rounded-xl px-1 pb-1 pt-6 sm:min-h-72 sm:gap-3"
+                            className="flex min-h-64 items-end overflow-x-auto rounded-xl px-1 pb-1 pt-6 sm:min-h-72"
+                            style={{ gap: `${barGapPx}px` }}
                         >
                             {visualBars.length > 0 ? (
                                 visualBars.map((bar, index) => {
@@ -1700,11 +1959,12 @@ function AlgorithmVisualizer({
                                             layout
                                             transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
                                             className={cn(
-                                                "flex min-w-10 flex-1 flex-col items-center justify-end gap-2 sm:min-w-12 transition-[opacity,filter] duration-500",
+                                                "flex flex-1 flex-col items-center justify-end gap-2 transition-[opacity,filter] duration-500",
                                                 isInteractive && "cursor-pointer",
                                                 isInteractionDisabled && "cursor-not-allowed opacity-70",
                                                 isDiscarded && "opacity-30 grayscale pointer-events-none",
                                             )}
+                                            style={{ minWidth: `${barMinWidthPx}px` }}
                                             onClick={() => {
                                                 if (isInteractive && !isInteractionDisabled) {
                                                     onBarClick(index);
@@ -1729,7 +1989,7 @@ function AlgorithmVisualizer({
                                                 animate={shouldReduceMotion ? {} : { y: isActive || isSelected ? -2 : 0 }}
                                                 transition={{ duration: 0.2 }}
                                                 className={cn(
-                                                    "text-xs font-medium text-text-secondary transition-colors duration-300",
+                                                    densityLevel === "ultra" ? "text-[10px] font-medium text-text-secondary transition-colors duration-300" : "text-xs font-medium text-text-secondary transition-colors duration-300",
                                                     isSorted && "text-emerald-200",
                                                     isInsertionShift && "text-red-100",
                                                     (isInsertionKey || isInsertionCompare) && "text-yellow-100",
@@ -1784,7 +2044,7 @@ function AlgorithmVisualizer({
                                                 animate={shouldReduceMotion ? {} : { y: isActive || isSelected ? 2 : 0 }}
                                                 transition={{ duration: 0.2 }}
                                                 className={cn(
-                                                    "text-[11px] text-text-secondary transition-colors duration-300",
+                                                    densityLevel === "ultra" ? "text-[10px] text-text-secondary transition-colors duration-300" : "text-[11px] text-text-secondary transition-colors duration-300",
                                                     isSorted && "text-emerald-200",
                                                     isInsertionShift && "text-red-100",
                                                     (isInsertionKey || isInsertionCompare) && "text-yellow-100",

@@ -256,6 +256,22 @@ function getInsertionSortPracticeAction(step) {
     return "compare";
 }
 
+function formatIndices(indices) {
+    if (!Array.isArray(indices) || indices.length === 0) {
+        return "none";
+    }
+
+    return indices.join(" and ");
+}
+
+function clampIndex(index, maxLength) {
+    if (!Number.isFinite(index) || maxLength <= 0) {
+        return null;
+    }
+
+    return Math.min(Math.max(Math.floor(index), 0), maxLength - 1);
+}
+
 export default function AlgorithmDetailPage() {
     const playbackSpeeds = [0.5, 1, 2, 4];
     const basePlaybackIntervalMs = 1400;
@@ -284,8 +300,14 @@ export default function AlgorithmDetailPage() {
     const [suggestedIndices, setSuggestedIndices] = useState([]);
     const [isValidatingStep, setIsValidatingStep] = useState(false);
     const [practiceCompleted, setPracticeCompleted] = useState(false);
+    const [recentPracticeAction, setRecentPracticeAction] = useState(null);
     const [feedbackVersion, setFeedbackVersion] = useState(0);
     const [showCompletionToast, setShowCompletionToast] = useState(false);
+    const [selectionPracticeAnchorIndex, setSelectionPracticeAnchorIndex] = useState(null);
+    const [selectionPracticeScanIndex, setSelectionPracticeScanIndex] = useState(null);
+    const [selectionPracticeCurrentMinIndex, setSelectionPracticeCurrentMinIndex] = useState(null);
+    const [selectionPracticeCandidateIndex, setSelectionPracticeCandidateIndex] = useState(null);
+    const [selectionPracticeConfirmedMinIndex, setSelectionPracticeConfirmedMinIndex] = useState(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -456,6 +478,49 @@ export default function AlgorithmDetailPage() {
     );
     const [mergePracticeStepIndex, setMergePracticeStepIndex] = useState(0);
 
+    function initializeSelectionPracticeState(stepCollection, arraySnapshot, stepIndex) {
+        if (!isSelectionSortMode || !Array.isArray(arraySnapshot) || arraySnapshot.length === 0) {
+            setSelectionPracticeAnchorIndex(null);
+            setSelectionPracticeScanIndex(null);
+            setSelectionPracticeCurrentMinIndex(null);
+            setSelectionPracticeCandidateIndex(null);
+            setSelectionPracticeConfirmedMinIndex(null);
+            return;
+        }
+
+        const safeStepIndex = Math.min(
+            Math.max(stepIndex ?? 0, 0),
+            Math.max((stepCollection?.length ?? 0) - 1, 0),
+        );
+        const step = stepCollection?.[safeStepIndex];
+        const stepType = (step?.selectionSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
+        const stepAnchor = clampIndex(step?.selectionSort?.currentIndex, arraySnapshot.length);
+        const fallbackAnchor = clampIndex(suggestedIndices?.[0], arraySnapshot.length);
+        const anchorIndex = stepAnchor ?? fallbackAnchor ?? 0;
+        const minIndexFromStep = clampIndex(step?.selectionSort?.minIndex, arraySnapshot.length);
+        const candidateIndexFromStep = clampIndex(step?.selectionSort?.candidateIndex, arraySnapshot.length);
+        const previousStep = safeStepIndex > 0 ? stepCollection?.[safeStepIndex - 1] : null;
+        const previousMinIndex = clampIndex(previousStep?.selectionSort?.minIndex, arraySnapshot.length);
+
+        if (stepType === "select_min") {
+            setSelectionPracticeAnchorIndex(anchorIndex);
+            setSelectionPracticeScanIndex(candidateIndexFromStep);
+            setSelectionPracticeCurrentMinIndex(previousMinIndex ?? anchorIndex);
+            setSelectionPracticeCandidateIndex(minIndexFromStep ?? candidateIndexFromStep ?? null);
+            setSelectionPracticeConfirmedMinIndex(null);
+            return;
+        }
+
+        const resolvedMinIndex = minIndexFromStep ?? anchorIndex;
+        const isMinLocked = stepType === "swap";
+
+        setSelectionPracticeAnchorIndex(anchorIndex);
+        setSelectionPracticeScanIndex(candidateIndexFromStep);
+        setSelectionPracticeCurrentMinIndex(resolvedMinIndex);
+        setSelectionPracticeCandidateIndex(isMinLocked ? null : (candidateIndexFromStep ?? null));
+        setSelectionPracticeConfirmedMinIndex(isMinLocked ? resolvedMinIndex : null);
+    }
+
     useEffect(() => {
         if (mode !== "practice" || !isMergeSortAlgorithm) {
             return;
@@ -472,6 +537,20 @@ export default function AlgorithmDetailPage() {
     }, [mode, isMergeSortAlgorithm, mergePracticeSwapPlan, mergePracticeStepIndex]);
 
     function getCurrentSortPracticeAction(step) {
+        if (isSelectionSortMode) {
+            const normalized = (step?.selectionSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
+
+            if (normalized === "compare" || normalized === "select_min" || normalized === "swap") {
+                return normalized;
+            }
+
+            if (normalized === "complete" || normalized === "early_exit") {
+                return "complete";
+            }
+
+            return "compare";
+        }
+
         if (isInsertionSortMode) {
             return getInsertionSortPracticeAction(step);
         }
@@ -493,7 +572,7 @@ export default function AlgorithmDetailPage() {
     }
 
     function getRequiredSelectionCount(action) {
-        if (action === "insert") {
+        if (action === "insert" || action === "select_min") {
             return 1;
         }
 
@@ -505,12 +584,27 @@ export default function AlgorithmDetailPage() {
 
         if (action === "compare") {
             return {
-                feedback: "Select two bars to validate the comparison.",
-                pending: "Select one more bar to validate the comparison.",
+                feedback: isSelectionSortMode
+                    ? "Click Go Right to compare the current minimum with the scan pointer."
+                    : "Select two bars to validate the comparison.",
+                pending: isSelectionSortMode
+                    ? "Click Go Right to continue scanning."
+                    : "Select one more bar to validate the comparison.",
                 validating: "Validating comparison...",
                 hint: "The backend will confirm whether this comparison is the next valid move.",
                 success: "Correct comparison.",
                 failure: "Incorrect comparison.",
+            };
+        }
+
+        if (action === "select_min") {
+            return {
+                feedback: "Click Select Min to lock the newly discovered minimum.",
+                pending: "Click Select Min to update the minimum tracker.",
+                validating: "Validating minimum selection...",
+                hint: "Selection Sort updates the minimum only when the compared value is smaller.",
+                success: "Minimum updated.",
+                failure: "Incorrect minimum selection.",
             };
         }
 
@@ -537,14 +631,20 @@ export default function AlgorithmDetailPage() {
         }
 
         return {
-            feedback: isQuickSortMode
-                ? "Select two array cells to validate the swap."
-                : `Select two ${visualUnit} to attempt the next swap.`,
-            pending: isQuickSortMode
-                ? "Select one more array cell to validate the swap."
-                : `Select one more ${isSelectionSortMode ? "box" : "bar"} to validate the swap.`,
+            feedback: isSelectionSortMode
+                ? "Use Go Right to scan for the minimum, then Select Min, then click the swap partner index."
+                : (isQuickSortMode
+                    ? "Select two array cells to validate the swap."
+                    : `Select two ${visualUnit} to attempt the next swap.`),
+            pending: isSelectionSortMode
+                ? "Search for the minimum with Go Right, then lock it with Select Min."
+                : (isQuickSortMode
+                    ? "Select one more array cell to validate the swap."
+                    : `Select one more ${isSelectionSortMode ? "box" : "bar"} to validate the swap.`),
             validating: "Validating swap...",
-            hint: "The backend will confirm whether this swap is the next valid move.",
+            hint: isSelectionSortMode
+                ? "Scan the unsorted region from left to right, lock the minimum, then swap with current i."
+                : "The backend will confirm whether this swap is the next valid move.",
             success: "Correct swap.",
             failure: "Incorrect step.",
         };
@@ -581,8 +681,10 @@ export default function AlgorithmDetailPage() {
         setSuggestedIndices([]);
         setIsValidatingStep(false);
         setPracticeCompleted(false);
+        setRecentPracticeAction(null);
         setFeedbackVersion((previousValue) => previousValue + 1);
         setCurrentStepIndex(nextStepIndex);
+        initializeSelectionPracticeState(steps, inputArray, nextStepIndex);
     }
 
     async function startPracticeSession(inputArray, targetNumber) {
@@ -631,7 +733,119 @@ export default function AlgorithmDetailPage() {
             setFeedbackMessage(isComplete ? "Practice complete." : practiceCopy.feedback);
         }
 
+        const effectiveSteps = Array.isArray(session?.steps) && session.steps.length > 0
+            ? session.steps
+            : steps;
+        const nextStepIndex = typeof session?.currentStepIndex === "number" ? session.currentStepIndex : 0;
+        initializeSelectionPracticeState(effectiveSteps, inputArray, nextStepIndex);
+
         return session;
+    }
+
+    function handleSelectionPracticeGoRight() {
+        if (
+            mode !== "practice"
+            || !isSelectionSortMode
+            || isValidatingStep
+            || practiceCompleted
+            || currentArray.length === 0
+        ) {
+            return;
+        }
+
+        const expectedAction = getCurrentSortPracticeAction(steps[currentStepIndex]);
+        const currentStep = steps[currentStepIndex];
+        const compareIndices = Array.isArray(currentStep?.activeIndices)
+            ? currentStep.activeIndices.slice(0, 2)
+            : [];
+
+        if (expectedAction === "select_min") {
+            setIsCorrect(false);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setFeedbackMessage("A smaller value was found. Click Select Min to update the minimum first.");
+            setHintMessage("Follow the algorithm order: compare, then select minimum when required.");
+            return;
+        }
+
+        if (expectedAction === "swap") {
+            const anchor = selectionPracticeAnchorIndex ?? 0;
+            setIsCorrect(false);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setFeedbackMessage(`Scan complete for this pass. Click index ${anchor} to perform the swap.`);
+            setHintMessage("Use tile selection for the swap step.");
+            return;
+        }
+
+        if (expectedAction !== "compare") {
+            setIsCorrect(false);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setFeedbackMessage("Go Right is only valid while scanning compare steps.");
+            setHintMessage("Continue from the expected selection sort step.");
+            return;
+        }
+
+        if (compareIndices.length < 2) {
+            setIsCorrect(false);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setFeedbackMessage("Compare indices are unavailable for this step.");
+            setHintMessage("Try resetting practice and starting again.");
+            return;
+        }
+
+        void validatePracticeSortAction("compare", compareIndices);
+    }
+
+    function handleSelectionPracticeSelectMin() {
+        if (
+            mode !== "practice"
+            || !isSelectionSortMode
+            || isValidatingStep
+            || practiceCompleted
+            || currentArray.length === 0
+        ) {
+            return;
+        }
+
+        const expectedAction = getCurrentSortPracticeAction(steps[currentStepIndex]);
+        const currentStep = steps[currentStepIndex];
+        const minIndices = Array.isArray(currentStep?.activeIndices)
+            ? currentStep.activeIndices.slice(0, 1)
+            : [];
+
+        if (expectedAction === "compare") {
+            setIsCorrect(false);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setFeedbackMessage("Click Go Right first. Select Min is only used when a smaller value is discovered.");
+            setHintMessage("At compare steps, Go Right advances the scan pointer.");
+            return;
+        }
+
+        if (expectedAction === "swap") {
+            const anchor = selectionPracticeAnchorIndex ?? 0;
+            setIsCorrect(false);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setFeedbackMessage(`Minimum is already set for this pass. Click index ${anchor} to swap.`);
+            setHintMessage("Use tile selection for the swap step.");
+            return;
+        }
+
+        if (expectedAction !== "select_min") {
+            setIsCorrect(false);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setFeedbackMessage("Select Min is not expected at this step.");
+            setHintMessage("Follow the next highlighted action.");
+            return;
+        }
+
+        if (minIndices.length === 0) {
+            setIsCorrect(false);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setFeedbackMessage("Minimum index is unavailable for this step.");
+            setHintMessage("Try resetting practice and starting again.");
+            return;
+        }
+
+        void validatePracticeSortAction("select_min", minIndices);
     }
 
     function handleTogglePlayback() {
@@ -709,7 +923,13 @@ export default function AlgorithmDetailPage() {
         setSuggestedIndices([]);
         setIsValidatingStep(false);
         setPracticeCompleted(false);
+        setRecentPracticeAction(null);
         setFeedbackVersion((previousValue) => previousValue + 1);
+        setSelectionPracticeAnchorIndex(null);
+        setSelectionPracticeScanIndex(null);
+        setSelectionPracticeCurrentMinIndex(null);
+        setSelectionPracticeCandidateIndex(null);
+        setSelectionPracticeConfirmedMinIndex(null);
     }
 
     async function validatePracticeSortAction(actionType, indices) {
@@ -723,7 +943,10 @@ export default function AlgorithmDetailPage() {
         setShowCompletionToast(false);
         setSimulationError("");
         setIsValidatingStep(true);
-        setFeedbackIndices(indices);
+        setRecentPracticeAction(actionType === "compare" && isSelectionSortMode ? "scan_min" : actionType);
+        setFeedbackIndices(actionType === "compare" && isSelectionSortMode && indices.length >= 2
+            ? [indices[1]]
+            : indices);
         setSuggestedIndices([]);
         setFeedbackMessage(copy.validating);
         setHintMessage(copy.hint);
@@ -761,11 +984,14 @@ export default function AlgorithmDetailPage() {
                 || isTerminalSearchAction(nextExpectedAction);
             setCurrentArray(nextArrayState);
             setPracticeCompleted(isComplete);
-            setCurrentStepIndex(
-                typeof validationResponse?.currentStepIndex === "number"
-                    ? validationResponse.currentStepIndex
-                    : currentStepIndex,
-            );
+            const nextStepIndex = typeof validationResponse?.currentStepIndex === "number"
+                ? validationResponse.currentStepIndex
+                : currentStepIndex;
+            setCurrentStepIndex(nextStepIndex);
+
+            if (isSelectionSortMode) {
+                initializeSelectionPracticeState(steps, nextArrayState, nextStepIndex);
+            }
 
             if (isComplete) {
                 setShowCompletionToast(true);
@@ -794,6 +1020,7 @@ export default function AlgorithmDetailPage() {
         setShowCompletionToast(false);
         setSimulationError("");
         setIsValidatingStep(true);
+        setRecentPracticeAction("midpoint");
         setSelectedIndices(indices);
         setFeedbackIndices(indices);
         setSuggestedIndices([]);
@@ -878,6 +1105,7 @@ export default function AlgorithmDetailPage() {
 
             if (selectedIndices.includes(index)) {
                 setSelectedIndices((previousIndices) => previousIndices.filter((value) => value !== index));
+                setFeedbackMessage("Selection cleared. Pick the first box again.");
                 return;
             }
 
@@ -885,7 +1113,7 @@ export default function AlgorithmDetailPage() {
                 setSelectedIndices([index]);
                 setFeedbackIndices([]);
                 setIsCorrect(null);
-                setFeedbackMessage("Select one more box to swap.");
+                setFeedbackMessage(`Index ${index} selected. Select one more box to swap.`);
                 if (expectedPlanStep) {
                     setHintMessage(`Try swapping index ${expectedPlanStep.indices[0]} and ${expectedPlanStep.indices[1]}.`);
                     setSuggestedIndices(expectedPlanStep.indices);
@@ -903,6 +1131,7 @@ export default function AlgorithmDetailPage() {
             const [leftIndex, rightIndex] = attemptedIndices;
             setSelectedIndices(attemptedIndices);
             setFeedbackIndices(attemptedIndices);
+            setFeedbackMessage(`Selected indexes ${leftIndex} and ${rightIndex}. Validating swap...`);
 
             if (
                 expectedPlanStep
@@ -937,6 +1166,7 @@ export default function AlgorithmDetailPage() {
             });
 
             setIsCorrect(true);
+            setRecentPracticeAction("swap");
             const nextPlanIndex = mergePracticeStepIndex + 1;
             const nextPlanStep = mergePracticeSwapPlan[nextPlanIndex] ?? null;
             const isComplete = Boolean(expectedPlanStep) && !nextPlanStep;
@@ -965,11 +1195,54 @@ export default function AlgorithmDetailPage() {
         }
 
         const expectedAction = getCurrentSortPracticeAction(steps[currentStepIndex]);
+
+        if (isSelectionSortMode && expectedAction === "swap") {
+            const expectedSwapIndices = Array.isArray(steps[currentStepIndex]?.activeIndices)
+                ? steps[currentStepIndex].activeIndices.slice(0, 2).sort((leftIndex, rightIndex) => leftIndex - rightIndex)
+                : [];
+            const stepMinIndex = clampIndex(steps[currentStepIndex]?.selectionSort?.minIndex, currentArray.length);
+            const confirmedMinIndex = clampIndex(selectionPracticeConfirmedMinIndex ?? stepMinIndex, currentArray.length);
+
+            if (expectedSwapIndices.length < 2 || confirmedMinIndex === null) {
+                setIsCorrect(false);
+                setFeedbackVersion((previousValue) => previousValue + 1);
+                setFeedbackMessage("Swap indices are unavailable. Continue with scan steps first.");
+                setHintMessage("Use Go Right and Select Min before swapping.");
+                return;
+            }
+
+            const swapPartnerIndex = expectedSwapIndices.find((value) => value !== confirmedMinIndex);
+            if (swapPartnerIndex === undefined) {
+                setIsCorrect(false);
+                setFeedbackVersion((previousValue) => previousValue + 1);
+                setFeedbackMessage("Swap partner index is unavailable for this step.");
+                setHintMessage("Try resetting practice and starting again.");
+                return;
+            }
+
+            if (index !== swapPartnerIndex) {
+                setIsCorrect(false);
+                setFeedbackVersion((previousValue) => previousValue + 1);
+                setSelectedIndices([confirmedMinIndex]);
+                setFeedbackMessage(`Select index ${swapPartnerIndex} to swap with the locked minimum at index ${confirmedMinIndex}.`);
+                setHintMessage("Swap requires selecting the other swap partner index.");
+                return;
+            }
+
+            const attemptedIndices = [swapPartnerIndex, confirmedMinIndex]
+                .sort((leftIndex, rightIndex) => leftIndex - rightIndex);
+
+            setSelectedIndices([confirmedMinIndex, swapPartnerIndex]);
+            await validatePracticeSortAction("swap", attemptedIndices);
+            return;
+        }
+
         const copy = getSortPracticeCopy(expectedAction);
         const requiredSelections = getRequiredSelectionCount(expectedAction);
 
         if (selectedIndices.includes(index)) {
             setSelectedIndices((previousIndices) => previousIndices.filter((value) => value !== index));
+            setFeedbackMessage("Selection cleared. Choose the correct index again.");
             return;
         }
 
@@ -978,7 +1251,9 @@ export default function AlgorithmDetailPage() {
             setSelectedIndices(firstSelection);
             setFeedbackIndices([]);
             setIsCorrect(null);
-            setFeedbackMessage(requiredSelections > 1 ? copy.pending : copy.validating);
+            setFeedbackMessage(requiredSelections > 1
+                ? `Index ${index} selected. ${copy.pending}`
+                : `Index ${index} selected. ${copy.validating}`);
             setHintMessage(copy.hint);
 
             if (requiredSelections === 1) {
@@ -1235,6 +1510,7 @@ export default function AlgorithmDetailPage() {
                             simulationError={simulationError}
                             feedbackMessage={feedbackMessage}
                             hintMessage={hintMessage}
+                            selectedIndices={selectedIndices}
                             isCorrect={isCorrect}
                             isValidatingStep={isValidatingStep}
                             practiceCompleted={practiceCompleted}
@@ -1267,9 +1543,28 @@ export default function AlgorithmDetailPage() {
                                 discardedIndices={autoDiscardedIndices}
                                 feedbackTone={isCorrect === null ? null : (isCorrect ? "correct" : "incorrect")}
                                 feedbackVersion={feedbackVersion}
+                                recentPracticeAction={recentPracticeAction}
                                 hintMessage={mode === "practice" ? hintMessage : ""}
                                 practiceCompleted={practiceCompleted}
                                 isInteractionDisabled={mode !== "practice" || isValidatingStep || practiceCompleted}
+                                selectionPracticeCandidateIndex={selectionPracticeCandidateIndex}
+                                selectionPracticeCurrentMinIndex={selectionPracticeCurrentMinIndex}
+                                selectionPracticeConfirmedMinIndex={selectionPracticeConfirmedMinIndex}
+                                selectionPracticeSwapAnchorIndex={selectionPracticeAnchorIndex}
+                                canSelectionPracticeGoRight={Boolean(
+                                    mode === "practice"
+                                    && isSelectionSortMode
+                                    && !isValidatingStep
+                                    && !practiceCompleted,
+                                )}
+                                canSelectionPracticeSelectMin={Boolean(
+                                    mode === "practice"
+                                    && isSelectionSortMode
+                                    && !isValidatingStep
+                                    && !practiceCompleted,
+                                )}
+                                onSelectionPracticeGoRight={handleSelectionPracticeGoRight}
+                                onSelectionPracticeSelectMin={handleSelectionPracticeSelectMin}
                                 onBarClick={algorithmType === "search" ? undefined : handlePracticeBarClick}
                                 onSearchDecision={handleSearchDecision}
                             />
