@@ -22,6 +22,7 @@ type SimulationControlsProps = {
     simulationError: string;
     feedbackMessage: string;
     hintMessage: string;
+    selectedIndices: number[];
     isCorrect: boolean | null;
     isValidatingStep: boolean;
     practiceCompleted: boolean;
@@ -66,6 +67,7 @@ export default function SimulationControls({
     simulationError,
     feedbackMessage,
     hintMessage,
+    selectedIndices,
     isCorrect,
     isValidatingStep,
     practiceCompleted,
@@ -122,6 +124,7 @@ export default function SimulationControls({
                         
                         <div className="inline-flex rounded-full border border-white/10 bg-bg/60 p-1">
                             <Button
+                                data-testid="simulation-auto-mode"
                                 variant={isPracticeMode ? "ghost" : "default"}
                                 size="sm"
                                 onClick={() => onModeChange("auto")}
@@ -130,6 +133,7 @@ export default function SimulationControls({
                                 Auto Mode
                             </Button>
                             <Button
+                                data-testid="simulation-practice-mode"
                                 variant={isPracticeMode ? "default" : "ghost"}
                                 size="sm"
                                 onClick={() => onModeChange("practice")}
@@ -225,6 +229,7 @@ export default function SimulationControls({
                                     <label className="flex flex-col gap-2 text-sm">
                                         <span className="font-medium text-white">Array size</span>
                                         <input
+                                            data-testid="simulation-array-size-input"
                                             type="number"
                                             min="2"
                                             max="16"
@@ -236,6 +241,7 @@ export default function SimulationControls({
                                     <label className="flex min-w-0 flex-col gap-2 text-sm">
                                         <span className="font-medium text-white">Elements</span>
                                         <input
+                                            data-testid="simulation-elements-input"
                                             type="text"
                                             value={elementsText}
                                             onChange={(event) => onElementsChange(event.target.value)}
@@ -248,6 +254,7 @@ export default function SimulationControls({
                                         <label className="flex flex-col gap-2 text-sm">
                                             <span className="font-medium text-white">Target</span>
                                             <input
+                                                data-testid="simulation-target-input"
                                                 type="number"
                                                 value={targetValue}
                                                 onChange={(event) => onTargetChange(event.target.value)}
@@ -259,6 +266,7 @@ export default function SimulationControls({
                                     <div className="flex items-end">
                                         <div className="flex w-full flex-col gap-2 lg:w-auto">
                                             <Button
+                                                data-testid="simulation-random-array"
                                                 variant="secondary"
                                                 onClick={onGenerateRandomArray}
                                                 className="w-full lg:w-auto"
@@ -268,6 +276,7 @@ export default function SimulationControls({
                                                 Random array
                                             </Button>
                                             <Button
+                                                data-testid="simulation-run-trace"
                                                 variant="default"
                                                 onClick={onApplyInput}
                                                 className="w-full lg:w-auto"
@@ -311,6 +320,11 @@ export default function SimulationControls({
                                                 ? "Watch the search window shrink around the target."
                                                 : "Watch as Auto Mode swaps the elements.")}
                                     </p>
+                                    {isPracticeMode && algorithmType === "sort" ? (
+                                        <p className="mt-2 text-xs text-sky-100/90">
+                                            Selected indexes: {selectedIndices.length > 0 ? selectedIndices.join(", ") : "none"}
+                                        </p>
+                                    ) : null}
                                 </div>
 
                                 <div className="rounded-2xl border border-white/[0.06] bg-bg/60 p-4 text-sm leading-6 text-text-secondary">

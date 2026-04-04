@@ -49,7 +49,7 @@ export const ALGORITHMS = [
         name: "Quick Sort",
         desc: "Partition-based divide-and-conquer sorting",
         complexity: "O(n log n)",
-        tag: "Intermediate",
+        tag: "Advanced",
         accentColor: ACCENT,
         icon: Zap,
     },
@@ -57,9 +57,33 @@ export const ALGORITHMS = [
         name: "Merge Sort",
         desc: "Stable sort by recursive merging of halves",
         complexity: "O(n log n)",
-        tag: "Advanced",
+        tag: "Intermediate",
         accentColor: ACCENT,
         icon: GitMerge,
+    },
+    {
+        name: "Insertion Sort",
+        desc: "Builds a sorted prefix by inserting one item at a time",
+        complexity: "O(nÂ²)",
+        tag: "Beginner",
+        accentColor: ACCENT,
+        icon: Rewind,
+    },
+    {
+        name: "Selection Sort",
+        desc: "Selects the minimum remaining value for each position",
+        complexity: "O(nÂ²)",
+        tag: "Beginner",
+        accentColor: ACCENT,
+        icon: Activity,
+    },
+    {
+        name: "Heap Sort",
+        desc: "Uses a max heap to repeatedly extract the largest value",
+        complexity: "O(n log n)",
+        tag: "Advanced",
+        accentColor: ACCENT,
+        icon: Cpu,
     },
 ];
 
@@ -127,7 +151,7 @@ export const STEPS = [
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 export const STATS = [
-    { label: "Algorithms. More to come!", value: 5, suffix: "+", icon: Code },
+    { label: "Algorithms. More to come!", value: 7, suffix: "+", icon: Code },
     { label: "Autograded quizzes", value: 10, suffix: "+", icon: FileQuestionMark },
     { label: "XP badge system", value: 12, suffix: " level", icon: Shield },
     { label: "Concurrent Users Supported", value: 100, suffix: "+", icon: Users },

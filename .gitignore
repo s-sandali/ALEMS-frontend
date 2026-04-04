@@ -14,6 +14,9 @@ dist-ssr
 .env
 
 .claude\
+playwright-report/
+test-results/
+tests/e2e/.auth/
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

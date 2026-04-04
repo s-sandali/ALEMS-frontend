@@ -13,6 +13,8 @@ export default function ProtectedRoute({ children }) {
             const syncAccount = async () => {
                 try {
                     await UserService.syncUser(getToken);
+                    // Reload Clerk user so publicMetadata reflects the latest role from Clerk
+                    await user?.reload();
                 } catch (error) {
                     if (error.message === "UNAUTHORIZED") {
                         window.location.href = "/login";
