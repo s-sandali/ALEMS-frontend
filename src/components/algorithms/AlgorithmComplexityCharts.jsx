@@ -122,7 +122,7 @@ function ComplexityChartCard({
     const canRenderChart = chartSize.width > 0 && chartSize.height > 0;
 
     return (
-        <article className="rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-7">
+        <article className="min-w-0 rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-7">
             <div className="mb-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-text-secondary">
                     {eyebrow}
@@ -135,9 +135,14 @@ function ComplexityChartCard({
                 </p>
             </div>
 
-            <div ref={chartContainerRef} className="h-[300px] w-full min-h-[300px] min-w-0">
+            <div ref={chartContainerRef} className="h-[300px] w-full min-h-[300px] min-w-0 overflow-hidden">
                 {canRenderChart ? (
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
+                    <ResponsiveContainer
+                        width={Math.max(1, Math.floor(chartSize.width))}
+                        height={Math.max(280, Math.floor(chartSize.height))}
+                        minWidth={0}
+                        minHeight={280}
+                    >
                         <LineChart data={data} margin={{ top: 8, right: 12, left: -20, bottom: 8 }}>
                             <CartesianGrid stroke={colors.border} strokeDasharray="3 3" />
                             <XAxis

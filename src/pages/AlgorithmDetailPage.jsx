@@ -186,6 +186,48 @@ function getNextSearchDecision(steps, currentIndex) {
     return null;
 }
 
+function buildMergePracticeSwapPlan(steps) {
+    const plan = [];
+
+    for (let index = 0; index < steps.length - 1; index += 1) {
+        const compareStep = steps[index];
+        const placeStep = steps[index + 1];
+        const compareAction = (compareStep?.actionLabel ?? "").trim().toLowerCase();
+        const placeAction = (placeStep?.actionLabel ?? "").trim().toLowerCase();
+
+        if (compareAction !== "compare" || placeAction !== "place") {
+            continue;
+        }
+
+        const candidates = Array.isArray(compareStep?.activeIndices) ? compareStep.activeIndices : [];
+        const targetIndex = placeStep?.mergeSort?.placeIndex;
+        if (candidates.length < 2 || typeof targetIndex !== "number") {
+            continue;
+        }
+
+        const [leftCandidate, rightCandidate] = [...candidates].sort((left, right) => left - right);
+        const snapshot = Array.isArray(compareStep?.arrayState) ? compareStep.arrayState : [];
+        const leftValue = snapshot[leftCandidate];
+        const rightValue = snapshot[rightCandidate];
+        if (typeof leftValue !== "number" || typeof rightValue !== "number") {
+            continue;
+        }
+
+        const sourceIndex = leftValue <= rightValue ? leftCandidate : rightCandidate;
+        if (sourceIndex === targetIndex) {
+            continue;
+        }
+
+        const pair = [Math.min(sourceIndex, targetIndex), Math.max(sourceIndex, targetIndex)];
+        plan.push({
+            indices: pair,
+            stepIndex: index,
+        });
+    }
+
+    return plan;
+}
+
 function getQuickSortPracticeAction(step) {
     const normalized = (step?.quickSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
 
@@ -385,6 +427,7 @@ export default function AlgorithmDetailPage() {
     const primaryComplexity = presentationAlgorithm ? getPrimaryComplexity(presentationAlgorithm) : "";
     const codeSnippets = presentationAlgorithm ? getAlgorithmCodeSnippets(presentationAlgorithm.name) : [];
     const simulationAlgorithmKey = algorithm ? getSimulationAlgorithmKey(algorithm.name) : "";
+    const isMergeSortAlgorithm = simulationAlgorithmKey === "merge_sort" || simulationAlgorithmKey === "merge-sort";
     const algorithmType = simulationAlgorithmKey === "binary_search" ? "search" : "sort";
     const isSearchMode = algorithmType === "search";
     const isQuickSortMode = simulationAlgorithmKey === "quick_sort";
@@ -406,6 +449,26 @@ export default function AlgorithmDetailPage() {
             : []),
         [currentStepIndex, isSearchMode, steps],
     );
+    const mergePracticeSwapPlan = useMemo(
+        () => (isMergeSortAlgorithm ? buildMergePracticeSwapPlan(steps) : []),
+        [isMergeSortAlgorithm, steps],
+    );
+    const [mergePracticeStepIndex, setMergePracticeStepIndex] = useState(0);
+
+    useEffect(() => {
+        if (mode !== "practice" || !isMergeSortAlgorithm) {
+            return;
+        }
+
+        const currentPlanStep = mergePracticeSwapPlan[mergePracticeStepIndex] ?? null;
+        if (!currentPlanStep) {
+            setSuggestedIndices([]);
+            return;
+        }
+
+        setSuggestedIndices(currentPlanStep.indices);
+        setCurrentStepIndex(currentPlanStep.stepIndex);
+    }, [mode, isMergeSortAlgorithm, mergePracticeSwapPlan, mergePracticeStepIndex]);
 
     function getCurrentSortPracticeAction(step) {
         if (isInsertionSortMode) {
@@ -506,6 +569,7 @@ export default function AlgorithmDetailPage() {
 
         setCurrentArray(inputArray);
         setPracticeSessionId("");
+        setMergePracticeStepIndex(0);
         setSelectedIndices([]);
         setFeedbackIndices([]);
         setFeedbackMessage(practiceCopy.feedback);
@@ -552,11 +616,17 @@ export default function AlgorithmDetailPage() {
             || isTerminalSearchAction(normalizedAction);
         const practiceCopy = getPracticeModeCopy(sessionStep);
 
-        setPracticeCompleted(isComplete);
-        setHintMessage(isComplete
-            ? "No more actions are needed."
-            : practiceCopy.hint);
-        setFeedbackMessage(isComplete ? "Practice complete." : practiceCopy.feedback);
+        if (isMergeSortAlgorithm) {
+            setPracticeCompleted(false);
+            setHintMessage("Follow highlighted indices and swap them in order.");
+            setFeedbackMessage("Select two boxes to perform the next guided merge swap.");
+        } else {
+            setPracticeCompleted(isComplete);
+            setHintMessage(isComplete
+                ? "No more actions are needed."
+                : practiceCopy.hint);
+            setFeedbackMessage(isComplete ? "Practice complete." : practiceCopy.feedback);
+        }
 
         return session;
     }
@@ -796,6 +866,98 @@ export default function AlgorithmDetailPage() {
             setFeedbackMessage("Validating midpoint selection...");
             setHintMessage("The backend will confirm whether this midpoint is the next valid move.");
             await validatePracticeMidpoint(index);
+            return;
+        }
+
+        const isMergeSortPractice = simulationAlgorithmKey === "merge_sort" || simulationAlgorithmKey === "merge-sort";
+        if (isMergeSortPractice) {
+            const expectedPlanStep = mergePracticeSwapPlan[mergePracticeStepIndex] ?? null;
+
+            if (selectedIndices.includes(index)) {
+                setSelectedIndices((previousIndices) => previousIndices.filter((value) => value !== index));
+                return;
+            }
+
+            if (selectedIndices.length === 0) {
+                setSelectedIndices([index]);
+                setFeedbackIndices([]);
+                setIsCorrect(null);
+                setFeedbackMessage("Select one more box to swap.");
+                if (expectedPlanStep) {
+                    setHintMessage(`Try swapping index ${expectedPlanStep.indices[0]} and ${expectedPlanStep.indices[1]}.`);
+                    setSuggestedIndices(expectedPlanStep.indices);
+                } else {
+                    setHintMessage("Guided merge swaps complete. You can continue manual swaps.");
+                    setSuggestedIndices([]);
+                }
+                return;
+            }
+
+            const attemptedIndices = [...selectedIndices, index]
+                .slice(0, 2)
+                .sort((leftIndex, rightIndex) => leftIndex - rightIndex);
+
+            const [leftIndex, rightIndex] = attemptedIndices;
+            setSelectedIndices(attemptedIndices);
+            setFeedbackIndices(attemptedIndices);
+
+            if (
+                expectedPlanStep
+                && (
+                    expectedPlanStep.indices[0] !== leftIndex
+                    || expectedPlanStep.indices[1] !== rightIndex
+                )
+            ) {
+                setIsCorrect(false);
+                setFeedbackMessage("Incorrect step.");
+                setHintMessage(`Try swapping index ${expectedPlanStep.indices[0]} and ${expectedPlanStep.indices[1]}.`);
+                setSuggestedIndices(expectedPlanStep.indices);
+                setFeedbackVersion((previousValue) => previousValue + 1);
+                setSelectedIndices([]);
+                return;
+            }
+
+            setCurrentArray((previousArray) => {
+                if (
+                    leftIndex < 0
+                    || rightIndex < 0
+                    || leftIndex >= previousArray.length
+                    || rightIndex >= previousArray.length
+                    || leftIndex === rightIndex
+                ) {
+                    return previousArray;
+                }
+
+                const nextArray = previousArray.slice();
+                [nextArray[leftIndex], nextArray[rightIndex]] = [nextArray[rightIndex], nextArray[leftIndex]];
+                return nextArray;
+            });
+
+            setIsCorrect(true);
+            const nextPlanIndex = mergePracticeStepIndex + 1;
+            const nextPlanStep = mergePracticeSwapPlan[nextPlanIndex] ?? null;
+            const isComplete = Boolean(expectedPlanStep) && !nextPlanStep;
+
+            if (nextPlanStep) {
+                setFeedbackMessage(`Correct swap: ${leftIndex} ↔ ${rightIndex}.`);
+                setHintMessage(`Next: swap index ${nextPlanStep.indices[0]} and ${nextPlanStep.indices[1]}.`);
+                setSuggestedIndices(nextPlanStep.indices);
+                setMergePracticeStepIndex(nextPlanIndex);
+                setCurrentStepIndex(nextPlanStep.stepIndex);
+            } else if (isComplete) {
+                setFeedbackMessage("Correct step. Guided merge practice complete.");
+                setHintMessage("No more actions are needed.");
+                setSuggestedIndices([]);
+                setPracticeCompleted(true);
+                setShowCompletionToast(true);
+            } else {
+                setFeedbackMessage(`Swapped index ${leftIndex} and ${rightIndex}.`);
+                setHintMessage("Guided merge swaps complete. You can continue manual swaps.");
+                setSuggestedIndices([]);
+            }
+
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setSelectedIndices([]);
             return;
         }
 
@@ -1131,7 +1293,7 @@ export default function AlgorithmDetailPage() {
                         className="fixed bottom-6 right-6 z-50 rounded-2xl border border-accent/20 bg-surface/95 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl"
                     >
                         <p className="text-sm font-semibold text-text-primary">
-                            {mode === "practice" ? "Practice complete" : "Simulation complete"}
+                            {mode === "practice" ? "Practice complete" : "Search complete"}
                         </p>
                         <p className="mt-1 text-xs text-text-secondary">
                             {mode === "practice"
