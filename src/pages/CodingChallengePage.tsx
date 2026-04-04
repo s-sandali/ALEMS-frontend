@@ -212,7 +212,9 @@ export default function CodingChallengePage() {
                                     <p style={{ fontSize: 11, fontWeight: 600, color: "var(--db-text2)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>
                                         Input Example
                                     </p>
-                                    <pre style={{
+                                    <pre
+                                        data-testid="coding-input-example"
+                                        style={{
                                         background: "var(--db-bg3)",
                                         border: "1px solid var(--db-border2)",
                                         borderRadius: 8,
@@ -222,7 +224,8 @@ export default function CodingChallengePage() {
                                         fontFamily: "'Fira Code', monospace",
                                         whiteSpace: "pre-wrap",
                                         margin: 0,
-                                    }}>
+                                        }}
+                                    >
                                         {question.inputExample}
                                     </pre>
                                 </div>
@@ -234,7 +237,9 @@ export default function CodingChallengePage() {
                                     <p style={{ fontSize: 11, fontWeight: 600, color: "var(--db-text2)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>
                                         Expected Output
                                     </p>
-                                    <pre style={{
+                                    <pre
+                                        data-testid="coding-expected-output"
+                                        style={{
                                         background: "var(--db-bg3)",
                                         border: "1px solid var(--db-border2)",
                                         borderRadius: 8,
@@ -244,7 +249,8 @@ export default function CodingChallengePage() {
                                         fontFamily: "'Fira Code', monospace",
                                         whiteSpace: "pre-wrap",
                                         margin: 0,
-                                    }}>
+                                        }}
+                                    >
                                         {question.expectedOutput}
                                     </pre>
                                 </div>
@@ -264,6 +270,7 @@ export default function CodingChallengePage() {
                                 />
                                 <div style={{ display: "flex", gap: 8 }}>
                                     <button
+                                        data-testid="coding-reset-button"
                                         onClick={handleReset}
                                         disabled={isRunning}
                                         title="Reset to starter template"
@@ -281,6 +288,7 @@ export default function CodingChallengePage() {
                                         Reset
                                     </button>
                                     <button
+                                        data-testid="coding-run-button"
                                         onClick={handleRun}
                                         disabled={isRunning}
                                         style={{
@@ -302,7 +310,7 @@ export default function CodingChallengePage() {
                             </div>
 
                             {/* Monaco editor */}
-                            <div style={{
+                            <div data-testid="coding-editor" style={{
                                 borderRadius: 10,
                                 overflow: "hidden",
                                 border: "1px solid var(--db-border2)",
@@ -333,6 +341,7 @@ export default function CodingChallengePage() {
                                 overflow: "hidden",
                             }}>
                                 <button
+                                    data-testid="coding-stdin-toggle"
                                     onClick={() => setStdinOpen(o => !o)}
                                     style={{
                                         width: "100%", display: "flex", alignItems: "center",
@@ -347,6 +356,7 @@ export default function CodingChallengePage() {
                                 </button>
                                 {stdinOpen && (
                                     <textarea
+                                        data-testid="coding-stdin-input"
                                         value={stdin}
                                         onChange={e => setStdin(e.target.value)}
                                         disabled={isRunning}

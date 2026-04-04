@@ -110,6 +110,7 @@ export default function AdminCodingQuestionListPage() {
                         </p>
                     </div>
                     <button
+                        data-testid="new-coding-question-button"
                         onClick={() => navigate("/admin/coding-questions/new")}
                         style={{
                             display: "inline-flex", alignItems: "center", gap: 7,
@@ -187,6 +188,7 @@ export default function AdminCodingQuestionListPage() {
                             return (
                                 <motion.div
                                     key={q.id}
+                                    data-testid="admin-coding-row"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: i * 0.04 }}

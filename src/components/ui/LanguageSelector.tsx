@@ -10,6 +10,7 @@ type Props = {
 export default function LanguageSelector({ languages, value, onChange, disabled }: Props) {
     return (
         <select
+            data-testid="coding-language-select"
             value={value}
             onChange={e => onChange(Number(e.target.value))}
             disabled={disabled}

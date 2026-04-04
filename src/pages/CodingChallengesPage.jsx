@@ -37,6 +37,7 @@ function CodingChallengeCard({ challenge, onOpen }) {
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ borderColor: "rgba(200,255,62,0.28)" }}
             onClick={() => onOpen(challenge.id)}
+            data-testid="coding-challenge-card"
             style={{
                 background: "#131415",
                 border: "1px solid #252627",

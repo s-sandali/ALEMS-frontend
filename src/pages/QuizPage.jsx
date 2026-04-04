@@ -66,6 +66,7 @@ function OptionButton({ label, text, selected, resultStyle, disabled, onSelect }
 
     return (
         <button
+            data-testid={`quiz-option-${label}`}
             disabled={disabled}
             onClick={onSelect}
             style={{
@@ -106,6 +107,7 @@ function QuestionCard({ question, index, total, selectedOption, onSelect, questi
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
+            data-testid="quiz-question-card"
             style={{
                 background: "var(--db-bg2)", border: "1px solid var(--db-border)",
                 borderRadius: 16, padding: "28px",
@@ -416,6 +418,7 @@ export default function QuizPage() {
                         {/* Navigation */}
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                             <button
+                                data-testid="quiz-prev"
                                 disabled={currentIndex === 0}
                                 onClick={() => setCurrentIndex(i => i - 1)}
                                 style={{
@@ -440,7 +443,7 @@ export default function QuizPage() {
                             </div>
 
                             {currentIndex < questions.length - 1 ? (
-                                <button onClick={() => setCurrentIndex(i => i + 1)} style={{
+                                <button data-testid="quiz-next" onClick={() => setCurrentIndex(i => i + 1)} style={{
                                     display: "flex", alignItems: "center", gap: 6,
                                     padding: "10px 16px", borderRadius: 8, fontSize: 13,
                                     background: "var(--db-bg2)", border: "1px solid var(--db-border2)",
@@ -450,6 +453,7 @@ export default function QuizPage() {
                                 </button>
                             ) : (
                                 <button
+                                    data-testid="quiz-submit"
                                     disabled={!allAnswered || view === "submitting"}
                                     onClick={handleSubmit}
                                     style={{

@@ -40,7 +40,7 @@ function OutputBlock({ label, content, color }: { label: string; content: string
 
 function StatusBanner({ color, label, meta }: { color: string; label: string; meta?: string }) {
     return (
-        <div style={{
+        <div data-testid="execution-status-banner" style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -61,7 +61,7 @@ export default function ExecutionResultPanel({ viewState, result, errorMessage, 
 
     if (viewState === "running") {
         return (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--db-text2)", fontSize: 13, padding: "16px 0" }}>
+            <div data-testid="execution-result-panel" style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--db-text2)", fontSize: 13, padding: "16px 0" }}>
                 <LoaderCircle size={15} className="animate-spin" style={{ color: "var(--accent)" }} />
                 Running…
             </div>
@@ -70,7 +70,9 @@ export default function ExecutionResultPanel({ viewState, result, errorMessage, 
 
     if (viewState === "error") {
         return (
-            <StatusBanner color="204,0,0" label={`Error: ${errorMessage}`} />
+            <div data-testid="execution-result-panel">
+                <StatusBanner color="204,0,0" label={`Error: ${errorMessage}`} />
+            </div>
         );
     }
 
@@ -87,7 +89,7 @@ export default function ExecutionResultPanel({ viewState, result, errorMessage, 
     // Accepted
     if (statusId === 3) {
         return (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div data-testid="execution-result-panel" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <StatusBanner color="var(--lime-rgb)" label="Accepted" meta={meta} />
                 <OutputBlock label="Output" content={stdout ?? ""} color="var(--lime)" />
             </div>
@@ -96,7 +98,7 @@ export default function ExecutionResultPanel({ viewState, result, errorMessage, 
 
     if (statusId === 4) {
         return (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div data-testid="execution-result-panel" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <StatusBanner color="204,0,0" label="Wrong Answer" meta={meta} />
                 <OutputBlock label="Your Output" content={stdout ?? ""} />
                 {expectedOutput != null && (
@@ -115,7 +117,7 @@ export default function ExecutionResultPanel({ viewState, result, errorMessage, 
     // Compilation Error
     if (statusId === 6) {
         return (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div data-testid="execution-result-panel" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <StatusBanner color="204,136,0" label="Compilation Error" />
                 <OutputBlock label="Compiler output" content={compileOutput ?? ""} color="var(--amber)" />
             </div>
@@ -124,7 +126,7 @@ export default function ExecutionResultPanel({ viewState, result, errorMessage, 
 
     // Wrong Answer or Runtime Error (statusId 4 or 7–12)
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div data-testid="execution-result-panel" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <StatusBanner color="204,0,0" label={statusDescription} meta={meta} />
             {stdout  && <OutputBlock label="stdout"  content={stdout}  />}
             {stderr  && <OutputBlock label="stderr"  content={stderr}  color="var(--red)" />}

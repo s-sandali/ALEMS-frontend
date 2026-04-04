@@ -154,6 +154,7 @@ export default function AdminQuizListPage() {
 
                     <button
                         type="button"
+                        data-testid="new-quiz-button"
                         onClick={() => navigate("/admin/quizzes/new")}
                         style={{
                             display: "inline-flex",
@@ -267,6 +268,7 @@ export default function AdminQuizListPage() {
                             return (
                                 <motion.div
                                     key={quiz.quizId}
+                                    data-testid="admin-quiz-row"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: index * 0.04 }}
