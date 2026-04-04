@@ -1529,6 +1529,10 @@ function AlgorithmVisualizer({
                                         && selectionPracticeConfirmedMinIndex === index;
                                     const isPracticeSwapAnchor = isPracticeMode
                                         && selectionPracticeSwapAnchorIndex === index;
+                                    const isPracticeScanProbe = isPracticeMode
+                                        && recentPracticeAction === "scan_min"
+                                        && isFeedbackTarget
+                                        && selectionPracticeConfirmedMinIndex === null;
                                     const shouldPulseCandidate = !isPracticeMode && isCandidate && !isSorted && !isMin && !shouldReduceMotion;
                                     const shouldPulseMin = !isPracticeMode && isMin && !isSorted && !shouldReduceMotion;
                                     const baseScale = isSelected ? 1.03 : 1;
@@ -1536,7 +1540,7 @@ function AlgorithmVisualizer({
                                         ? [baseScale, 1.07, baseScale]
                                         : (shouldPulseMin
                                             ? [baseScale, 1.05, baseScale]
-                                            : (isPracticeCandidate && !shouldReduceMotion
+                                            : ((isPracticeCandidate || isPracticeScanProbe) && !shouldReduceMotion
                                                 ? [baseScale, 1.06, baseScale]
                                                 : baseScale));
 
@@ -1548,6 +1552,7 @@ function AlgorithmVisualizer({
                                         !isPracticeMode && !isSorted && !isMin && (isCandidate || isSwapTo) && "border-red-200/80 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.34)]",
                                         isPracticeMode && isPracticeCandidate && "border-red-200/85 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.35)]",
                                         isPracticeMode && isPracticeConfirmedMin && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.34)]",
+                                        isPracticeMode && isPracticeScanProbe && "ring-2 ring-amber-300/85 shadow-[0_0_0_2px_rgba(252,211,77,0.25)]",
                                         isPracticeMode && isPracticeSwapAnchor && !isPracticeConfirmedMin && "ring-2 ring-accent/70 ring-offset-1 ring-offset-transparent",
                                         isSuggested && isPracticeMode && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
                                         isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
@@ -1590,7 +1595,7 @@ function AlgorithmVisualizer({
                                                 animate={shouldReduceMotion
                                                     ? {}
                                                     : {
-                                                        y: (isMin || isCandidate || isSelected || isPracticeCandidate || isPracticeConfirmedMin) && !isSorted ? -3 : 0,
+                                                        y: (isMin || isCandidate || isSelected || isPracticeCandidate || isPracticeConfirmedMin || isPracticeScanProbe) && !isSorted ? -3 : 0,
                                                         scale: scaleSequence,
                                                     }}
                                                 transition={{ duration: 0.28, ease: "easeOut" }}
@@ -1612,6 +1617,7 @@ function AlgorithmVisualizer({
                                                 !isSorted && !isMin && isCandidate && "text-red-100",
                                                 !isSorted && isPracticeCandidate && "text-red-100",
                                                 !isSorted && isPracticeConfirmedMin && "text-sky-100",
+                                                !isSorted && isPracticeScanProbe && "text-amber-100",
                                             )}
                                             >
                                                 {index}
