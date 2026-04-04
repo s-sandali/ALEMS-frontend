@@ -907,6 +907,114 @@ function AlgorithmVisualizer({
     const isTargetAtMidpoint = typeof searchTarget === "number"
         && typeof midpointValue === "number"
         && searchTarget === midpointValue;
+    const densityLevel = useMemo(() => {
+        if (values.length >= 32) {
+            return "ultra";
+        }
+
+        if (values.length >= 24) {
+            return "dense";
+        }
+
+        if (values.length >= 16) {
+            return "compact";
+        }
+
+        return "normal";
+    }, [values.length]);
+    const barMinWidthPx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 18;
+        }
+
+        if (densityLevel === "dense") {
+            return 24;
+        }
+
+        if (densityLevel === "compact") {
+            return 30;
+        }
+
+        return 40;
+    }, [densityLevel]);
+    const barGapPx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 4;
+        }
+
+        if (densityLevel === "dense") {
+            return 6;
+        }
+
+        return 8;
+    }, [densityLevel]);
+    const selectionTileSizePx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 36;
+        }
+
+        if (densityLevel === "dense") {
+            return 44;
+        }
+
+        if (densityLevel === "compact") {
+            return 52;
+        }
+
+        return 64;
+    }, [densityLevel]);
+    const selectionTileFontPx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 14;
+        }
+
+        if (densityLevel === "dense") {
+            return 16;
+        }
+
+        if (densityLevel === "compact") {
+            return 18;
+        }
+
+        return 22;
+    }, [densityLevel]);
+    const selectionGapPx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 6;
+        }
+
+        if (densityLevel === "dense") {
+            return 8;
+        }
+
+        return 12;
+    }, [densityLevel]);
+    const searchTileSizePx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 42;
+        }
+
+        if (densityLevel === "dense") {
+            return 48;
+        }
+
+        if (densityLevel === "compact") {
+            return 52;
+        }
+
+        return 56;
+    }, [densityLevel]);
+    const searchTileFontPx = useMemo(() => {
+        if (densityLevel === "ultra") {
+            return 14;
+        }
+
+        if (densityLevel === "dense") {
+            return 16;
+        }
+
+        return 18;
+    }, [densityLevel]);
     const showSearchDecisionControls = algorithmType === "search"
         && isPracticeMode
         && typeof onSearchDecision === "function";
@@ -1294,7 +1402,7 @@ function AlgorithmVisualizer({
                                 </p>
                             ) : null}
 
-                            <div className="flex flex-wrap items-end justify-center gap-3">
+                            <div className="flex flex-wrap items-end justify-center" style={{ gap: `${selectionGapPx}px` }}>
                                 {values.length > 0 ? (
                                     values.map((value, index) => {
                                         const isActive = activeIndices.has(index);
@@ -1317,12 +1425,17 @@ function AlgorithmVisualizer({
                                                     animate={shouldReduceMotion ? {} : { scale: isMidpoint ? 1.12 : 1 }}
                                                     transition={{ duration: 0.25 }}
                                                     className={cn(
-                                                        "flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-lg font-semibold text-white",
+                                                        "flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] font-semibold text-white",
                                                         isInRange && "border-accent/40 bg-accent/10",
                                                         isMidpoint && "border-accent/60 bg-accent/25 shadow-[0_0_20px_rgba(213,255,64,0.3)]",
                                                         isActive && "ring-2 ring-accent/40",
                                                         isFound && "border-emerald-400/60 bg-emerald-400/20 text-emerald-100 shadow-[0_0_22px_rgba(52,211,153,0.35)]",
                                                     )}
+                                                    style={{
+                                                        width: `${searchTileSizePx}px`,
+                                                        height: `${searchTileSizePx}px`,
+                                                        fontSize: `${searchTileFontPx}px`,
+                                                    }}
                                                 >
                                                     {value}
                                                 </motion.div>
@@ -1355,7 +1468,8 @@ function AlgorithmVisualizer({
                                         ? { scale: [1, 1.015, 1] }
                                         : { x: 0, scale: 1 }))}
                             transition={{ duration: 0.36, ease: "easeOut" }}
-                            className="flex min-h-56 items-center gap-3 overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                            className="flex min-h-56 items-center overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                            style={{ gap: `${selectionGapPx}px` }}
                         >
                             {visualBars.length > 0 ? (
                                 visualBars.map((bar, index) => {
@@ -1380,7 +1494,7 @@ function AlgorithmVisualizer({
                                             : baseScale);
 
                                     const tileClassName = cn(
-                                        "flex h-16 w-16 items-center justify-center rounded-xl border text-xl font-semibold transition-[transform,background-color,border-color,box-shadow] duration-300 sm:h-20 sm:w-20",
+                                        "flex items-center justify-center rounded-xl border font-semibold transition-[transform,background-color,border-color,box-shadow] duration-300",
                                         "border-white/20 bg-slate-900/60 text-slate-100",
                                         isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
                                         !isPracticeMode && !isSorted && (isMin || isCurrent || isSwapFrom) && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.3)]",
@@ -1431,6 +1545,11 @@ function AlgorithmVisualizer({
                                                     }}
                                                 transition={{ duration: 0.28, ease: "easeOut" }}
                                                 className={tileClassName}
+                                                style={{
+                                                    width: `${selectionTileSizePx}px`,
+                                                    height: `${selectionTileSizePx}px`,
+                                                    fontSize: `${selectionTileFontPx}px`,
+                                                }}
                                                 aria-label={`Index ${index}, value ${bar.value}`}
                                                 aria-current={isMin || isCandidate || isSelected ? "true" : undefined}
                                             >
@@ -1692,7 +1811,8 @@ function AlgorithmVisualizer({
                                         ? { scale: [1, 1.015, 1] }
                                         : { x: 0, scale: 1 }))}
                             transition={{ duration: 0.38, ease: "easeOut" }}
-                            className="flex min-h-64 items-end gap-2 overflow-x-auto rounded-xl px-1 pb-1 pt-6 sm:min-h-72 sm:gap-3"
+                            className="flex min-h-64 items-end overflow-x-auto rounded-xl px-1 pb-1 pt-6 sm:min-h-72"
+                            style={{ gap: `${barGapPx}px` }}
                         >
                             {visualBars.length > 0 ? (
                                 visualBars.map((bar, index) => {
@@ -1740,11 +1860,12 @@ function AlgorithmVisualizer({
                                             layout
                                             transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
                                             className={cn(
-                                                "flex min-w-10 flex-1 flex-col items-center justify-end gap-2 sm:min-w-12 transition-[opacity,filter] duration-500",
+                                                "flex flex-1 flex-col items-center justify-end gap-2 transition-[opacity,filter] duration-500",
                                                 isInteractive && "cursor-pointer",
                                                 isInteractionDisabled && "cursor-not-allowed opacity-70",
                                                 isDiscarded && "opacity-30 grayscale pointer-events-none",
                                             )}
+                                            style={{ minWidth: `${barMinWidthPx}px` }}
                                             onClick={() => {
                                                 if (isInteractive && !isInteractionDisabled) {
                                                     onBarClick(index);
@@ -1769,7 +1890,7 @@ function AlgorithmVisualizer({
                                                 animate={shouldReduceMotion ? {} : { y: isActive || isSelected ? -2 : 0 }}
                                                 transition={{ duration: 0.2 }}
                                                 className={cn(
-                                                    "text-xs font-medium text-text-secondary transition-colors duration-300",
+                                                    densityLevel === "ultra" ? "text-[10px] font-medium text-text-secondary transition-colors duration-300" : "text-xs font-medium text-text-secondary transition-colors duration-300",
                                                     isSorted && "text-emerald-200",
                                                     isInsertionShift && "text-red-100",
                                                     (isInsertionKey || isInsertionCompare) && "text-yellow-100",
@@ -1824,7 +1945,7 @@ function AlgorithmVisualizer({
                                                 animate={shouldReduceMotion ? {} : { y: isActive || isSelected ? 2 : 0 }}
                                                 transition={{ duration: 0.2 }}
                                                 className={cn(
-                                                    "text-[11px] text-text-secondary transition-colors duration-300",
+                                                    densityLevel === "ultra" ? "text-[10px] text-text-secondary transition-colors duration-300" : "text-[11px] text-text-secondary transition-colors duration-300",
                                                     isSorted && "text-emerald-200",
                                                     isInsertionShift && "text-red-100",
                                                     (isInsertionKey || isInsertionCompare) && "text-yellow-100",
