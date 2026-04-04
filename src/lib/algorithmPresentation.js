@@ -300,31 +300,524 @@ int main() {
 }`,
         },
     ],
-        "insertion sort": [
-                {
-                        id: "pseudocode",
-                        label: "Pseudocode",
-                        language: "PSEUDOCODE",
-                        syncsWithTrace: true,
-                        traceLineMap: {
-                                1: 1,
-                                2: [2, 3],
-                                3: 4,
-                                4: 5,
-                                5: 6,
-                                6: 7,
-                                7: 8,
-                        },
-                        code: `function insertionSort(arr)
-    for i ← 1 to length(arr) - 1
-        key ← arr[i], j ← i - 1
-        while j ≥ 0 and arr[j] > key
-            arr[j + 1] ← arr[j]
-            j ← j - 1
-        arr[j + 1] ← key
-    return arr`,
-                },
-        ],
+    "insertion sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: [2, 3],
+                3: 4,
+                4: 5,
+                5: 6,
+                6: 7,
+                7: 8,
+            },
+            code: `function insertionSort(arr)
+  for i ← 1 to length(arr) - 1
+    key ← arr[i]
+    j ← i - 1
+    while j ≥ 0 and arr[j] > key
+      arr[j + 1] ← arr[j]
+      j ← j - 1
+    arr[j + 1] ← key
+  return arr`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Insertion Sort in JavaScript
+function insertionSort(arr) {
+  const values = [...arr];
+
+  for (let i = 1; i < values.length; i += 1) {
+    const key = values[i];
+    let j = i - 1;
+
+    while (j >= 0 && values[j] > key) {
+      values[j + 1] = values[j];
+      j -= 1;
+    }
+
+    values[j + 1] = key;
+  }
+
+  return values;
+}
+
+const unsorted = [8, 3, 5, 1, 9, 2];
+console.log("Unsorted:", unsorted);
+console.log("Sorted:", insertionSort(unsorted));`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Insertion Sort in Python
+def insertion_sort(arr):
+    values = arr[:]
+
+    for i in range(1, len(values)):
+        key = values[i]
+        j = i - 1
+
+        while j >= 0 and values[j] > key:
+            values[j + 1] = values[j]
+            j -= 1
+
+        values[j + 1] = key
+
+    return values
+
+
+unsorted = [8, 3, 5, 1, 9, 2]
+print("Unsorted:", unsorted)
+print("Sorted:", insertion_sort(unsorted))`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Insertion Sort in Java
+import java.util.Arrays;
+
+public class InsertionSortExample {
+    public static int[] insertionSort(int[] input) {
+        int[] values = input.clone();
+
+        for (int i = 1; i < values.length; i++) {
+            int key = values[i];
+            int j = i - 1;
+
+            while (j >= 0 && values[j] > key) {
+                values[j + 1] = values[j];
+                j--;
+            }
+
+            values[j + 1] = key;
+        }
+
+        return values;
+    }
+
+    public static void main(String[] args) {
+        int[] unsorted = {8, 3, 5, 1, 9, 2};
+        System.out.println("Unsorted: " + Arrays.toString(unsorted));
+        System.out.println("Sorted: " + Arrays.toString(insertionSort(unsorted)));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Insertion Sort in C++
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+vector<int> insertionSort(vector<int> values) {
+    for (int i = 1; i < static_cast<int>(values.size()); ++i) {
+        int key = values[i];
+        int j = i - 1;
+
+        while (j >= 0 && values[j] > key) {
+            values[j + 1] = values[j];
+            --j;
+        }
+
+        values[j + 1] = key;
+    }
+
+    return values;
+}
+
+int main() {
+    vector<int> unsorted = {8, 3, 5, 1, 9, 2};
+    vector<int> sorted = insertionSort(unsorted);
+
+    cout << "Unsorted: ";
+    for (int value : unsorted) cout << value << " ";
+    cout << endl;
+
+    cout << "Sorted: ";
+    for (int value : sorted) cout << value << " ";
+    cout << endl;
+}`,
+        },
+    ],
+    "selection sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: [4, 5],
+                5: 6,
+                6: 7,
+                7: 8,
+            },
+            code: `function selectionSort(arr)
+  for i ← 0 to length(arr) - 2
+    minIndex ← i
+    for j ← i + 1 to length(arr) - 1
+      if arr[j] < arr[minIndex]
+        minIndex ← j
+    swap arr[i], arr[minIndex]
+  return arr`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Selection Sort in JavaScript
+function selectionSort(arr) {
+  const values = [...arr];
+
+  for (let i = 0; i < values.length - 1; i += 1) {
+    let minIndex = i;
+
+    for (let j = i + 1; j < values.length; j += 1) {
+      if (values[j] < values[minIndex]) {
+        minIndex = j;
+      }
+    }
+
+    if (minIndex !== i) {
+      [values[i], values[minIndex]] = [values[minIndex], values[i]];
+    }
+  }
+
+  return values;
+}
+
+const unsorted = [8, 3, 5, 1, 9, 2];
+console.log("Unsorted:", unsorted);
+console.log("Sorted:", selectionSort(unsorted));`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Selection Sort in Python
+def selection_sort(arr):
+    values = arr[:]
+
+    for i in range(len(values) - 1):
+        min_index = i
+
+        for j in range(i + 1, len(values)):
+            if values[j] < values[min_index]:
+                min_index = j
+
+        if min_index != i:
+            values[i], values[min_index] = values[min_index], values[i]
+
+    return values
+
+
+unsorted = [8, 3, 5, 1, 9, 2]
+print("Unsorted:", unsorted)
+print("Sorted:", selection_sort(unsorted))`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Selection Sort in Java
+import java.util.Arrays;
+
+public class SelectionSortExample {
+    public static int[] selectionSort(int[] input) {
+        int[] values = input.clone();
+
+        for (int i = 0; i < values.length - 1; i++) {
+            int minIndex = i;
+
+            for (int j = i + 1; j < values.length; j++) {
+                if (values[j] < values[minIndex]) {
+                    minIndex = j;
+                }
+            }
+
+            if (minIndex != i) {
+                int temp = values[i];
+                values[i] = values[minIndex];
+                values[minIndex] = temp;
+            }
+        }
+
+        return values;
+    }
+
+    public static void main(String[] args) {
+        int[] unsorted = {8, 3, 5, 1, 9, 2};
+        System.out.println("Unsorted: " + Arrays.toString(unsorted));
+        System.out.println("Sorted: " + Arrays.toString(selectionSort(unsorted)));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Selection Sort in C++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+vector<int> selectionSort(vector<int> values) {
+    for (int i = 0; i < static_cast<int>(values.size()) - 1; ++i) {
+        int minIndex = i;
+
+        for (int j = i + 1; j < static_cast<int>(values.size()); ++j) {
+            if (values[j] < values[minIndex]) {
+                minIndex = j;
+            }
+        }
+
+        if (minIndex != i) {
+            swap(values[i], values[minIndex]);
+        }
+    }
+
+    return values;
+}
+
+int main() {
+    vector<int> unsorted = {8, 3, 5, 1, 9, 2};
+    vector<int> sorted = selectionSort(unsorted);
+
+    cout << "Unsorted: ";
+    for (int value : unsorted) cout << value << " ";
+    cout << endl;
+
+    cout << "Sorted: ";
+    for (int value : sorted) cout << value << " ";
+    cout << endl;
+}`,
+        },
+    ],
+    "quick sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: [3, 4],
+                4: [5, 6],
+                5: 7,
+                6: [8, 9],
+                7: 10,
+            },
+            code: `function quickSort(arr, low, high)
+  if low >= high: return
+  pivot ← arr[high]
+  i ← low - 1
+  for j ← low to high - 1
+    if arr[j] ≤ pivot
+      i ← i + 1
+      swap arr[i], arr[j]
+  swap arr[i + 1], arr[high]
+  quickSort(arr, low, i)
+  quickSort(arr, i + 2, high)
+  return arr`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Quick Sort in JavaScript
+function quickSort(arr) {
+  const values = [...arr];
+
+  function partition(low, high) {
+    const pivot = values[high];
+    let i = low - 1;
+
+    for (let j = low; j < high; j += 1) {
+      if (values[j] <= pivot) {
+        i += 1;
+        [values[i], values[j]] = [values[j], values[i]];
+      }
+    }
+
+    [values[i + 1], values[high]] = [values[high], values[i + 1]];
+    return i + 1;
+  }
+
+  function sort(low, high) {
+    if (low >= high) return;
+    const pivotIndex = partition(low, high);
+    sort(low, pivotIndex - 1);
+    sort(pivotIndex + 1, high);
+  }
+
+  sort(0, values.length - 1);
+  return values;
+}
+
+const unsorted = [8, 3, 5, 1, 9, 2];
+console.log("Unsorted:", unsorted);
+console.log("Sorted:", quickSort(unsorted));`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Quick Sort in Python
+def quick_sort(arr):
+    values = arr[:]
+
+    def partition(low, high):
+        pivot = values[high]
+        i = low - 1
+
+        for j in range(low, high):
+            if values[j] <= pivot:
+                i += 1
+                values[i], values[j] = values[j], values[i]
+
+        values[i + 1], values[high] = values[high], values[i + 1]
+        return i + 1
+
+    def sort(low, high):
+        if low >= high:
+            return
+        pivot_index = partition(low, high)
+        sort(low, pivot_index - 1)
+        sort(pivot_index + 1, high)
+
+    sort(0, len(values) - 1)
+    return values
+
+
+unsorted = [8, 3, 5, 1, 9, 2]
+print("Unsorted:", unsorted)
+print("Sorted:", quick_sort(unsorted))`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Quick Sort in Java
+import java.util.Arrays;
+
+public class QuickSortExample {
+    public static int[] quickSort(int[] input) {
+        int[] values = input.clone();
+        sort(values, 0, values.length - 1);
+        return values;
+    }
+
+    private static void sort(int[] values, int low, int high) {
+        if (low >= high) {
+            return;
+        }
+
+        int pivotIndex = partition(values, low, high);
+        sort(values, low, pivotIndex - 1);
+        sort(values, pivotIndex + 1, high);
+    }
+
+    private static int partition(int[] values, int low, int high) {
+        int pivot = values[high];
+        int i = low - 1;
+
+        for (int j = low; j < high; j++) {
+            if (values[j] <= pivot) {
+                i++;
+                int temp = values[i];
+                values[i] = values[j];
+                values[j] = temp;
+            }
+        }
+
+        int temp = values[i + 1];
+        values[i + 1] = values[high];
+        values[high] = temp;
+        return i + 1;
+    }
+
+    public static void main(String[] args) {
+        int[] unsorted = {8, 3, 5, 1, 9, 2};
+        System.out.println("Unsorted: " + Arrays.toString(unsorted));
+        System.out.println("Sorted: " + Arrays.toString(quickSort(unsorted)));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Quick Sort in C++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+int partition(vector<int>& values, int low, int high) {
+    int pivot = values[high];
+    int i = low - 1;
+
+    for (int j = low; j < high; ++j) {
+        if (values[j] <= pivot) {
+            ++i;
+            swap(values[i], values[j]);
+        }
+    }
+
+    swap(values[i + 1], values[high]);
+    return i + 1;
+}
+
+void quickSort(vector<int>& values, int low, int high) {
+    if (low >= high) {
+        return;
+    }
+
+    int pivotIndex = partition(values, low, high);
+    quickSort(values, low, pivotIndex - 1);
+    quickSort(values, pivotIndex + 1, high);
+}
+
+int main() {
+    vector<int> values = {8, 3, 5, 1, 9, 2};
+    quickSort(values, 0, static_cast<int>(values.size()) - 1);
+
+    for (int value : values) {
+        cout << value << " ";
+    }
+    cout << endl;
+}`,
+        },
+    ],
     "binary search": [
         {
             id: "pseudocode",
