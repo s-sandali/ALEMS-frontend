@@ -29,9 +29,6 @@ import {
 } from "./stepUtils";
 import {
     type HeapIdentityNode,
-    type HeapNodeState,
-    type HeapVisualEdge,
-    type HeapVisualNode,
     buildHeapVisualEdges,
     buildHeapVisualNodes,
     buildTrajectoryPath,
