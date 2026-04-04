@@ -1,5 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// Load local env files for Playwright's Node process. Vite does this for the app,
+// but Playwright needs the variables available before config and setup code run.
+process.loadEnvFile?.(".env");
+process.loadEnvFile?.(".env.local");
+
 const baseURL = process.env.PLAYWRIGHT_FRONTEND_URL ?? "http://127.0.0.1:5173";
 
 export default defineConfig({
