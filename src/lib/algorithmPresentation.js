@@ -1,22 +1,41 @@
+import {
+    Activity,
+    Bubbles,
+    Cpu,
+    GitMerge,
+    Rewind,
+    Search,
+    Zap,
+} from "lucide-react";
+
 const difficultyByAlgorithm = {
     "bubble sort": "Beginner",
     "binary search": "Intermediate",
+    "insertion sort": "Beginner",
+    "selection sort": "Beginner",
     "merge sort": "Intermediate",
     "quick sort": "Advanced",
+    "heap sort": "Advanced",
 };
 
 const algorithmKeyByName = {
     "bubble sort": "bubble_sort",
     "binary search": "binary_search",
+    "insertion sort": "insertion_sort",
+    "selection sort": "selection_sort",
     "merge sort": "merge_sort",
     "quick sort": "quick_sort",
+    "heap sort": "heap_sort",
 };
 
 const spaceComplexityByAlgorithm = {
     "bubble sort": "O(1)",
     "binary search": "O(1)",
+    "insertion sort": "O(1)",
+    "selection sort": "O(1)",
     "merge sort": "O(n)",
     "quick sort": "O(log n)",
+    "heap sort": "O(1)",
 };
 
 const quizMetadataByAlgorithm = {
@@ -32,6 +51,18 @@ const quizMetadataByAlgorithm = {
         xpReward: 60,
         timeMinutes: 3,
     },
+    "insertion sort": {
+        available: false,
+        questionCount: 6,
+        xpReward: 65,
+        timeMinutes: 4,
+    },
+    "selection sort": {
+        available: false,
+        questionCount: 6,
+        xpReward: 65,
+        timeMinutes: 4,
+    },
     "merge sort": {
         available: false,
         questionCount: 6,
@@ -43,6 +74,12 @@ const quizMetadataByAlgorithm = {
         questionCount: 6,
         xpReward: 75,
         timeMinutes: 4,
+    },
+    "heap sort": {
+        available: false,
+        questionCount: 7,
+        xpReward: 80,
+        timeMinutes: 5,
     },
 };
 
@@ -63,6 +100,22 @@ const pseudocodeByAlgorithm = {
         "discard the half that cannot contain the target",
         "stop when the search interval is empty",
     ],
+    "insertion sort": [
+        "treat the first element as a sorted prefix",
+        "pick the next unsorted value as the key",
+        "shift larger sorted values one position right",
+        "insert the key into the opened position",
+        "grow the sorted prefix by one element",
+        "repeat until all values are inserted",
+    ],
+    "selection sort": [
+        "start at the first unsorted position",
+        "scan the remaining array for the minimum value",
+        "remember the index of the smallest value found",
+        "swap it into the current position",
+        "grow the sorted prefix by one element",
+        "repeat until the array is sorted",
+    ],
     "merge sort": [
         "return when the array has one element",
         "split the array into left and right halves",
@@ -78,6 +131,14 @@ const pseudocodeByAlgorithm = {
         "place the pivot in its final position",
         "recursively sort the left partition",
         "recursively sort the right partition",
+    ],
+    "heap sort": [
+        "build a max heap from the array",
+        "swap the root with the last unsorted element",
+        "shrink the heap boundary by one",
+        "heapify the root to restore heap order",
+        "repeat extraction until one element remains",
+        "return the sorted array",
     ],
 };
 
@@ -235,6 +296,524 @@ int main() {
     vector<int> sortedArray = bubbleSort(unsortedArray);
     cout << "Sorted array: ";
     for (int value : sortedArray) cout << value << " ";
+    cout << endl;
+}`,
+        },
+    ],
+    "insertion sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: [2, 3],
+                3: 4,
+                4: 5,
+                5: 6,
+                6: 7,
+                7: 8,
+            },
+            code: `function insertionSort(arr)
+  for i ← 1 to length(arr) - 1
+    key ← arr[i]
+    j ← i - 1
+    while j ≥ 0 and arr[j] > key
+      arr[j + 1] ← arr[j]
+      j ← j - 1
+    arr[j + 1] ← key
+  return arr`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Insertion Sort in JavaScript
+function insertionSort(arr) {
+  const values = [...arr];
+
+  for (let i = 1; i < values.length; i += 1) {
+    const key = values[i];
+    let j = i - 1;
+
+    while (j >= 0 && values[j] > key) {
+      values[j + 1] = values[j];
+      j -= 1;
+    }
+
+    values[j + 1] = key;
+  }
+
+  return values;
+}
+
+const unsorted = [8, 3, 5, 1, 9, 2];
+console.log("Unsorted:", unsorted);
+console.log("Sorted:", insertionSort(unsorted));`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Insertion Sort in Python
+def insertion_sort(arr):
+    values = arr[:]
+
+    for i in range(1, len(values)):
+        key = values[i]
+        j = i - 1
+
+        while j >= 0 and values[j] > key:
+            values[j + 1] = values[j]
+            j -= 1
+
+        values[j + 1] = key
+
+    return values
+
+
+unsorted = [8, 3, 5, 1, 9, 2]
+print("Unsorted:", unsorted)
+print("Sorted:", insertion_sort(unsorted))`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Insertion Sort in Java
+import java.util.Arrays;
+
+public class InsertionSortExample {
+    public static int[] insertionSort(int[] input) {
+        int[] values = input.clone();
+
+        for (int i = 1; i < values.length; i++) {
+            int key = values[i];
+            int j = i - 1;
+
+            while (j >= 0 && values[j] > key) {
+                values[j + 1] = values[j];
+                j--;
+            }
+
+            values[j + 1] = key;
+        }
+
+        return values;
+    }
+
+    public static void main(String[] args) {
+        int[] unsorted = {8, 3, 5, 1, 9, 2};
+        System.out.println("Unsorted: " + Arrays.toString(unsorted));
+        System.out.println("Sorted: " + Arrays.toString(insertionSort(unsorted)));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Insertion Sort in C++
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+vector<int> insertionSort(vector<int> values) {
+    for (int i = 1; i < static_cast<int>(values.size()); ++i) {
+        int key = values[i];
+        int j = i - 1;
+
+        while (j >= 0 && values[j] > key) {
+            values[j + 1] = values[j];
+            --j;
+        }
+
+        values[j + 1] = key;
+    }
+
+    return values;
+}
+
+int main() {
+    vector<int> unsorted = {8, 3, 5, 1, 9, 2};
+    vector<int> sorted = insertionSort(unsorted);
+
+    cout << "Unsorted: ";
+    for (int value : unsorted) cout << value << " ";
+    cout << endl;
+
+    cout << "Sorted: ";
+    for (int value : sorted) cout << value << " ";
+    cout << endl;
+}`,
+        },
+    ],
+    "selection sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: [4, 5],
+                5: 6,
+                6: 7,
+                7: 8,
+            },
+            code: `function selectionSort(arr)
+  for i ← 0 to length(arr) - 2
+    minIndex ← i
+    for j ← i + 1 to length(arr) - 1
+      if arr[j] < arr[minIndex]
+        minIndex ← j
+    swap arr[i], arr[minIndex]
+  return arr`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Selection Sort in JavaScript
+function selectionSort(arr) {
+  const values = [...arr];
+
+  for (let i = 0; i < values.length - 1; i += 1) {
+    let minIndex = i;
+
+    for (let j = i + 1; j < values.length; j += 1) {
+      if (values[j] < values[minIndex]) {
+        minIndex = j;
+      }
+    }
+
+    if (minIndex !== i) {
+      [values[i], values[minIndex]] = [values[minIndex], values[i]];
+    }
+  }
+
+  return values;
+}
+
+const unsorted = [8, 3, 5, 1, 9, 2];
+console.log("Unsorted:", unsorted);
+console.log("Sorted:", selectionSort(unsorted));`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Selection Sort in Python
+def selection_sort(arr):
+    values = arr[:]
+
+    for i in range(len(values) - 1):
+        min_index = i
+
+        for j in range(i + 1, len(values)):
+            if values[j] < values[min_index]:
+                min_index = j
+
+        if min_index != i:
+            values[i], values[min_index] = values[min_index], values[i]
+
+    return values
+
+
+unsorted = [8, 3, 5, 1, 9, 2]
+print("Unsorted:", unsorted)
+print("Sorted:", selection_sort(unsorted))`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Selection Sort in Java
+import java.util.Arrays;
+
+public class SelectionSortExample {
+    public static int[] selectionSort(int[] input) {
+        int[] values = input.clone();
+
+        for (int i = 0; i < values.length - 1; i++) {
+            int minIndex = i;
+
+            for (int j = i + 1; j < values.length; j++) {
+                if (values[j] < values[minIndex]) {
+                    minIndex = j;
+                }
+            }
+
+            if (minIndex != i) {
+                int temp = values[i];
+                values[i] = values[minIndex];
+                values[minIndex] = temp;
+            }
+        }
+
+        return values;
+    }
+
+    public static void main(String[] args) {
+        int[] unsorted = {8, 3, 5, 1, 9, 2};
+        System.out.println("Unsorted: " + Arrays.toString(unsorted));
+        System.out.println("Sorted: " + Arrays.toString(selectionSort(unsorted)));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Selection Sort in C++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+vector<int> selectionSort(vector<int> values) {
+    for (int i = 0; i < static_cast<int>(values.size()) - 1; ++i) {
+        int minIndex = i;
+
+        for (int j = i + 1; j < static_cast<int>(values.size()); ++j) {
+            if (values[j] < values[minIndex]) {
+                minIndex = j;
+            }
+        }
+
+        if (minIndex != i) {
+            swap(values[i], values[minIndex]);
+        }
+    }
+
+    return values;
+}
+
+int main() {
+    vector<int> unsorted = {8, 3, 5, 1, 9, 2};
+    vector<int> sorted = selectionSort(unsorted);
+
+    cout << "Unsorted: ";
+    for (int value : unsorted) cout << value << " ";
+    cout << endl;
+
+    cout << "Sorted: ";
+    for (int value : sorted) cout << value << " ";
+    cout << endl;
+}`,
+        },
+    ],
+    "quick sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: [3, 4],
+                4: [5, 6],
+                5: 7,
+                6: [8, 9],
+                7: 10,
+            },
+            code: `function quickSort(arr, low, high)
+  if low >= high: return
+  pivot ← arr[high]
+  i ← low - 1
+  for j ← low to high - 1
+    if arr[j] ≤ pivot
+      i ← i + 1
+      swap arr[i], arr[j]
+  swap arr[i + 1], arr[high]
+  quickSort(arr, low, i)
+  quickSort(arr, i + 2, high)
+  return arr`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Quick Sort in JavaScript
+function quickSort(arr) {
+  const values = [...arr];
+
+  function partition(low, high) {
+    const pivot = values[high];
+    let i = low - 1;
+
+    for (let j = low; j < high; j += 1) {
+      if (values[j] <= pivot) {
+        i += 1;
+        [values[i], values[j]] = [values[j], values[i]];
+      }
+    }
+
+    [values[i + 1], values[high]] = [values[high], values[i + 1]];
+    return i + 1;
+  }
+
+  function sort(low, high) {
+    if (low >= high) return;
+    const pivotIndex = partition(low, high);
+    sort(low, pivotIndex - 1);
+    sort(pivotIndex + 1, high);
+  }
+
+  sort(0, values.length - 1);
+  return values;
+}
+
+const unsorted = [8, 3, 5, 1, 9, 2];
+console.log("Unsorted:", unsorted);
+console.log("Sorted:", quickSort(unsorted));`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Quick Sort in Python
+def quick_sort(arr):
+    values = arr[:]
+
+    def partition(low, high):
+        pivot = values[high]
+        i = low - 1
+
+        for j in range(low, high):
+            if values[j] <= pivot:
+                i += 1
+                values[i], values[j] = values[j], values[i]
+
+        values[i + 1], values[high] = values[high], values[i + 1]
+        return i + 1
+
+    def sort(low, high):
+        if low >= high:
+            return
+        pivot_index = partition(low, high)
+        sort(low, pivot_index - 1)
+        sort(pivot_index + 1, high)
+
+    sort(0, len(values) - 1)
+    return values
+
+
+unsorted = [8, 3, 5, 1, 9, 2]
+print("Unsorted:", unsorted)
+print("Sorted:", quick_sort(unsorted))`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Quick Sort in Java
+import java.util.Arrays;
+
+public class QuickSortExample {
+    public static int[] quickSort(int[] input) {
+        int[] values = input.clone();
+        sort(values, 0, values.length - 1);
+        return values;
+    }
+
+    private static void sort(int[] values, int low, int high) {
+        if (low >= high) {
+            return;
+        }
+
+        int pivotIndex = partition(values, low, high);
+        sort(values, low, pivotIndex - 1);
+        sort(values, pivotIndex + 1, high);
+    }
+
+    private static int partition(int[] values, int low, int high) {
+        int pivot = values[high];
+        int i = low - 1;
+
+        for (int j = low; j < high; j++) {
+            if (values[j] <= pivot) {
+                i++;
+                int temp = values[i];
+                values[i] = values[j];
+                values[j] = temp;
+            }
+        }
+
+        int temp = values[i + 1];
+        values[i + 1] = values[high];
+        values[high] = temp;
+        return i + 1;
+    }
+
+    public static void main(String[] args) {
+        int[] unsorted = {8, 3, 5, 1, 9, 2};
+        System.out.println("Unsorted: " + Arrays.toString(unsorted));
+        System.out.println("Sorted: " + Arrays.toString(quickSort(unsorted)));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Quick Sort in C++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+int partition(vector<int>& values, int low, int high) {
+    int pivot = values[high];
+    int i = low - 1;
+
+    for (int j = low; j < high; ++j) {
+        if (values[j] <= pivot) {
+            ++i;
+            swap(values[i], values[j]);
+        }
+    }
+
+    swap(values[i + 1], values[high]);
+    return i + 1;
+}
+
+void quickSort(vector<int>& values, int low, int high) {
+    if (low >= high) {
+        return;
+    }
+
+    int pivotIndex = partition(values, low, high);
+    quickSort(values, low, pivotIndex - 1);
+    quickSort(values, pivotIndex + 1, high);
+}
+
+int main() {
+    vector<int> values = {8, 3, 5, 1, 9, 2};
+    quickSort(values, 0, static_cast<int>(values.size()) - 1);
+
+    for (int value : values) {
+        cout << value << " ";
+    }
     cout << endl;
 }`,
         },
@@ -403,12 +982,438 @@ int main() {
 }`,
         },
     ],
+    "heap sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 4,
+                5: 5,
+                6: 6,
+                7: 7,
+                8: 8,
+                9: 9,
+                10: 10,
+                11: 11,
+            },
+            code: `function heapSort(arr)
+  buildMaxHeap(arr)
+  for i ← length(arr)-1 down to 1
+    swap arr[0], arr[i]
+    heapBoundary ← i - 1
+    siftDown(arr, root=0, heapBoundary)
+  end for
+  extractionPhaseComplete()
+  return arr
+
+function siftDown(arr, root, heapBoundary)
+  compare/swap root with larger child until heap property restored`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Heap Sort in JavaScript
+function heapSort(arr) {
+  const values = [...arr];
+  const n = values.length;
+
+  function siftDown(heapSize, root) {
+    let current = root;
+
+    while (true) {
+      const left = 2 * current + 1;
+      const right = left + 1;
+      let largest = current;
+
+      if (left < heapSize && values[left] > values[largest]) {
+        largest = left;
+      }
+
+      if (right < heapSize && values[right] > values[largest]) {
+        largest = right;
+      }
+
+      if (largest === current) {
+        break;
+      }
+
+      [values[current], values[largest]] = [values[largest], values[current]];
+      current = largest;
+    }
+  }
+
+  for (let parent = Math.floor(n / 2) - 1; parent >= 0; parent -= 1) {
+    siftDown(n, parent);
+  }
+
+  for (let end = n - 1; end > 0; end -= 1) {
+    [values[0], values[end]] = [values[end], values[0]];
+    siftDown(end, 0);
+  }
+
+  return values;
+}
+
+const unsorted = [8, 3, 5, 1, 9, 2];
+console.log("Unsorted:", unsorted);
+console.log("Sorted:", heapSort(unsorted));`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Heap Sort in Python
+def heap_sort(arr):
+    values = arr[:]
+    n = len(values)
+
+    def sift_down(heap_size, root):
+        current = root
+
+        while True:
+            left = 2 * current + 1
+            right = left + 1
+            largest = current
+
+            if left < heap_size and values[left] > values[largest]:
+                largest = left
+
+            if right < heap_size and values[right] > values[largest]:
+                largest = right
+
+            if largest == current:
+                break
+
+            values[current], values[largest] = values[largest], values[current]
+            current = largest
+
+    for parent in range((n // 2) - 1, -1, -1):
+        sift_down(n, parent)
+
+    for end in range(n - 1, 0, -1):
+        values[0], values[end] = values[end], values[0]
+        sift_down(end, 0)
+
+    return values
+
+
+unsorted = [8, 3, 5, 1, 9, 2]
+print("Unsorted:", unsorted)
+print("Sorted:", heap_sort(unsorted))`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Heap Sort in Java
+import java.util.Arrays;
+
+public class HeapSortExample {
+    public static int[] heapSort(int[] input) {
+        int[] values = input.clone();
+        int n = values.length;
+
+        for (int parent = (n / 2) - 1; parent >= 0; parent--) {
+            siftDown(values, n, parent);
+        }
+
+        for (int end = n - 1; end > 0; end--) {
+            int temp = values[0];
+            values[0] = values[end];
+            values[end] = temp;
+            siftDown(values, end, 0);
+        }
+
+        return values;
+    }
+
+    private static void siftDown(int[] values, int heapSize, int root) {
+        int current = root;
+
+        while (true) {
+            int left = 2 * current + 1;
+            int right = left + 1;
+            int largest = current;
+
+            if (left < heapSize && values[left] > values[largest]) {
+                largest = left;
+            }
+
+            if (right < heapSize && values[right] > values[largest]) {
+                largest = right;
+            }
+
+            if (largest == current) {
+                break;
+            }
+
+            int temp = values[current];
+            values[current] = values[largest];
+            values[largest] = temp;
+            current = largest;
+        }
+    }
+
+    public static void main(String[] args) {
+        int[] unsorted = {8, 3, 5, 1, 9, 2};
+        System.out.println("Unsorted: " + Arrays.toString(unsorted));
+        System.out.println("Sorted: " + Arrays.toString(heapSort(unsorted)));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Heap Sort in C++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+void siftDown(vector<int>& values, int heapSize, int root) {
+    int current = root;
+
+    while (true) {
+        int left = 2 * current + 1;
+        int right = left + 1;
+        int largest = current;
+
+        if (left < heapSize && values[left] > values[largest]) {
+            largest = left;
+        }
+
+        if (right < heapSize && values[right] > values[largest]) {
+            largest = right;
+        }
+
+        if (largest == current) {
+            break;
+        }
+
+        swap(values[current], values[largest]);
+        current = largest;
+    }
+}
+
+vector<int> heapSort(vector<int> input) {
+    vector<int> values = input;
+    int n = static_cast<int>(values.size());
+
+    for (int parent = (n / 2) - 1; parent >= 0; --parent) {
+        siftDown(values, n, parent);
+    }
+
+    for (int end = n - 1; end > 0; --end) {
+        swap(values[0], values[end]);
+        siftDown(values, end, 0);
+    }
+
+    return values;
+}
+
+int main() {
+    vector<int> unsorted = {8, 3, 5, 1, 9, 2};
+    vector<int> sorted = heapSort(unsorted);
+
+    cout << "Unsorted: ";
+    for (int v : unsorted) cout << v << " ";
+    cout << endl;
+
+    cout << "Sorted: ";
+    for (int v : sorted) cout << v << " ";
+    cout << endl;
+
+    return 0;
+}`,
+        },
+    ],
+    "merge sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 4,
+                5: 5,
+                6: 6,
+                7: 7,
+                8: 8,
+                9: 9,
+                10: 10,
+                11: 11,
+                12: 12,
+            },
+            code: `function mergeSort(arr, left, right)
+  mergeSort(arr, left, right)           // recursive call
+  if left >= right: return              // base case
+  mid ← left + (right - left) / 2      // split
+  mergeSort(arr, left, mid)             // sort left half
+  mergeSort(arr, mid+1, right)          // sort right half
+  merge(arr, left, mid, right)          // begin merge
+  begin merging left and right halves   // merge_start
+  compare arr[i] vs arr[j]             // compare
+  place smaller into arr[k]            // place
+  merged region is fully sorted        // merge_complete
+  return sorted sub-array              // return`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Merge Sort in JavaScript
+function mergeSort(arr) {
+  if (arr.length <= 1) return arr;
+
+  const mid = Math.floor(arr.length / 2);
+  const left  = mergeSort(arr.slice(0, mid));
+  const right = mergeSort(arr.slice(mid));
+  return merge(left, right);
+}
+
+function merge(left, right) {
+  const result = [];
+  let i = 0, j = 0;
+  while (i < left.length && j < right.length) {
+    if (left[i] <= right[j]) result.push(left[i++]);
+    else                      result.push(right[j++]);
+  }
+  return result.concat(left.slice(i)).concat(right.slice(j));
+}
+
+const arr = [8, 3, 5, 1, 9, 2];
+console.log("Sorted:", mergeSort(arr));`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Merge Sort in Python
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    left  = merge_sort(arr[:mid])
+    right = merge_sort(arr[mid:])
+    return merge(left, right)
+
+def merge(left, right):
+    result, i, j = [], 0, 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            result.append(left[i]); i += 1
+        else:
+            result.append(right[j]); j += 1
+    return result + left[i:] + right[j:]
+
+arr = [8, 3, 5, 1, 9, 2]
+print("Sorted:", merge_sort(arr))`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Merge Sort in Java
+import java.util.Arrays;
+
+public class MergeSortExample {
+    public static void mergeSort(int[] arr, int left, int right) {
+        if (left >= right) return;
+        int mid = left + (right - left) / 2;
+        mergeSort(arr, left, mid);
+        mergeSort(arr, mid + 1, right);
+        merge(arr, left, mid, right);
+    }
+
+    static void merge(int[] arr, int l, int m, int r) {
+        int[] tmp = Arrays.copyOfRange(arr, l, r + 1);
+        int i = 0, j = m - l + 1, k = l, end = r - l;
+        while (i <= m - l && j <= end)
+            arr[k++] = tmp[i] <= tmp[j] ? tmp[i++] : tmp[j++];
+        while (i <= m - l) arr[k++] = tmp[i++];
+        while (j <= end)   arr[k++] = tmp[j++];
+    }
+
+    public static void main(String[] args) {
+        int[] arr = {8, 3, 5, 1, 9, 2};
+        mergeSort(arr, 0, arr.length - 1);
+        System.out.println(Arrays.toString(arr));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Merge Sort in C++
+#include <iostream>
+#include <vector>
+using namespace std;
+
+void merge(vector<int>& a, int l, int m, int r) {
+    vector<int> L(a.begin()+l, a.begin()+m+1);
+    vector<int> R(a.begin()+m+1, a.begin()+r+1);
+    int i=0, j=0, k=l;
+    while (i<(int)L.size() && j<(int)R.size())
+        a[k++] = L[i] <= R[j] ? L[i++] : R[j++];
+    while (i<(int)L.size()) a[k++] = L[i++];
+    while (j<(int)R.size()) a[k++] = R[j++];
+}
+
+void mergeSort(vector<int>& a, int l, int r) {
+    if (l >= r) return;
+    int m = l + (r-l)/2;
+    mergeSort(a, l, m);
+    mergeSort(a, m+1, r);
+    merge(a, l, m, r);
+}
+
+int main() {
+    vector<int> a = {8,3,5,1,9,2};
+    mergeSort(a, 0, a.size()-1);
+    for (int v : a) cout << v << " ";
+}`,
+        },
+    ],
 };
 
 const sampleSizes = [8, 16, 32, 64, 128, 256];
 
+const algorithmIconByName = {
+    "bubble sort": Bubbles,
+    "binary search": Search,
+    "insertion sort": Rewind,
+    "selection sort": Activity,
+    "merge sort": GitMerge,
+    "quick sort": Zap,
+    "heap sort": Cpu,
+};
+
 export function getAlgorithmDifficulty(name) {
     return difficultyByAlgorithm[name.trim().toLowerCase()] || "Core";
+}
+
+export function getAlgorithmIcon(name) {
+    return algorithmIconByName[name.trim().toLowerCase()] || Activity;
 }
 
 export function getPrimaryComplexity(algorithm) {
@@ -421,6 +1426,11 @@ export function getPrimaryComplexity(algorithm) {
 export function getAlgorithmSampleInput(name) {
     switch (name.trim().toLowerCase()) {
         case "bubble sort":
+        case "insertion sort":
+        case "selection sort":
+        case "merge sort":
+        case "quick sort":
+        case "heap sort":
             return [8, 3, 5, 1, 9, 2];
         case "binary search":
             // Binary Search requires a pre-sorted array
@@ -624,12 +1634,197 @@ export function getAlgorithmIntroduction(name) {
         };
     }
 
+    if (normalizedName === "quick sort") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Quick Sort work?",
+            paragraphs: [
+                "Quick Sort is a divide-and-conquer sorting algorithm that selects a pivot, partitions the remaining values around that pivot, and then recursively sorts the two resulting partitions.",
+                "Its average-case performance is O(n log n), but the pivot choice matters: consistently poor pivots can degrade the runtime to O(n^2).",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Choose a pivot",
+                    desc: "Pick a pivot value that will be used to split smaller values from larger ones.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Partition around the pivot",
+                    desc: "Rearrange the range so values less than the pivot move left and larger values move right.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Place the pivot",
+                    desc: "Move the pivot into its final sorted position after partitioning finishes.",
+                    matchAction: "swap",
+                },
+                {
+                    num: "04",
+                    title: "Recurse on both sides",
+                    desc: "Apply the same process to the left and right partitions until each partition has size zero or one.",
+                    matchAction: "complete",
+                },
+            ],
+        };
+    }
+
+    if (normalizedName === "merge sort") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Merge Sort work?",
+            paragraphs: [
+                "Merge Sort repeatedly splits the array into halves until each subarray has one element, then merges those subarrays back together in sorted order.",
+                "Because each merge step combines already-sorted halves, Merge Sort guarantees O(n log n) time but needs extra memory to hold intermediate merged results.",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Split the array",
+                    desc: "Divide the input into left and right halves until single-element arrays remain.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Sort each half",
+                    desc: "Recursively process the left half and the right half independently.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Merge in order",
+                    desc: "Compare the front values of both halves and build one sorted output list.",
+                    matchAction: "swap",
+                },
+                {
+                    num: "04",
+                    title: "Repeat upward",
+                    desc: "Continue merging larger sorted halves until the full array is reconstructed.",
+                    matchAction: "complete",
+                },
+            ],
+        };
+    }
+
+    if (normalizedName === "insertion sort") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Insertion Sort work?",
+            paragraphs: [
+                "Insertion Sort grows a sorted prefix one item at a time. Each new value is compared against the sorted portion and inserted into the correct position.",
+                "It performs especially well on nearly sorted data because only a few shifts are needed when elements are already close to their final positions.",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Start with a sorted prefix",
+                    desc: "Treat the first element as already sorted and begin scanning from the second element.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Pick the key",
+                    desc: "Take the next unsorted value and hold it temporarily as the key to insert.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Shift larger values",
+                    desc: "Move larger values in the sorted prefix one position to the right until the correct slot opens.",
+                    matchAction: "swap",
+                },
+                {
+                    num: "04",
+                    title: "Insert and continue",
+                    desc: "Place the key into its correct position and repeat for the next unsorted value.",
+                    matchAction: "complete",
+                },
+            ],
+        };
+    }
+
+    if (normalizedName === "selection sort") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Selection Sort work?",
+            paragraphs: [
+                "Selection Sort repeatedly finds the minimum value in the unsorted region and swaps it into the next position of the sorted prefix.",
+                "It always performs the same number of comparisons for a given input size, making it easy to reason about but less adaptive than Insertion Sort.",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Mark the boundary",
+                    desc: "Treat everything before the current index as sorted and everything after it as unsorted.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Scan for the minimum",
+                    desc: "Search the unsorted region to find the index of its smallest value.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Swap into position",
+                    desc: "Exchange that minimum value with the first unsorted element.",
+                    matchAction: "swap",
+                },
+                {
+                    num: "04",
+                    title: "Advance the boundary",
+                    desc: "Grow the sorted prefix by one and repeat until no unsorted values remain.",
+                    matchAction: "complete",
+                },
+            ],
+        };
+    }
+
+    if (normalizedName === "heap sort") {
+        return {
+            eyebrow: "01 - Introduction",
+            title: "How does Heap Sort work?",
+            paragraphs: [
+                "Heap Sort first arranges the array into a max heap so the largest value is always at the root, then repeatedly moves that root to the end of the array.",
+                "After each extraction, the heap is rebuilt at the root so the next largest value can be placed. This keeps the algorithm in-place with O(n log n) time.",
+            ],
+            steps: [
+                {
+                    num: "01",
+                    title: "Build a max heap",
+                    desc: "Reorganize the array so every parent is greater than or equal to its children.",
+                    matchAction: "start",
+                },
+                {
+                    num: "02",
+                    title: "Move the root",
+                    desc: "Swap the largest value at the root with the last unsorted element.",
+                    matchAction: "compare",
+                },
+                {
+                    num: "03",
+                    title: "Restore heap order",
+                    desc: "Heapify the root so the remaining unsorted region is again a valid max heap.",
+                    matchAction: "swap",
+                },
+                {
+                    num: "04",
+                    title: "Repeat extraction",
+                    desc: "Shrink the heap boundary and keep extracting until the array is fully sorted.",
+                    matchAction: "complete",
+                },
+            ],
+        };
+    }
+
     return {
         eyebrow: "01 - Introduction",
         title: `How does ${name} work?`,
         paragraphs: [
-            `${name} follows a structured sequence of comparisons and state changes that can be explored step by step through the backend simulation trace.`,
-            "Use the cards below to jump through the major phases and preview the related simulation state.",
+            `${name} follows a structured sequence of comparisons and state changes that can be broken down into a few core phases.`,
+            "Use the cards below to review the major phases and connect them to the complexity and code sections on the page.",
         ],
         steps: [
             {

@@ -45,18 +45,18 @@ export default function DashboardSection() {
         <section
             ref={sectionRef}
             className="py-24"
-            style={{ background: "#0C0C0C" }}
+            style={{ background: "var(--bg)" }}
         >
             <div className="max-w-[1200px] mx-auto px-6">
                 <div ref={titleRef} className="text-center mb-16">
-                    <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "#D5FF40" }}>
+                    <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--accent)" }}>
                         Student Dashboard
                     </p>
-                    <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
+                    <h2 className="text-4xl lg:text-5xl font-bold text-text-primary tracking-tight">
                         Your progress,{" "}
                         <span className="gradient-text">visualised</span>
                     </h2>
-                    <p className="mt-4 max-w-xl mx-auto" style={{ color: "#A1A1A1" }}>
+                    <p className="mt-4 max-w-xl mx-auto" style={{ color: "var(--text-secondary)" }}>
                         Track your XP, badges, and quiz performance across all algorithms in real time.
                     </p>
                 </div>
@@ -66,42 +66,42 @@ export default function DashboardSection() {
                         {/* Profile row */}
                         <div className="flex items-center gap-4 mb-8">
                             <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-black font-bold text-xl shadow-lg"
-                                style={{ background: "#D5FF40" }}
+                                style={{ background: "var(--accent)" }}
                             >
                                 HD
                             </div>
                             <div>
-                                <h3 className="text-xl font-semibold text-white">Himasha Devindi</h3>
-                                <p className="text-sm" style={{ color: "#A1A1A1" }}>Rank #9 on Leaderboard</p>
+                                <h3 className="text-xl font-semibold text-text-primary">Himasha Devindi</h3>
+                                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Rank #9 on Leaderboard</p>
                             </div>
                             <div className="ml-auto text-right">
-                                <div className="font-bold text-lg" style={{ color: "#D5FF40" }}>2,840 XP</div>
-                                <div className="text-xs" style={{ color: "#A1A1A1" }}>Level 14</div>
+                                <div className="font-bold text-lg" style={{ color: "var(--accent)" }}>2,840 XP</div>
+                                <div className="text-xs" style={{ color: "var(--text-secondary)" }}>Level 14</div>
                             </div>
                         </div>
 
                         {/* XP Bar */}
                         <div className="mb-8">
                             <div className="flex justify-between text-sm mb-2">
-                                <span style={{ color: "#A1A1A1" }}>XP Progress to Level 15</span>
-                                <span className="font-semibold" style={{ color: "#D5FF40" }}>2840 / 3500 XP</span>
+                                <span style={{ color: "var(--text-secondary)" }}>XP Progress to Level 15</span>
+                                <span className="font-semibold" style={{ color: "var(--accent)" }}>2840 / 3500 XP</span>
                             </div>
-                            <div className="h-3 rounded-full overflow-hidden" style={{ background: "#1a1a1a" }}>
+                            <div className="h-3 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
                                 <div ref={xpBarRef} className="xp-bar-fill" style={{ width: "0%" }} />
                             </div>
                         </div>
 
                         {/* Quiz scores */}
                         <div className="mb-8">
-                            <h4 className="font-semibold mb-4 text-white">Recent Quiz Scores</h4>
+                            <h4 className="font-semibold mb-4 text-text-primary">Recent Quiz Scores</h4>
                             <div className="space-y-3">
                                 {QUIZ_SCORES.map((qs) => (
                                     <div key={qs.algo}>
                                         <div className="flex justify-between text-sm mb-1">
-                                            <span style={{ color: "#A1A1A1" }}>{qs.algo}</span>
+                                            <span style={{ color: "var(--text-secondary)" }}>{qs.algo}</span>
                                             <span className="font-semibold" style={{ color: qs.color }}>{qs.score}%</span>
                                         </div>
-                                        <div className="h-2 rounded-full overflow-hidden" style={{ background: "#1a1a1a" }}>
+                                        <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
                                             <div
                                                 className="h-full rounded-full transition-all duration-1000"
                                                 style={{ width: `${qs.score}%`, background: qs.color }}
@@ -114,7 +114,7 @@ export default function DashboardSection() {
 
                         {/* Badges */}
                         <div>
-                            <h4 className="font-semibold mb-4 text-white">Badges</h4>
+                            <h4 className="font-semibold mb-4 text-text-primary">Badges</h4>
                             <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                                 {BADGES.map((badge) => {
                                     const BadgeIcon = badge.icon;
@@ -126,16 +126,16 @@ export default function DashboardSection() {
                                                 : "opacity-40 grayscale"
                                                 }`}
                                             style={{
-                                                background: badge.awarded ? "rgba(213,255,64,0.08)" : "rgba(255,255,255,0.02)",
-                                                border: `1px solid ${badge.awarded ? "rgba(213,255,64,0.25)" : "rgba(255,255,255,0.06)"}`,
+                                                background: badge.awarded ? "rgba(var(--accent-rgb),0.08)" : "rgba(var(--accent-rgb),0.02)",
+                                                border: `1px solid ${badge.awarded ? "rgba(var(--accent-rgb),0.25)" : "rgba(var(--accent-rgb),0.08)"}`,
                                             }}
                                             title={badge.label}
                                         >
                                             <BadgeIcon
                                                 className="w-6 h-6"
-                                                style={{ color: badge.awarded ? "#D5FF40" : "#4a4a4a" }}
+                                                style={{ color: badge.awarded ? "var(--accent)" : "var(--text-secondary)" }}
                                             />
-                                            <span className="text-xs text-center leading-tight" style={{ color: badge.awarded ? "#D5FF40" : "#4a4a4a" }}>
+                                            <span className="text-xs text-center leading-tight" style={{ color: badge.awarded ? "var(--accent)" : "var(--text-secondary)" }}>
                                                 {badge.label}
                                             </span>
                                         </div>

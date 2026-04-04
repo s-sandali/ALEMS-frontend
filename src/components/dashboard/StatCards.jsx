@@ -64,7 +64,7 @@ export default function StatCards({ user }) {
                 fontSize: 26,
                 fontWeight: 700,
                 color: card.valueColor,
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "'Poppins', sans-serif",
                 lineHeight: 1,
                 marginBottom: 4,
               }}
