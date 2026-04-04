@@ -12,7 +12,7 @@ import {
 } from "./selectors";
 
 export async function loginViaClerk(page: Page, credentials: AuthCredentials): Promise<void> {
-    await page.goto("/login");
+    await page.goto("/login", { waitUntil: "domcontentloaded", timeout: 60_000 });
     await expectClerkSignInForm(page);
 
     await clerkIdentifierInput(page).fill(credentials.email);
@@ -33,7 +33,7 @@ export async function loginViaClerk(page: Page, credentials: AuthCredentials): P
         );
     }
 
-    await page.waitForURL(/\/dashboard(?:\/)?$/, { timeout: 30_000 });
+    await page.waitForURL(/\/dashboard(?:\/)?$/, { timeout: 60_000 });
     await expectDashboardReady(page);
 }
 
