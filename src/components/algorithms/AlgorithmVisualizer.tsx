@@ -956,6 +956,7 @@ function AlgorithmVisualizer({
                 "glass overflow-hidden rounded-3xl border border-white/10 p-4 sm:p-6",
                 className,
             )}
+            data-feedback-version={feedbackVersion}
             aria-label="Algorithm step visualizer"
         >
             <div className="flex flex-col gap-4">
@@ -1340,7 +1341,7 @@ function AlgorithmVisualizer({
                         </div>
                     ) : isSelectionSortStep ? (
                         <motion.div
-                            key={`selection-tiles-${mode}-${feedbackTone ?? "idle"}-${feedbackVersion}`}
+                            key={`selection-tiles-${mode}`}
                             initial={shouldReduceMotion
                                 ? false
                                 : (feedbackTone === "incorrect"
@@ -1677,7 +1678,7 @@ function AlgorithmVisualizer({
                         </div>
                     ) : (
                         <motion.div
-                            key={`bars-${mode}-${feedbackTone ?? "idle"}-${feedbackVersion}`}
+                            key={`bars-${mode}`}
                             initial={shouldReduceMotion
                                 ? false
                                 : (feedbackTone === "incorrect"
