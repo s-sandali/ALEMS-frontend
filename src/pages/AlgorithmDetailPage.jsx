@@ -264,6 +264,14 @@ function formatIndices(indices) {
     return indices.join(" and ");
 }
 
+function clampIndex(index, maxLength) {
+    if (!Number.isFinite(index) || maxLength <= 0) {
+        return null;
+    }
+
+    return Math.min(Math.max(Math.floor(index), 0), maxLength - 1);
+}
+
 export default function AlgorithmDetailPage() {
     const playbackSpeeds = [0.5, 1, 2, 4];
     const basePlaybackIntervalMs = 1400;
@@ -295,6 +303,11 @@ export default function AlgorithmDetailPage() {
     const [recentPracticeAction, setRecentPracticeAction] = useState(null);
     const [feedbackVersion, setFeedbackVersion] = useState(0);
     const [showCompletionToast, setShowCompletionToast] = useState(false);
+    const [selectionPracticeAnchorIndex, setSelectionPracticeAnchorIndex] = useState(null);
+    const [selectionPracticeScanIndex, setSelectionPracticeScanIndex] = useState(null);
+    const [selectionPracticeCurrentMinIndex, setSelectionPracticeCurrentMinIndex] = useState(null);
+    const [selectionPracticeCandidateIndex, setSelectionPracticeCandidateIndex] = useState(null);
+    const [selectionPracticeConfirmedMinIndex, setSelectionPracticeConfirmedMinIndex] = useState(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -465,6 +478,35 @@ export default function AlgorithmDetailPage() {
     );
     const [mergePracticeStepIndex, setMergePracticeStepIndex] = useState(0);
 
+    function initializeSelectionPracticeState(stepCollection, arraySnapshot, stepIndex) {
+        if (!isSelectionSortMode || !Array.isArray(arraySnapshot) || arraySnapshot.length === 0) {
+            setSelectionPracticeAnchorIndex(null);
+            setSelectionPracticeScanIndex(null);
+            setSelectionPracticeCurrentMinIndex(null);
+            setSelectionPracticeCandidateIndex(null);
+            setSelectionPracticeConfirmedMinIndex(null);
+            return;
+        }
+
+        const safeStepIndex = Math.min(
+            Math.max(stepIndex ?? 0, 0),
+            Math.max((stepCollection?.length ?? 0) - 1, 0),
+        );
+        const step = stepCollection?.[safeStepIndex];
+        const stepAnchor = clampIndex(step?.selectionSort?.currentIndex, arraySnapshot.length);
+        const fallbackAnchor = clampIndex(suggestedIndices?.[0], arraySnapshot.length);
+        const anchorIndex = stepAnchor ?? fallbackAnchor ?? 0;
+        const firstScanIndex = anchorIndex + 1 < arraySnapshot.length
+            ? anchorIndex + 1
+            : null;
+
+        setSelectionPracticeAnchorIndex(anchorIndex);
+        setSelectionPracticeScanIndex(firstScanIndex);
+        setSelectionPracticeCurrentMinIndex(anchorIndex);
+        setSelectionPracticeCandidateIndex(anchorIndex);
+        setSelectionPracticeConfirmedMinIndex(null);
+    }
+
     useEffect(() => {
         if (mode !== "practice" || !isMergeSortAlgorithm) {
             return;
@@ -546,14 +588,20 @@ export default function AlgorithmDetailPage() {
         }
 
         return {
-            feedback: isQuickSortMode
-                ? "Select two array cells to validate the swap."
-                : `Select two ${visualUnit} to attempt the next swap.`,
-            pending: isQuickSortMode
-                ? "Select one more array cell to validate the swap."
-                : `Select one more ${isSelectionSortMode ? "box" : "bar"} to validate the swap.`,
+            feedback: isSelectionSortMode
+                ? "Use Go Right to scan for the minimum, then Select Min, then click the swap partner index."
+                : (isQuickSortMode
+                    ? "Select two array cells to validate the swap."
+                    : `Select two ${visualUnit} to attempt the next swap.`),
+            pending: isSelectionSortMode
+                ? "Search for the minimum with Go Right, then lock it with Select Min."
+                : (isQuickSortMode
+                    ? "Select one more array cell to validate the swap."
+                    : `Select one more ${isSelectionSortMode ? "box" : "bar"} to validate the swap.`),
             validating: "Validating swap...",
-            hint: "The backend will confirm whether this swap is the next valid move.",
+            hint: isSelectionSortMode
+                ? "Scan the unsorted region from left to right, lock the minimum, then swap with current i."
+                : "The backend will confirm whether this swap is the next valid move.",
             success: "Correct swap.",
             failure: "Incorrect step.",
         };
@@ -593,6 +641,7 @@ export default function AlgorithmDetailPage() {
         setRecentPracticeAction(null);
         setFeedbackVersion((previousValue) => previousValue + 1);
         setCurrentStepIndex(nextStepIndex);
+        initializeSelectionPracticeState(steps, inputArray, nextStepIndex);
     }
 
     async function startPracticeSession(inputArray, targetNumber) {
@@ -641,7 +690,112 @@ export default function AlgorithmDetailPage() {
             setFeedbackMessage(isComplete ? "Practice complete." : practiceCopy.feedback);
         }
 
+        const effectiveSteps = Array.isArray(session?.steps) && session.steps.length > 0
+            ? session.steps
+            : steps;
+        const nextStepIndex = typeof session?.currentStepIndex === "number" ? session.currentStepIndex : 0;
+        initializeSelectionPracticeState(effectiveSteps, inputArray, nextStepIndex);
+
         return session;
+    }
+
+    function handleSelectionPracticeGoRight() {
+        if (
+            mode !== "practice"
+            || !isSelectionSortMode
+            || isValidatingStep
+            || practiceCompleted
+            || currentArray.length === 0
+        ) {
+            return;
+        }
+
+        if (selectionPracticeConfirmedMinIndex !== null) {
+            const anchor = selectionPracticeAnchorIndex ?? 0;
+            setFeedbackMessage(`Minimum locked at index ${selectionPracticeConfirmedMinIndex}. Select index ${anchor} to perform the swap.`);
+            setHintMessage("Click the swap partner index now.");
+            return;
+        }
+
+        const anchor = clampIndex(selectionPracticeAnchorIndex ?? 0, currentArray.length) ?? 0;
+        const minIndex = clampIndex(selectionPracticeCurrentMinIndex ?? anchor, currentArray.length) ?? anchor;
+        const scanIndex = clampIndex(selectionPracticeScanIndex, currentArray.length);
+
+        if (scanIndex === null) {
+            setSelectionPracticeCandidateIndex(null);
+            setFeedbackMessage("Search scan complete. Click Select Min to lock the minimum.");
+            setHintMessage("After selecting the minimum, click the swap partner index.");
+            return;
+        }
+
+        const scannedValue = currentArray[scanIndex];
+        const currentMinValue = currentArray[minIndex];
+        const nextMinIndex = scannedValue < currentMinValue ? scanIndex : minIndex;
+        const nextScanIndex = scanIndex + 1 < currentArray.length ? scanIndex + 1 : null;
+
+        setIsCorrect(null);
+        setRecentPracticeAction("scan_min");
+        setSelectedIndices([]);
+        setFeedbackIndices([scanIndex]);
+        setSuggestedIndices([]);
+        setSelectionPracticeCandidateIndex(nextMinIndex);
+        setSelectionPracticeCurrentMinIndex(nextMinIndex);
+        setSelectionPracticeScanIndex(nextScanIndex);
+        setFeedbackVersion((previousValue) => previousValue + 1);
+
+        if (nextScanIndex === null) {
+            setFeedbackMessage(`Checked index ${scanIndex}. Candidate minimum is index ${nextMinIndex}. Click Select Min.`);
+            setHintMessage("Selection scan reached the end of the unsorted region.");
+            return;
+        }
+
+        setFeedbackMessage(`Checked index ${scanIndex}. Candidate minimum is index ${nextMinIndex}.`);
+        setHintMessage("Keep moving right to compare the rest of the unsorted region.");
+    }
+
+    function handleSelectionPracticeSelectMin() {
+        if (
+            mode !== "practice"
+            || !isSelectionSortMode
+            || isValidatingStep
+            || practiceCompleted
+            || currentArray.length === 0
+        ) {
+            return;
+        }
+
+        const anchor = clampIndex(selectionPracticeAnchorIndex ?? 0, currentArray.length) ?? 0;
+        const candidateMinIndex = clampIndex(selectionPracticeCurrentMinIndex ?? anchor, currentArray.length) ?? anchor;
+
+        const actualMinIndex = currentArray
+            .slice(anchor)
+            .reduce((bestRelativeIndex, value, relativeIndex, source) => (
+                value < source[bestRelativeIndex] ? relativeIndex : bestRelativeIndex
+            ), 0) + anchor;
+
+        if (candidateMinIndex !== actualMinIndex) {
+            setIsCorrect(false);
+            setFeedbackVersion((previousValue) => previousValue + 1);
+            setFeedbackIndices([candidateMinIndex]);
+            setSuggestedIndices([actualMinIndex]);
+            setFeedbackMessage(`Index ${candidateMinIndex} is not the smallest value. The minimum is still further right.`);
+            setHintMessage("Scan again from the unsorted region and track the smallest value.");
+            return;
+        }
+
+        setIsCorrect(true);
+        setRecentPracticeAction("select_min");
+        setFeedbackIndices([candidateMinIndex]);
+        setSuggestedIndices([anchor, candidateMinIndex]);
+        setSelectionPracticeConfirmedMinIndex(candidateMinIndex);
+        setSelectionPracticeScanIndex(null);
+        setSelectionPracticeCandidateIndex(null);
+        setSelectedIndices([candidateMinIndex]);
+        setFeedbackVersion((previousValue) => previousValue + 1);
+        setFeedbackMessage(selectionPracticeScanIndex === null
+            ? `Minimum confirmed at index ${candidateMinIndex}. Now select index ${anchor} to swap.`
+            : `Correct minimum selected early at index ${candidateMinIndex}. Now select index ${anchor} to swap.`);
+        setHintMessage("The selected minimum is locked in blue. Click its swap partner index.");
     }
 
     function handleTogglePlayback() {
@@ -721,6 +875,11 @@ export default function AlgorithmDetailPage() {
         setPracticeCompleted(false);
         setRecentPracticeAction(null);
         setFeedbackVersion((previousValue) => previousValue + 1);
+        setSelectionPracticeAnchorIndex(null);
+        setSelectionPracticeScanIndex(null);
+        setSelectionPracticeCurrentMinIndex(null);
+        setSelectionPracticeCandidateIndex(null);
+        setSelectionPracticeConfirmedMinIndex(null);
     }
 
     async function validatePracticeSortAction(actionType, indices) {
@@ -773,11 +932,14 @@ export default function AlgorithmDetailPage() {
                 || isTerminalSearchAction(nextExpectedAction);
             setCurrentArray(nextArrayState);
             setPracticeCompleted(isComplete);
-            setCurrentStepIndex(
-                typeof validationResponse?.currentStepIndex === "number"
-                    ? validationResponse.currentStepIndex
-                    : currentStepIndex,
-            );
+            const nextStepIndex = typeof validationResponse?.currentStepIndex === "number"
+                ? validationResponse.currentStepIndex
+                : currentStepIndex;
+            setCurrentStepIndex(nextStepIndex);
+
+            if (isSelectionSortMode) {
+                initializeSelectionPracticeState(steps, nextArrayState, nextStepIndex);
+            }
 
             if (isComplete) {
                 setShowCompletionToast(true);
@@ -981,6 +1143,36 @@ export default function AlgorithmDetailPage() {
         }
 
         const expectedAction = getCurrentSortPracticeAction(steps[currentStepIndex]);
+
+        if (isSelectionSortMode && expectedAction === "swap") {
+            const confirmedMinIndex = clampIndex(selectionPracticeConfirmedMinIndex, currentArray.length);
+            const anchorIndex = clampIndex(selectionPracticeAnchorIndex, currentArray.length);
+
+            if (confirmedMinIndex === null || anchorIndex === null) {
+                setIsCorrect(false);
+                setFeedbackVersion((previousValue) => previousValue + 1);
+                setFeedbackMessage("Use Go Right and Select Min first, then choose the swap partner index.");
+                setHintMessage("Search for the minimum before attempting the swap.");
+                return;
+            }
+
+            if (index !== anchorIndex) {
+                setIsCorrect(false);
+                setFeedbackVersion((previousValue) => previousValue + 1);
+                setSelectedIndices([confirmedMinIndex]);
+                setFeedbackMessage(`Select index ${anchorIndex} to swap with the locked minimum at index ${confirmedMinIndex}.`);
+                setHintMessage("Swap requires the current i index as the partner.");
+                return;
+            }
+
+            const attemptedIndices = [anchorIndex, confirmedMinIndex]
+                .sort((leftIndex, rightIndex) => leftIndex - rightIndex);
+
+            setSelectedIndices([confirmedMinIndex, anchorIndex]);
+            await validatePracticeSortAction("swap", attemptedIndices);
+            return;
+        }
+
         const copy = getSortPracticeCopy(expectedAction);
         const requiredSelections = getRequiredSelectionCount(expectedAction);
 
@@ -1291,6 +1483,25 @@ export default function AlgorithmDetailPage() {
                                 hintMessage={mode === "practice" ? hintMessage : ""}
                                 practiceCompleted={practiceCompleted}
                                 isInteractionDisabled={mode !== "practice" || isValidatingStep || practiceCompleted}
+                                selectionPracticeCandidateIndex={selectionPracticeCandidateIndex}
+                                selectionPracticeConfirmedMinIndex={selectionPracticeConfirmedMinIndex}
+                                selectionPracticeSwapAnchorIndex={selectionPracticeAnchorIndex}
+                                canSelectionPracticeGoRight={Boolean(
+                                    mode === "practice"
+                                    && isSelectionSortMode
+                                    && !isValidatingStep
+                                    && !practiceCompleted
+                                    && selectionPracticeConfirmedMinIndex === null,
+                                )}
+                                canSelectionPracticeSelectMin={Boolean(
+                                    mode === "practice"
+                                    && isSelectionSortMode
+                                    && !isValidatingStep
+                                    && !practiceCompleted
+                                    && selectionPracticeConfirmedMinIndex === null,
+                                )}
+                                onSelectionPracticeGoRight={handleSelectionPracticeGoRight}
+                                onSelectionPracticeSelectMin={handleSelectionPracticeSelectMin}
                                 onBarClick={algorithmType === "search" ? undefined : handlePracticeBarClick}
                                 onSearchDecision={handleSearchDecision}
                             />
