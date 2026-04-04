@@ -247,6 +247,32 @@ function getQuickSortPracticeAction(step: AlgorithmSimulationStep | undefined) {
     return action;
 }
 
+function getInsertionSortPracticeAction(step: AlgorithmSimulationStep | undefined) {
+    const action = (step?.insertionSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
+
+    if (action === "compare" || action === "shift" || action === "insert") {
+        return action;
+    }
+
+    if (action === "complete" || action === "early_exit") {
+        return "complete";
+    }
+
+    return "compare";
+}
+
+function getSafeStepIndex(index: number | null | undefined, totalValues: number) {
+    if (typeof index !== "number") {
+        return null;
+    }
+
+    if (index < 0 || index >= totalValues) {
+        return null;
+    }
+
+    return index;
+}
+
 function getSearchWindow(step: AlgorithmSimulationStep | undefined, totalValues: number) {
     if (totalValues <= 0) {
         return { low: 0, high: -1, midpoint: null };
@@ -591,6 +617,24 @@ function AlgorithmVisualizer({
             : getSortedIndices(currentStep, values.length)),
         [currentStep, isPracticeMode, practiceCompleted, values.length],
     );
+    const insertionSortMeta = currentStep?.insertionSort ?? null;
+    const hasInsertionSortMetadata = Boolean(insertionSortMeta);
+    const insertionKeyIndex = useMemo(
+        () => getSafeStepIndex(insertionSortMeta?.currentIndex, values.length),
+        [insertionSortMeta?.currentIndex, values.length],
+    );
+    const insertionCompareIndex = useMemo(
+        () => getSafeStepIndex(insertionSortMeta?.compareIndex, values.length),
+        [insertionSortMeta?.compareIndex, values.length],
+    );
+    const insertionSortedBoundary = useMemo(
+        () => getSafeStepIndex(insertionSortMeta?.sortedBoundary, values.length),
+        [insertionSortMeta?.sortedBoundary, values.length],
+    );
+    const insertionPositionIndex = useMemo(
+        () => getSafeStepIndex(insertionSortMeta?.insertPosition, values.length),
+        [insertionSortMeta?.insertPosition, values.length],
+    );
 
     const practiceTone = getPracticeTone(feedbackTone, practiceCompleted);
     const stepTone = getStepTone(currentStep);
@@ -602,6 +646,7 @@ function AlgorithmVisualizer({
     const quickSortMeta = currentStep?.quickSort ?? null;
     const selectionSortMeta = currentStep?.selectionSort ?? null;
     const mergeSortMeta = currentStep?.mergeSort ?? null;
+    const isInsertionSortStep = hasInsertionSortMetadata && algorithmType === "sort";
     const isSelectionSortStep = Boolean(selectionSortMeta) && algorithmType === "sort";
     const isMergeSortStep = Boolean(mergeSortMeta);
     const quickSortRange = useMemo(
@@ -621,6 +666,10 @@ function AlgorithmVisualizer({
     );
     const quickSortPracticeAction = useMemo(
         () => getQuickSortPracticeAction(currentStep),
+        [currentStep],
+    );
+    const insertionSortPracticeAction = useMemo(
+        () => getInsertionSortPracticeAction(currentStep),
         [currentStep],
     );
     const selectionCurrentIndex = typeof selectionSortMeta?.currentIndex === "number"
@@ -898,21 +947,45 @@ function AlgorithmVisualizer({
                             </span>
                             {isPracticeMode ? (
                                 <span className="text-sm text-sky-100/80">
-                                    {algorithmType === "search"
-                                        ? "Use Go Left, Go Right, or Found to decide the next move"
-                                        : (isQuickSortStep
-                                            ? (quickSortPracticeAction === "compare"
-                                                ? "Use the bottom array strip to validate the next comparison"
-                                                : (quickSortPracticeAction === "swap"
-                                                    ? "Use the bottom array strip to validate the next swap"
-                                                    : "Use the bottom array strip to follow the next quick sort action"))
-                                            : (isHeapStep
-                                                ? "Click two heap nodes to validate a swap"
-                                                : (isMergeSortStep
-                                                    ? "Click two boxes to validate a swap"
-                                                    : (isSelectionSortStep
-                                                        ? "Click two boxes to validate a swap"
-                                                        : "Click two bars to validate a swap"))))}
+                                    {(() => {
+                                        if (algorithmType === "search") {
+                                            return "Use Go Left, Go Right, or Found to decide the next move";
+                                        }
+
+                                        if (isQuickSortStep) {
+                                            if (quickSortPracticeAction === "compare") {
+                                                return "Use the bottom array strip to validate the next comparison";
+                                            }
+
+                                            if (quickSortPracticeAction === "swap") {
+                                                return "Use the bottom array strip to validate the next swap";
+                                            }
+
+                                            return "Use the bottom array strip to follow the next quick sort action";
+                                        }
+
+                                        if (isInsertionSortStep) {
+                                            if (insertionSortPracticeAction === "insert") {
+                                                return "Select one bar to validate the insertion position";
+                                            }
+
+                                            if (insertionSortPracticeAction === "shift") {
+                                                return "Select source and destination bars to validate the shift";
+                                            }
+
+                                            return "Select two bars to validate the comparison";
+                                        }
+
+                                        if (isHeapStep) {
+                                            return "Click two heap nodes to validate a swap";
+                                        }
+
+                                        if (isMergeSortStep || isSelectionSortStep) {
+                                            return "Click two boxes to validate a swap";
+                                        }
+
+                                        return "Click two bars to validate a swap";
+                                    })()}
                                 </span>
                             ) : null}
                         </div>
@@ -932,6 +1005,25 @@ function AlgorithmVisualizer({
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Found
+                                </span>
+                            </>
+                        ) : isInsertionSortStep ? (
+                            <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    Key / Compare
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-300 to-red-500" />
+                                    Shift
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-300 to-sky-500" />
+                                    Insert Position
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" />
+                                    Sorted Prefix
                                 </span>
                             </>
                         ) : isHeapStep ? (
@@ -1077,6 +1169,30 @@ function AlgorithmVisualizer({
                             </span>
                             <span>
                                 Candidate j: <span className="text-text-primary">{selectionCandidateIndex ?? "--"}</span>
+                            </span>
+                        </div>
+                    ) : hasInsertionSortMetadata ? (
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                            <span>
+                                Key: <span className="text-text-primary">{insertionSortMeta?.key ?? "--"}</span>
+                            </span>
+                            <span>
+                                Current Index: <span className="text-text-primary">{insertionSortMeta?.currentIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Compare Index: <span className="text-text-primary">{insertionSortMeta?.compareIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Insert Position: <span className="text-text-primary">{insertionSortMeta?.insertPosition ?? "--"}</span>
+                            </span>
+                            <span>
+                                Shift: <span className="text-text-primary">{insertionSortMeta?.shiftFrom ?? "--"} to {insertionSortMeta?.shiftTo ?? "--"}</span>
+                            </span>
+                            <span>
+                                Sorted Boundary: <span className="text-text-primary">{insertionSortMeta?.sortedBoundary ?? "--"}</span>
+                            </span>
+                            <span>
+                                Insertion Step: <span className="text-text-primary">{formatActionLabel(currentStep?.actionLabel ?? "--")}</span>
                             </span>
                         </div>
                     ) : mergeSortMeta ? (
@@ -1553,6 +1669,14 @@ function AlgorithmVisualizer({
                                     );
                                     const isQuickSortPivotPlacementIndex = typeof quickSortPivotIndex === "number"
                                         && index === quickSortPivotIndex;
+                                    const isInsertionKey = isInsertionSortStep && insertionKeyIndex === index;
+                                    const isInsertionCompare = isInsertionSortStep && insertionCompareIndex === index;
+                                    const isInsertionInsertPosition = isInsertionSortStep && insertionPositionIndex === index;
+                                    const isInsertionShift = isInsertionSortStep
+                                        && (insertionSortMeta?.shiftFrom === index || insertionSortMeta?.shiftTo === index);
+                                    const isInsertionSortedPrefix = isInsertionSortStep
+                                        && insertionSortedBoundary !== null
+                                        && index <= insertionSortedBoundary;
                                     const height = `${Math.max((bar.value / globalMax) * 100, 8)}%`;
                                     const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
                                     const shouldPulseMidpoint = !isPracticeMode && isSearchMidpoint && isActive && !shouldReduceMotion;
@@ -1607,6 +1731,9 @@ function AlgorithmVisualizer({
                                                 className={cn(
                                                     "text-xs font-medium text-text-secondary transition-colors duration-300",
                                                     isSorted && "text-emerald-200",
+                                                    isInsertionShift && "text-red-100",
+                                                    (isInsertionKey || isInsertionCompare) && "text-yellow-100",
+                                                    isInsertionInsertPosition && "text-sky-100",
                                                     isSelected && "text-sky-50",
                                                     isFeedbackTarget && feedbackTone === "correct" && "text-emerald-100",
                                                     isFeedbackTarget && feedbackTone === "incorrect" && "text-red-100",
@@ -1635,6 +1762,10 @@ function AlgorithmVisualizer({
                                                     className={cn(
                                                         "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
                                                         isSorted && "border-emerald-400/40 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
+                                                        isInsertionSortedPrefix && !isInsertionShift && !isInsertionInsertPosition && !(isInsertionKey || isInsertionCompare) && "border-emerald-300/45 from-emerald-300/85 to-emerald-500/90 shadow-[0_0_16px_rgba(52,211,153,0.2)]",
+                                                        (isInsertionKey || isInsertionCompare) && "border-yellow-300/60 from-yellow-300/90 to-yellow-500 shadow-[0_0_18px_rgba(250,204,21,0.3)]",
+                                                        isInsertionShift && "border-red-300/60 from-red-300/90 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.3)]",
+                                                        isInsertionInsertPosition && "border-sky-300/60 from-sky-300/90 to-sky-500 shadow-[0_0_18px_rgba(56,189,248,0.28)]",
                                                         isInQuickSortRange && !isHeapStep && "border-sky-300/40 from-sky-400/40 to-sky-500/20 shadow-[0_0_12px_rgba(56,189,248,0.18)]",
                                                         isQuickSortPivotPlacementIndex && "border-emerald-300/70 from-emerald-300 to-emerald-500 shadow-[0_0_24px_rgba(52,211,153,0.35)]",
                                                         !isPracticeMode && isActive && tone.activeBarClassName,
@@ -1655,6 +1786,9 @@ function AlgorithmVisualizer({
                                                 className={cn(
                                                     "text-[11px] text-text-secondary transition-colors duration-300",
                                                     isSorted && "text-emerald-200",
+                                                    isInsertionShift && "text-red-100",
+                                                    (isInsertionKey || isInsertionCompare) && "text-yellow-100",
+                                                    isInsertionInsertPosition && "text-sky-100",
                                                     isInQuickSortRange && !isSorted && "text-sky-100",
                                                     isQuickSortPivotPlacementIndex && "text-emerald-100",
                                                     isSelected && "text-sky-50",

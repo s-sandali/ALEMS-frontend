@@ -20,6 +20,7 @@ export type AlgorithmSimulationStep = {
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
     quickSort?: QuickSortStepModel | null;
+    insertionSort?: InsertionSortStepModel | null;
     selectionSort?: SelectionSortStepModel | null;
     mergeSort?: MergeSortStepModel | null;
     recursion?: RecursionStepModel | null;
@@ -72,6 +73,17 @@ export type QuickSortStepModel = {
     pivotIndex?: number | null;
     range?: number[] | null;
     recursionDepth?: number | null;
+};
+
+export type InsertionSortStepModel = {
+    type?: string | null;
+    currentIndex?: number | null;
+    key?: number | null;
+    compareIndex?: number | null;
+    shiftFrom?: number | null;
+    shiftTo?: number | null;
+    insertPosition?: number | null;
+    sortedBoundary?: number | null;
 };
 
 export type SelectionSortStepModel = {
