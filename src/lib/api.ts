@@ -17,15 +17,11 @@ export type AlgorithmSimulationStep = {
     activeIndices: number[];
     lineNumber: number;
     actionLabel: string;
-    keyIndex?: number | null;
-    key?: number | null;
-    compareIndex?: number | null;
-    sortedBoundary?: number | null;
-    insertPosition?: number | null;
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
     quickSort?: QuickSortStepModel | null;
     insertionSort?: InsertionSortStepModel | null;
+    selectionSort?: SelectionSortStepModel | null;
     mergeSort?: MergeSortStepModel | null;
     recursion?: RecursionStepModel | null;
 };
@@ -57,8 +53,8 @@ export type RecursionStepModel = {
     state?: string | null;
     depth?: number | null;
     currentFrameId?: string | number | null;
-    stack?: RecursionFrameModel[] | null;
     frames?: RecursionFrameModel[] | null;
+    stack?: RecursionFrameModel[] | null;
 };
 
 export type MergeSortStepModel = {
@@ -79,6 +75,27 @@ export type QuickSortStepModel = {
     recursionDepth?: number | null;
 };
 
+export type InsertionSortStepModel = {
+    type?: string | null;
+    currentIndex?: number | null;
+    key?: number | null;
+    compareIndex?: number | null;
+    shiftFrom?: number | null;
+    shiftTo?: number | null;
+    insertPosition?: number | null;
+    sortedBoundary?: number | null;
+};
+
+export type SelectionSortStepModel = {
+    type?: string | null;
+    currentIndex?: number | null;
+    candidateIndex?: number | null;
+    minIndex?: number | null;
+    swapFrom?: number | null;
+    swapTo?: number | null;
+    sortedBoundary?: number | null;
+};
+
 export type HeapStepModel = {
     phase: string;
     heapBoundaryEnd: number;
@@ -95,16 +112,6 @@ export type HeapStepModel = {
     sortedTargetIndex?: number | null;
 };
 
-export type InsertionSortStepModel = {
-    action?: string | null;
-    currentIndex?: number | null;
-    key?: number | null;
-    compareIndex?: number | null;
-    shiftFrom?: number | null;
-    shiftTo?: number | null;
-    insertPosition?: number | null;
-    boundary?: number | null;
-};
 export type SearchStepModel = {
     lowIndex: number;
     highIndex: number;

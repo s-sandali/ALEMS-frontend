@@ -431,6 +431,7 @@ export default function AlgorithmDetailPage() {
     const algorithmType = simulationAlgorithmKey === "binary_search" ? "search" : "sort";
     const isSearchMode = algorithmType === "search";
     const isQuickSortMode = simulationAlgorithmKey === "quick_sort";
+    const isSelectionSortMode = simulationAlgorithmKey === "selection_sort" || simulationAlgorithmKey === "selection-sort";
     const isInsertionSortMode = simulationAlgorithmKey === "insertion_sort";
     const activeLine = steps[currentStepIndex]?.lineNumber ?? 0;
     const lineToStepIndexMap = useMemo(
@@ -500,6 +501,8 @@ export default function AlgorithmDetailPage() {
     }
 
     function getSortPracticeCopy(action) {
+        const visualUnit = isSelectionSortMode ? "boxes" : "bars";
+
         if (action === "compare") {
             return {
                 feedback: "Select two bars to validate the comparison.",
@@ -536,10 +539,10 @@ export default function AlgorithmDetailPage() {
         return {
             feedback: isQuickSortMode
                 ? "Select two array cells to validate the swap."
-                : "Select two bars to attempt the next swap.",
+                : `Select two ${visualUnit} to attempt the next swap.`,
             pending: isQuickSortMode
                 ? "Select one more array cell to validate the swap."
-                : "Select one more bar to validate the swap.",
+                : `Select one more ${isSelectionSortMode ? "box" : "bar"} to validate the swap.`,
             validating: "Validating swap...",
             hint: "The backend will confirm whether this swap is the next valid move.",
             success: "Correct swap.",
