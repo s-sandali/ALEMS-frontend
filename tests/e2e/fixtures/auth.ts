@@ -45,9 +45,39 @@ export async function loginViaClerk(page: Page, credentials: AuthCredentials): P
 
     await page.waitForLoadState("domcontentloaded", { timeout: 15_000 }).catch(() => {});
 
+    // Clerk can redirect to /login/factor-two a moment after password submit.
+    // Poll both URL and verification UI so we don't miss that transition.
+    await expect
+        .poll(async () => {
+            if (page.url().includes("/dashboard")) {
+                return "dashboard";
+            }
+
+            if (page.url().includes("/factor-two")) {
+                return "factor-two";
+            }
+
+            const codeInputVisible = await clerkVerificationCodeInput(page)
+                .isVisible({ timeout: 1_000 })
+                .catch(() => false);
+            if (codeInputVisible) {
+                return "factor-two";
+            }
+
+            const checkEmailVisible = await page.getByText(/check your email/i)
+                .isVisible({ timeout: 1_000 })
+                .catch(() => false);
+            if (checkEmailVisible) {
+                return "factor-two";
+            }
+
+            return "pending";
+        }, { timeout: 60_000, intervals: [500, 1_000, 2_000] })
+        .not.toBe("pending");
+
     const verificationRequested = page.url().includes("/factor-two")
         || await clerkVerificationCodeInput(page)
-            .isVisible({ timeout: 5_000 })
+            .isVisible({ timeout: 2_000 })
             .catch(() => false)
         || await page.getByText(/check your email/i)
             .isVisible({ timeout: 2_000 })
