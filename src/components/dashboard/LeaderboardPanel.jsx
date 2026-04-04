@@ -6,8 +6,8 @@ export default function LeaderboardPanel({ entries }) {
   return (
     <div
       style={{
-        background: '#131415',
-        border: '1px solid #252627',
+        background: 'var(--db-bg2)',
+        border: '1px solid var(--db-border)',
         borderRadius: 12,
         padding: 20,
       }}
@@ -21,7 +21,7 @@ export default function LeaderboardPanel({ entries }) {
           marginBottom: 12,
         }}
       >
-        <span style={{ fontSize: 15, fontWeight: 600, color: '#e4e5e6' }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--db-text)' }}>
           Leaderboard
         </span>
         <button
@@ -31,11 +31,11 @@ export default function LeaderboardPanel({ entries }) {
             border: 'none',
             cursor: 'pointer',
             fontSize: 12,
-            color: '#4a4b4e',
+            color: 'var(--db-text3)',
             transition: 'color 0.15s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#c8ff3e')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#4a4b4e')}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--lime)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--db-text3)')}
         >
           Full board →
         </button>
@@ -58,16 +58,16 @@ export default function LeaderboardPanel({ entries }) {
                   padding: '9px 6px',
                   margin: '0 -6px',
                   borderRadius: 6,
-                  background: 'rgba(200,255,62,0.04)',
+                  background: 'rgba(var(--lime-rgb), 0.04)',
                 }}
               >
                 <span
                   style={{
                     fontSize: 12,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "'Poppins', sans-serif",
                     fontWeight: 700,
                     width: 18,
-                    color: '#c8ff3e',
+                    color: 'var(--lime)',
                     flexShrink: 0,
                   }}
                 >
@@ -78,14 +78,14 @@ export default function LeaderboardPanel({ entries }) {
                     width: 26,
                     height: 26,
                     borderRadius: '50%',
-                    background: 'rgba(200,255,62,0.1)',
-                    border: '1px solid rgba(200,255,62,0.25)',
+                    background: 'rgba(var(--lime-rgb), 0.1)',
+                    border: '1px solid rgba(var(--lime-rgb), 0.25)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 10,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    color: '#c8ff3e',
+                    fontFamily: "'Poppins', sans-serif",
+                    color: 'var(--lime)',
                     flexShrink: 0,
                   }}
                 >
@@ -95,7 +95,7 @@ export default function LeaderboardPanel({ entries }) {
                   style={{
                     fontSize: 13,
                     flex: 1,
-                    color: '#c8ff3e',
+                    color: 'var(--lime)',
                     fontWeight: 600,
                   }}
                 >
@@ -104,8 +104,8 @@ export default function LeaderboardPanel({ entries }) {
                 <span
                   style={{
                     fontSize: 12,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    color: '#8a8b8e',
+                    fontFamily: "'Poppins', sans-serif",
+                    color: 'var(--db-text2)',
                     flexShrink: 0,
                   }}
                 >
@@ -123,16 +123,16 @@ export default function LeaderboardPanel({ entries }) {
                 alignItems: 'center',
                 gap: 10,
                 padding: '9px 0',
-                borderBottom: isLast ? 'none' : '1px solid #252627',
+                borderBottom: isLast ? 'none' : '1px solid var(--db-border)',
               }}
             >
               <span
                 style={{
                   fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "'Poppins', sans-serif",
                   fontWeight: 700,
                   width: 18,
-                  color: isTop3 ? '#c8ff3e' : '#4a4b4e',
+                  color: isTop3 ? 'var(--lime)' : 'var(--db-text3)',
                   flexShrink: 0,
                 }}
               >
@@ -143,26 +143,26 @@ export default function LeaderboardPanel({ entries }) {
                   width: 26,
                   height: 26,
                   borderRadius: '50%',
-                  background: '#1f2020',
+                  background: 'var(--db-bg4)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: 10,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color: '#8a8b8e',
+                  fontFamily: "'Poppins', sans-serif",
+                  color: 'var(--db-text2)',
                   flexShrink: 0,
                 }}
               >
                 {entry.initials}
               </div>
-              <span style={{ fontSize: 13, flex: 1, color: '#e4e5e6' }}>
+              <span style={{ fontSize: 13, flex: 1, color: 'var(--db-text)' }}>
                 {entry.username}
               </span>
               <span
                 style={{
                   fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color: '#8a8b8e',
+                  fontFamily: "'Poppins', sans-serif",
+                  color: 'var(--db-text2)',
                   flexShrink: 0,
                 }}
               >

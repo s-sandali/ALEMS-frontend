@@ -4,13 +4,13 @@ export default function NextToUnlockPanel({ items }) {
   return (
     <div
       style={{
-        background: '#131415',
-        border: '1px solid #252627',
+        background: 'var(--db-bg2)',
+        border: '1px solid var(--db-border)',
         borderRadius: 12,
         padding: 20,
       }}
     >
-      <p style={{ fontSize: 15, fontWeight: 600, color: '#e4e5e6', marginBottom: 14 }}>
+      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--db-text)', marginBottom: 14 }}>
         Next to unlock
       </p>
 
@@ -25,7 +25,7 @@ export default function NextToUnlockPanel({ items }) {
                 alignItems: 'center',
                 gap: 10,
                 paddingBottom: isLast ? 0 : 12,
-                borderBottom: isLast ? 'none' : '1px solid #252627',
+                borderBottom: isLast ? 'none' : '1px solid var(--db-border)',
               }}
             >
               {/* Icon box */}
@@ -34,14 +34,14 @@ export default function NextToUnlockPanel({ items }) {
                   width: 28,
                   height: 28,
                   borderRadius: 6,
-                  background: '#1f2020',
+                  background: 'var(--db-bg4)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
                 }}
               >
-                <Lock size={12} color="#4a4b4e" />
+                <Lock size={12} color="var(--db-text3)" />
               </div>
 
               {/* Text */}
@@ -50,20 +50,20 @@ export default function NextToUnlockPanel({ items }) {
                   style={{
                     fontSize: 12,
                     fontWeight: 500,
-                    color: '#e4e5e6',
+                    color: 'var(--db-text)',
                     marginBottom: 2,
                   }}
                 >
                   {item.name}
                 </p>
-                <p style={{ fontSize: 11, color: '#4a4b4e' }}>{item.hint}</p>
+                <p style={{ fontSize: 11, color: 'var(--db-text3)' }}>{item.hint}</p>
               </div>
 
               {/* Progress label */}
               <span
                 style={{
                   fontSize: 10,
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "'Poppins', sans-serif",
                   color: item.progressColor,
                   flexShrink: 0,
                 }}
