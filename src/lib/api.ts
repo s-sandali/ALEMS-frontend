@@ -18,7 +18,9 @@ export type AlgorithmSimulationStep = {
     lineNumber: number;
     actionLabel: string;
     keyIndex?: number | null;
+    key?: number | null;
     compareIndex?: number | null;
+    sortedBoundary?: number | null;
     insertPosition?: number | null;
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
@@ -54,8 +56,8 @@ export type RecursionStepModel = {
     state?: string | null;
     depth?: number | null;
     currentFrameId?: string | number | null;
-    frames?: RecursionFrameModel[] | null;
     stack?: RecursionFrameModel[] | null;
+    frames?: RecursionFrameModel[] | null;
 };
 
 export type MergeSortStepModel = {

@@ -607,13 +607,24 @@ function AlgorithmVisualizer({
         () => getSafeStepIndex(currentStep?.keyIndex, values.length),
         [currentStep?.keyIndex, values.length],
     );
+    const insertionKeyValue = currentStep?.key ?? null;
     const insertionCompareIndex = useMemo(
         () => getSafeStepIndex(currentStep?.compareIndex, values.length),
         [currentStep?.compareIndex, values.length],
     );
+    const insertionSortedBoundary = useMemo(
+        () => getSafeStepIndex(currentStep?.sortedBoundary, values.length),
+        [currentStep?.sortedBoundary, values.length],
+    );
     const insertionPositionIndex = useMemo(
         () => getSafeStepIndex(currentStep?.insertPosition, values.length),
         [currentStep?.insertPosition, values.length],
+    );
+    const hasInsertionMetadata = Boolean(
+        typeof currentStep?.keyIndex === "number"
+        || typeof currentStep?.key === "number"
+        || typeof currentStep?.compareIndex === "number"
+        || typeof currentStep?.sortedBoundary === "number",
     );
 
     const practiceTone = getPracticeTone(feedbackTone, practiceCompleted);
@@ -1057,6 +1068,21 @@ function AlgorithmVisualizer({
                             <span>Range: <span className="text-text-primary">[{mergeSortMeta.left}..{mergeSortMeta.right}]</span></span>
                             <span>Mid: <span className="text-text-primary">{typeof mergeSortMeta.mid === "number" ? mergeSortMeta.mid : "--"}</span></span>
                         </div>
+                    ) : hasInsertionMetadata ? (
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                            <span>
+                                Key Index: <span className="text-text-primary">{insertionKeyIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Key: <span className="text-text-primary">{typeof insertionKeyValue === "number" ? insertionKeyValue : "--"}</span>
+                            </span>
+                            <span>
+                                Compare Index: <span className="text-text-primary">{insertionCompareIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Sorted Boundary: <span className="text-text-primary">{insertionSortedBoundary ?? "--"}</span>
+                            </span>
+                        </div>
                     ) : null}
 
                     {isPracticeMode && hintMessage ? (
@@ -1401,6 +1427,9 @@ function AlgorithmVisualizer({
                                     const isKeyElement = !isPracticeMode && index === insertionKeyIndex;
                                     const isCompareElement = !isPracticeMode && index === insertionCompareIndex;
                                     const isInsertionPosition = !isPracticeMode && index === insertionPositionIndex;
+                                    const isInSortedBoundary = !isPracticeMode
+                                        && typeof insertionSortedBoundary === "number"
+                                        && index <= insertionSortedBoundary;
                                     const isSelected = selectedIndexSet.has(index);
                                     const isSuggested = suggestedIndexSet.has(index);
                                     const isFeedbackTarget = feedbackIndexSet.has(index);
@@ -1508,6 +1537,7 @@ function AlgorithmVisualizer({
                                                         isKeyElement && "border-yellow-300/70 from-yellow-300 to-yellow-500 shadow-[0_0_22px_rgba(250,204,21,0.32)]",
                                                         isCompareElement && "border-red-300/75 from-red-300 to-red-500 shadow-[0_0_22px_rgba(248,113,113,0.34)]",
                                                         isInsertionPosition && "border-sky-300/75 from-sky-300 to-sky-500 shadow-[0_0_22px_rgba(56,189,248,0.34)]",
+                                                        isInSortedBoundary && "border-emerald-300/40 from-emerald-400/85 to-emerald-500 shadow-[0_0_14px_rgba(52,211,153,0.2)]",
                                                     )}
                                                     aria-label={`Index ${index}, value ${bar.value}`}
                                                     aria-current={isActive || isSelected ? "true" : undefined}
