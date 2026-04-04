@@ -5,6 +5,7 @@ import type { Transition } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
+import MergeSortVisualizer from "./MergeSortVisualizer";
 
 type LearningMode = "auto" | "practice";
 type PracticeFeedbackTone = "correct" | "incorrect" | null;
@@ -230,6 +231,20 @@ function getSearchActiveIndices(step: AlgorithmSimulationStep | undefined) {
 
 function getSearchState(step: AlgorithmSimulationStep | undefined) {
     return (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
+}
+
+function getQuickSortPracticeAction(step: AlgorithmSimulationStep | undefined) {
+    const action = (step?.quickSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
+
+    if (action === "pivot_swap" || action === "swap") {
+        return "swap";
+    }
+
+    if (action === "compare") {
+        return "compare";
+    }
+
+    return action;
 }
 
 function getSearchWindow(step: AlgorithmSimulationStep | undefined, totalValues: number) {
@@ -620,6 +635,8 @@ function AlgorithmVisualizer({
         : (currentStep?.search?.state ?? currentStep?.actionLabel ?? "Waiting for steps");
     const heapStepMeta = currentStep?.heap ?? null;
     const quickSortMeta = currentStep?.quickSort ?? null;
+    const mergeSortMeta = currentStep?.mergeSort ?? null;
+    const isMergeSortStep = Boolean(mergeSortMeta);
     const quickSortRange = useMemo(
         () => getQuickSortRange(currentStep),
         [currentStep],
@@ -635,6 +652,11 @@ function AlgorithmVisualizer({
         () => formatHeapComparison(currentStep),
         [currentStep],
     );
+    const quickSortPracticeAction = useMemo(
+        () => getQuickSortPracticeAction(currentStep),
+        [currentStep],
+    );
+    const isQuickSortStep = hasQuickSortMetadata && algorithmType === "sort";
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
     const heapIdentityData = useMemo(() => {
         if (!isHeapStep || steps.length === 0) {
@@ -896,9 +918,17 @@ function AlgorithmVisualizer({
                                 <span className="text-sm text-sky-100/80">
                                     {algorithmType === "search"
                                         ? "Use Go Left, Go Right, or Found to decide the next move"
-                                        : (isHeapStep
-                                            ? "Click two heap nodes to validate a swap"
-                                            : "Click two bars to validate a swap")}
+                                        : (isQuickSortStep
+                                            ? (quickSortPracticeAction === "compare"
+                                                ? "Use the bottom array strip to validate the next comparison"
+                                                : (quickSortPracticeAction === "swap"
+                                                    ? "Use the bottom array strip to validate the next swap"
+                                                    : "Use the bottom array strip to follow the next quick sort action"))
+                                            : (isHeapStep
+                                                ? "Click two heap nodes to validate a swap"
+                                                : (isMergeSortStep
+                                                    ? "Click two boxes to validate a swap"
+                                                    : "Click two bars to validate a swap")))}
                                 </span>
                             ) : null}
                         </div>
@@ -942,6 +972,37 @@ function AlgorithmVisualizer({
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Sorted Array
                                 </span>
+                            </>
+                        ) : isMergeSortStep ? (
+                            <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-blue-400 to-blue-500" />
+                                    Merge Group
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-300 to-sky-400" />
+                                    Active Group
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    Comparing
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                                    Placed / Sorted
+                                </span>
+                                {isPracticeMode ? (
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                        <span className="h-2.5 w-2.5 rounded-sm border border-sky-200/80 bg-sky-400/20 ring-2 ring-cyan-300/80" />
+                                        Suggested Step
+                                    </span>
+                                ) : null}
+                                {isPracticeMode ? (
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                        <span className="h-2.5 w-2.5 rounded-sm border border-sky-200/80 bg-sky-400/20 ring-2 ring-fuchsia-300/85" />
+                                        Selected
+                                    </span>
+                                ) : null}
                             </>
                         ) : (
                             <>
@@ -999,6 +1060,13 @@ function AlgorithmVisualizer({
                             <span>
                                 Quick Sort Step: <span className="text-text-primary">{formatActionLabel(currentStep?.actionLabel ?? "--")}</span>
                             </span>
+                        </div>
+                    ) : mergeSortMeta ? (
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                            <span>Phase: <span className="text-text-primary">{formatActionLabel(mergeSortMeta.type ?? "--")}</span></span>
+                            <span>Depth: <span className="text-text-primary">{mergeSortMeta.recursionDepth}</span></span>
+                            <span>Range: <span className="text-text-primary">[{mergeSortMeta.left}..{mergeSortMeta.right}]</span></span>
+                            <span>Mid: <span className="text-text-primary">{typeof mergeSortMeta.mid === "number" ? mergeSortMeta.mid : "--"}</span></span>
                         </div>
                     ) : hasInsertionMetadata ? (
                         <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
@@ -1112,6 +1180,18 @@ function AlgorithmVisualizer({
                                 )}
                             </div>
                         </div>
+                    ) : isMergeSortStep ? (
+                        <MergeSortVisualizer
+                            steps={steps}
+                            currentStepIndex={safeIndex}
+                            mode={mode}
+                            practiceArray={values}
+                            selectedIndices={selectedIndices}
+                            suggestedIndices={suggestedIndices}
+                            isInteractionDisabled={isInteractionDisabled}
+                            practiceCompleted={practiceCompleted}
+                            onBarClick={onBarClick}
+                        />
                     ) : isHeapStep ? (
                         <div>
                             <div className="mb-3 flex items-center justify-between text-xs text-text-secondary">

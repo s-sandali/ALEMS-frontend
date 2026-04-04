@@ -721,6 +721,161 @@ int main() {
 }`,
         },
     ],
+    "merge sort": [
+        {
+            id: "pseudocode",
+            label: "Pseudocode",
+            language: "PSEUDOCODE",
+            syncsWithTrace: true,
+            traceLineMap: {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 4,
+                5: 5,
+                6: 6,
+                7: 7,
+                8: 8,
+                9: 9,
+                10: 10,
+                11: 11,
+                12: 12,
+            },
+            code: `function mergeSort(arr, left, right)
+  mergeSort(arr, left, right)           // recursive call
+  if left >= right: return              // base case
+  mid ← left + (right - left) / 2      // split
+  mergeSort(arr, left, mid)             // sort left half
+  mergeSort(arr, mid+1, right)          // sort right half
+  merge(arr, left, mid, right)          // begin merge
+  begin merging left and right halves   // merge_start
+  compare arr[i] vs arr[j]             // compare
+  place smaller into arr[k]            // place
+  merged region is fully sorted        // merge_complete
+  return sorted sub-array              // return`,
+        },
+        {
+            id: "javascript",
+            label: "JavaScript",
+            language: "JAVASCRIPT",
+            syncsWithTrace: false,
+            code: `// Merge Sort in JavaScript
+function mergeSort(arr) {
+  if (arr.length <= 1) return arr;
+
+  const mid = Math.floor(arr.length / 2);
+  const left  = mergeSort(arr.slice(0, mid));
+  const right = mergeSort(arr.slice(mid));
+  return merge(left, right);
+}
+
+function merge(left, right) {
+  const result = [];
+  let i = 0, j = 0;
+  while (i < left.length && j < right.length) {
+    if (left[i] <= right[j]) result.push(left[i++]);
+    else                      result.push(right[j++]);
+  }
+  return result.concat(left.slice(i)).concat(right.slice(j));
+}
+
+const arr = [8, 3, 5, 1, 9, 2];
+console.log("Sorted:", mergeSort(arr));`,
+        },
+        {
+            id: "python",
+            label: "Python",
+            language: "PYTHON",
+            syncsWithTrace: false,
+            code: `# Merge Sort in Python
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    left  = merge_sort(arr[:mid])
+    right = merge_sort(arr[mid:])
+    return merge(left, right)
+
+def merge(left, right):
+    result, i, j = [], 0, 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            result.append(left[i]); i += 1
+        else:
+            result.append(right[j]); j += 1
+    return result + left[i:] + right[j:]
+
+arr = [8, 3, 5, 1, 9, 2]
+print("Sorted:", merge_sort(arr))`,
+        },
+        {
+            id: "java",
+            label: "Java",
+            language: "JAVA",
+            syncsWithTrace: false,
+            code: `// Merge Sort in Java
+import java.util.Arrays;
+
+public class MergeSortExample {
+    public static void mergeSort(int[] arr, int left, int right) {
+        if (left >= right) return;
+        int mid = left + (right - left) / 2;
+        mergeSort(arr, left, mid);
+        mergeSort(arr, mid + 1, right);
+        merge(arr, left, mid, right);
+    }
+
+    static void merge(int[] arr, int l, int m, int r) {
+        int[] tmp = Arrays.copyOfRange(arr, l, r + 1);
+        int i = 0, j = m - l + 1, k = l, end = r - l;
+        while (i <= m - l && j <= end)
+            arr[k++] = tmp[i] <= tmp[j] ? tmp[i++] : tmp[j++];
+        while (i <= m - l) arr[k++] = tmp[i++];
+        while (j <= end)   arr[k++] = tmp[j++];
+    }
+
+    public static void main(String[] args) {
+        int[] arr = {8, 3, 5, 1, 9, 2};
+        mergeSort(arr, 0, arr.length - 1);
+        System.out.println(Arrays.toString(arr));
+    }
+}`,
+        },
+        {
+            id: "cpp",
+            label: "C++",
+            language: "C++",
+            syncsWithTrace: false,
+            code: `// Merge Sort in C++
+#include <iostream>
+#include <vector>
+using namespace std;
+
+void merge(vector<int>& a, int l, int m, int r) {
+    vector<int> L(a.begin()+l, a.begin()+m+1);
+    vector<int> R(a.begin()+m+1, a.begin()+r+1);
+    int i=0, j=0, k=l;
+    while (i<(int)L.size() && j<(int)R.size())
+        a[k++] = L[i] <= R[j] ? L[i++] : R[j++];
+    while (i<(int)L.size()) a[k++] = L[i++];
+    while (j<(int)R.size()) a[k++] = R[j++];
+}
+
+void mergeSort(vector<int>& a, int l, int r) {
+    if (l >= r) return;
+    int m = l + (r-l)/2;
+    mergeSort(a, l, m);
+    mergeSort(a, m+1, r);
+    merge(a, l, m, r);
+}
+
+int main() {
+    vector<int> a = {8,3,5,1,9,2};
+    mergeSort(a, 0, a.size()-1);
+    for (int v : a) cout << v << " ";
+}`,
+        },
+    ],
 };
 
 const sampleSizes = [8, 16, 32, 64, 128, 256];

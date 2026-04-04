@@ -25,7 +25,49 @@ export type AlgorithmSimulationStep = {
     search?: SearchStepModel | null;
     heap?: HeapStepModel | null;
     quickSort?: QuickSortStepModel | null;
-    recursion?: RecursionStateModel | null;
+    mergeSort?: MergeSortStepModel | null;
+    recursion?: RecursionStepModel | null;
+};
+
+type RecursionPrimitive = string | number | boolean | null;
+
+export type RecursionFrameModel = {
+    id?: string | number | null;
+    functionName?: string | null;
+    label?: string | null;
+    state?: string | null;
+    depth?: number | null;
+    arguments?: Record<string, RecursionPrimitive> | null;
+    params?: Record<string, RecursionPrimitive> | null;
+    leftIndex?: number | null;
+    rightIndex?: number | null;
+    lowIndex?: number | null;
+    highIndex?: number | null;
+    startIndex?: number | null;
+    endIndex?: number | null;
+    midpointIndex?: number | null;
+    pivotIndex?: number | null;
+    returnValue?: RecursionPrimitive | number[] | string[] | null;
+    result?: RecursionPrimitive | number[] | string[] | null;
+};
+
+export type RecursionStepModel = {
+    event?: string | null;
+    state?: string | null;
+    depth?: number | null;
+    currentFrameId?: string | number | null;
+    stack?: RecursionFrameModel[] | null;
+    frames?: RecursionFrameModel[] | null;
+};
+
+export type MergeSortStepModel = {
+    type: string;
+    left: number;
+    right: number;
+    mid?: number | null;
+    recursionDepth: number;
+    mergeBuffer?: number[] | null;
+    placeIndex?: number | null;
 };
 
 export type QuickSortStepModel = {
@@ -34,23 +76,6 @@ export type QuickSortStepModel = {
     pivotIndex?: number | null;
     range?: number[] | null;
     recursionDepth?: number | null;
-};
-
-export type RecursionFrameModel = {
-    id?: string | number | null;
-    depth?: number | null;
-    leftIndex?: number | null;
-    rightIndex?: number | null;
-    lowIndex?: number | null;
-    highIndex?: number | null;
-    startIndex?: number | null;
-    endIndex?: number | null;
-};
-
-export type RecursionStateModel = {
-    currentFrameId?: string | number | null;
-    stack?: RecursionFrameModel[];
-    frames?: RecursionFrameModel[];
 };
 
 export type HeapStepModel = {
