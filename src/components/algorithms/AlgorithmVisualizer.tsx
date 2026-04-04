@@ -28,6 +28,13 @@ type AlgorithmVisualizerProps = {
     hintMessage?: string;
     practiceCompleted?: boolean;
     isInteractionDisabled?: boolean;
+    selectionPracticeCandidateIndex?: number | null;
+    selectionPracticeConfirmedMinIndex?: number | null;
+    selectionPracticeSwapAnchorIndex?: number | null;
+    canSelectionPracticeGoRight?: boolean;
+    canSelectionPracticeSelectMin?: boolean;
+    onSelectionPracticeGoRight?: () => void;
+    onSelectionPracticeSelectMin?: () => void;
     onBarClick?: (index: number) => void;
     onSearchDecision?: (decision: SearchDecision) => void;
     className?: string;
@@ -590,6 +597,13 @@ function AlgorithmVisualizer({
     hintMessage = "",
     practiceCompleted = false,
     isInteractionDisabled = false,
+    selectionPracticeCandidateIndex = null,
+    selectionPracticeConfirmedMinIndex = null,
+    selectionPracticeSwapAnchorIndex = null,
+    canSelectionPracticeGoRight = false,
+    canSelectionPracticeSelectMin = false,
+    onSelectionPracticeGoRight,
+    onSelectionPracticeSelectMin,
     onBarClick,
     onSearchDecision,
     className,
@@ -1021,6 +1035,10 @@ function AlgorithmVisualizer({
     const isHeapPracticeInteractive = isHeapStep
         && isPracticeMode
         && typeof onBarClick === "function";
+    const showSelectionPracticeControls = isPracticeMode
+        && isSelectionSortStep
+        && typeof onSelectionPracticeGoRight === "function"
+        && typeof onSelectionPracticeSelectMin === "function";
 
     const createBar = (value: number): VisualBar => ({
         id: `visual-bar-${nextBarIdRef.current++}`,
@@ -1129,7 +1147,7 @@ function AlgorithmVisualizer({
                                         }
 
                                         if (isMergeSortStep || isSelectionSortStep) {
-                                            return "Click two boxes to validate a swap";
+                                            return "Go Right to scan the minimum, Select Min to lock it, then click the swap partner index";
                                         }
 
                                         return "Click two bars to validate a swap";
@@ -1453,6 +1471,26 @@ function AlgorithmVisualizer({
                             </div>
                         </div>
                     ) : isSelectionSortStep ? (
+                        <div className="flex flex-col gap-4">
+                            {showSelectionPracticeControls ? (
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => onSelectionPracticeGoRight?.()}
+                                        disabled={!canSelectionPracticeGoRight || isInteractionDisabled}
+                                    >
+                                        Go Right
+                                    </Button>
+                                    <Button
+                                        variant="default"
+                                        onClick={() => onSelectionPracticeSelectMin?.()}
+                                        disabled={!canSelectionPracticeSelectMin || isInteractionDisabled}
+                                    >
+                                        Select Min
+                                    </Button>
+                                </div>
+                            ) : null}
+
                         <motion.div
                             key={`selection-tiles-${mode}`}
                             initial={shouldReduceMotion
@@ -1484,6 +1522,13 @@ function AlgorithmVisualizer({
                                     const isCandidate = selectionCandidateIndex === index;
                                     const isSwapFrom = selectionSwapFromIndex === index;
                                     const isSwapTo = selectionSwapToIndex === index;
+                                    const isPracticeCandidate = isPracticeMode
+                                        && selectionPracticeCandidateIndex === index
+                                        && selectionPracticeConfirmedMinIndex === null;
+                                    const isPracticeConfirmedMin = isPracticeMode
+                                        && selectionPracticeConfirmedMinIndex === index;
+                                    const isPracticeSwapAnchor = isPracticeMode
+                                        && selectionPracticeSwapAnchorIndex === index;
                                     const shouldPulseCandidate = !isPracticeMode && isCandidate && !isSorted && !isMin && !shouldReduceMotion;
                                     const shouldPulseMin = !isPracticeMode && isMin && !isSorted && !shouldReduceMotion;
                                     const baseScale = isSelected ? 1.03 : 1;
@@ -1491,7 +1536,9 @@ function AlgorithmVisualizer({
                                         ? [baseScale, 1.07, baseScale]
                                         : (shouldPulseMin
                                             ? [baseScale, 1.05, baseScale]
-                                            : baseScale);
+                                            : (isPracticeCandidate && !shouldReduceMotion
+                                                ? [baseScale, 1.06, baseScale]
+                                                : baseScale));
 
                                     const tileClassName = cn(
                                         "flex items-center justify-center rounded-xl border font-semibold transition-[transform,background-color,border-color,box-shadow] duration-300",
@@ -1499,6 +1546,9 @@ function AlgorithmVisualizer({
                                         isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
                                         !isPracticeMode && !isSorted && (isMin || isCurrent || isSwapFrom) && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.3)]",
                                         !isPracticeMode && !isSorted && !isMin && (isCandidate || isSwapTo) && "border-red-200/80 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.34)]",
+                                        isPracticeMode && isPracticeCandidate && "border-red-200/85 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.35)]",
+                                        isPracticeMode && isPracticeConfirmedMin && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.34)]",
+                                        isPracticeMode && isPracticeSwapAnchor && !isPracticeConfirmedMin && "ring-2 ring-accent/70 ring-offset-1 ring-offset-transparent",
                                         isSuggested && isPracticeMode && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
                                         isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
                                         isFeedbackTarget && feedbackTone === "correct" && "border-emerald-300/80 bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.32)]",
@@ -1540,7 +1590,7 @@ function AlgorithmVisualizer({
                                                 animate={shouldReduceMotion
                                                     ? {}
                                                     : {
-                                                        y: (isMin || isCandidate || isSelected) && !isSorted ? -3 : 0,
+                                                        y: (isMin || isCandidate || isSelected || isPracticeCandidate || isPracticeConfirmedMin) && !isSorted ? -3 : 0,
                                                         scale: scaleSequence,
                                                     }}
                                                 transition={{ duration: 0.28, ease: "easeOut" }}
@@ -1560,6 +1610,8 @@ function AlgorithmVisualizer({
                                                 isSorted && "text-emerald-200",
                                                 !isSorted && isMin && "text-sky-100",
                                                 !isSorted && !isMin && isCandidate && "text-red-100",
+                                                !isSorted && isPracticeCandidate && "text-red-100",
+                                                !isSorted && isPracticeConfirmedMin && "text-sky-100",
                                             )}
                                             >
                                                 {index}
@@ -1573,6 +1625,7 @@ function AlgorithmVisualizer({
                                 </div>
                             )}
                         </motion.div>
+                        </div>
                     ) : isMergeSortStep ? (
                         <MergeSortVisualizer
                             steps={steps}
