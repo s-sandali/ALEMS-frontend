@@ -6,6 +6,7 @@ import { getAuthStatePath, type AuthCredentials, type RoleName } from "./env";
 import {
     clerkIdentifierInput,
     clerkPasswordInput,
+    clerkPrimaryContinueButton,
     clerkVerificationCodeInput,
     expectClerkSignInForm,
     expectDashboardReady,
@@ -16,11 +17,11 @@ export async function loginViaClerk(page: Page, credentials: AuthCredentials): P
     await expectClerkSignInForm(page);
 
     await clerkIdentifierInput(page).fill(credentials.email);
-    await page.getByRole("button", { name: /continue/i }).click();
+    await clerkPrimaryContinueButton(page).click();
 
     await expect(clerkPasswordInput(page)).toBeVisible({ timeout: 20_000 });
     await clerkPasswordInput(page).fill(credentials.password);
-    await page.getByRole("button", { name: /continue/i }).click();
+    await clerkPrimaryContinueButton(page).click();
 
     const verificationRequested = await clerkVerificationCodeInput(page)
         .isVisible({ timeout: 5_000 })
