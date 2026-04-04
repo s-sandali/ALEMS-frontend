@@ -292,6 +292,7 @@ export default function AlgorithmDetailPage() {
     const [suggestedIndices, setSuggestedIndices] = useState([]);
     const [isValidatingStep, setIsValidatingStep] = useState(false);
     const [practiceCompleted, setPracticeCompleted] = useState(false);
+    const [recentPracticeAction, setRecentPracticeAction] = useState(null);
     const [feedbackVersion, setFeedbackVersion] = useState(0);
     const [showCompletionToast, setShowCompletionToast] = useState(false);
 
@@ -479,127 +480,6 @@ export default function AlgorithmDetailPage() {
         setCurrentStepIndex(currentPlanStep.stepIndex);
     }, [mode, isMergeSortAlgorithm, mergePracticeSwapPlan, mergePracticeStepIndex]);
 
-    const practiceQuestions = useMemo(() => {
-        if (mode !== "practice" || practiceCompleted) {
-            return [];
-        }
-
-        if (isSearchMode) {
-            return [
-                {
-                    prompt: "Midpoint Decision Drill",
-                    steps: [
-                        "Identify the highlighted midpoint index.",
-                        "Compare midpoint value with the target.",
-                        "Choose Go Left, Go Right, or Found.",
-                        "Check the feedback and update your next move.",
-                    ],
-                },
-            ];
-        }
-
-        const step = steps[currentStepIndex];
-        const expectedAction = getCurrentSortPracticeAction(step);
-        const isBoxInteraction = isSelectionSortMode || isMergeSortAlgorithm;
-        const unit = isBoxInteraction ? "box" : "bar";
-        const unitPlural = isBoxInteraction ? "boxes" : "bars";
-        const guidedSuggestion = formatIndices(suggestedIndices);
-
-        if (expectedAction === "insert") {
-            return [
-                {
-                    prompt: "Insertion Target Challenge",
-                    steps: [
-                        `Select one ${unit} where the key should be inserted.`,
-                        "Confirm the selected index is highlighted.",
-                        "Wait for validation feedback before the next move.",
-                    ],
-                },
-                {
-                    prompt: "Highlight Awareness",
-                    steps: [
-                        `Click any ${unit} once and verify the blue selected highlight.`,
-                        "Click the same index again to clear the selection.",
-                        "Select the correct insertion target index and submit.",
-                    ],
-                },
-            ];
-        }
-
-        if (expectedAction === "compare") {
-            return [
-                {
-                    prompt: "Comparison Pair Challenge",
-                    steps: [
-                        `Select the first ${unit} for comparison.`,
-                        `Select the second ${unit} to form the pair.`,
-                        "Check that both selected indexes remain highlighted until validation.",
-                        "Read feedback to confirm if the pair was correct.",
-                    ],
-                },
-                {
-                    prompt: "Suggested Pair Follow",
-                    steps: [
-                        `If hints are shown, try indexes: ${guidedSuggestion}.`,
-                        `Select those two ${unitPlural} in order.`,
-                        "Use the result to decide the next comparison.",
-                    ],
-                },
-            ];
-        }
-
-        if (expectedAction === "shift") {
-            return [
-                {
-                    prompt: "Shift Source to Destination",
-                    steps: [
-                        `Select the source ${unit} first.`,
-                        `Select the destination ${unit} second.`,
-                        "Confirm both selected indexes are highlighted.",
-                        "Validate and observe how the array updates.",
-                    ],
-                },
-                {
-                    prompt: "Retry With Hint",
-                    steps: [
-                        `Use suggested indexes if available: ${guidedSuggestion}.`,
-                        "Swap only after both selections are highlighted.",
-                        "Repeat until feedback says the shift is correct.",
-                    ],
-                },
-            ];
-        }
-
-        return [
-            {
-                prompt: "Manual Swap Challenge",
-                steps: [
-                    `Select the first ${unit} index.`,
-                    `Select the second ${unit} index to attempt the swap.`,
-                    "Check both selected indexes are highlighted before validation.",
-                    "Use feedback and hint text to prepare the next swap.",
-                ],
-            },
-            {
-                prompt: "Guided Swap Follow-up",
-                steps: [
-                    `Try the suggested indexes: ${guidedSuggestion}.`,
-                    `If wrong, clear selection and re-select the recommended ${unitPlural}.`,
-                    "Continue until the practice step is marked correct.",
-                ],
-            },
-        ];
-    }, [
-        currentStepIndex,
-        isMergeSortAlgorithm,
-        isSearchMode,
-        isSelectionSortMode,
-        mode,
-        practiceCompleted,
-        steps,
-        suggestedIndices,
-    ]);
-
     function getCurrentSortPracticeAction(step) {
         if (isInsertionSortMode) {
             return getInsertionSortPracticeAction(step);
@@ -710,6 +590,7 @@ export default function AlgorithmDetailPage() {
         setSuggestedIndices([]);
         setIsValidatingStep(false);
         setPracticeCompleted(false);
+        setRecentPracticeAction(null);
         setFeedbackVersion((previousValue) => previousValue + 1);
         setCurrentStepIndex(nextStepIndex);
     }
@@ -838,6 +719,7 @@ export default function AlgorithmDetailPage() {
         setSuggestedIndices([]);
         setIsValidatingStep(false);
         setPracticeCompleted(false);
+        setRecentPracticeAction(null);
         setFeedbackVersion((previousValue) => previousValue + 1);
     }
 
@@ -852,6 +734,7 @@ export default function AlgorithmDetailPage() {
         setShowCompletionToast(false);
         setSimulationError("");
         setIsValidatingStep(true);
+        setRecentPracticeAction(actionType);
         setFeedbackIndices(indices);
         setSuggestedIndices([]);
         setFeedbackMessage(copy.validating);
@@ -923,6 +806,7 @@ export default function AlgorithmDetailPage() {
         setShowCompletionToast(false);
         setSimulationError("");
         setIsValidatingStep(true);
+        setRecentPracticeAction("midpoint");
         setSelectedIndices(indices);
         setFeedbackIndices(indices);
         setSuggestedIndices([]);
@@ -1068,6 +952,7 @@ export default function AlgorithmDetailPage() {
             });
 
             setIsCorrect(true);
+            setRecentPracticeAction("swap");
             const nextPlanIndex = mergePracticeStepIndex + 1;
             const nextPlanStep = mergePracticeSwapPlan[nextPlanIndex] ?? null;
             const isComplete = Boolean(expectedPlanStep) && !nextPlanStep;
@@ -1370,7 +1255,6 @@ export default function AlgorithmDetailPage() {
                             feedbackMessage={feedbackMessage}
                             hintMessage={hintMessage}
                             selectedIndices={selectedIndices}
-                            practiceQuestions={practiceQuestions}
                             isCorrect={isCorrect}
                             isValidatingStep={isValidatingStep}
                             practiceCompleted={practiceCompleted}
@@ -1403,6 +1287,7 @@ export default function AlgorithmDetailPage() {
                                 discardedIndices={autoDiscardedIndices}
                                 feedbackTone={isCorrect === null ? null : (isCorrect ? "correct" : "incorrect")}
                                 feedbackVersion={feedbackVersion}
+                                recentPracticeAction={recentPracticeAction}
                                 hintMessage={mode === "practice" ? hintMessage : ""}
                                 practiceCompleted={practiceCompleted}
                                 isInteractionDisabled={mode !== "practice" || isValidatingStep || practiceCompleted}
