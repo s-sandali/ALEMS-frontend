@@ -29,6 +29,7 @@ type AlgorithmVisualizerProps = {
     practiceCompleted?: boolean;
     isInteractionDisabled?: boolean;
     selectionPracticeCandidateIndex?: number | null;
+    selectionPracticeCurrentMinIndex?: number | null;
     selectionPracticeConfirmedMinIndex?: number | null;
     selectionPracticeSwapAnchorIndex?: number | null;
     canSelectionPracticeGoRight?: boolean;
@@ -598,6 +599,7 @@ function AlgorithmVisualizer({
     practiceCompleted = false,
     isInteractionDisabled = false,
     selectionPracticeCandidateIndex = null,
+    selectionPracticeCurrentMinIndex = null,
     selectionPracticeConfirmedMinIndex = null,
     selectionPracticeSwapAnchorIndex = null,
     canSelectionPracticeGoRight = false,
@@ -723,6 +725,9 @@ function AlgorithmVisualizer({
     const selectionMinIndex = typeof selectionSortMeta?.minIndex === "number"
         ? selectionSortMeta.minIndex
         : null;
+    const effectiveSelectionMinIndex = isPracticeMode && isSelectionSortStep
+        ? selectionPracticeCurrentMinIndex
+        : selectionMinIndex;
     const selectionCandidateIndex = typeof selectionSortMeta?.candidateIndex === "number"
         ? selectionSortMeta.candidateIndex
         : null;
@@ -734,6 +739,49 @@ function AlgorithmVisualizer({
         : currentStep?.activeIndices?.[1] ?? null;
     const selectionActionType = (selectionSortMeta?.type ?? currentStep?.actionLabel ?? "").trim().toLowerCase();
     const isSelectionSwapPhase = selectionActionType === "swap";
+    const selectionCandidateHighlightIndex = useMemo(() => {
+        if (!isSelectionSortStep) {
+            return null;
+        }
+
+        if (!isPracticeMode) {
+            if (typeof selectionCandidateIndex === "number") {
+                return selectionCandidateIndex;
+            }
+
+            return isSelectionSwapPhase ? selectionSwapToIndex : null;
+        }
+
+        if (selectionActionType === "compare") {
+            if (recentPracticeAction === "scan_min" && Array.isArray(feedbackIndices) && typeof feedbackIndices[0] === "number") {
+                return feedbackIndices[0];
+            }
+
+            return null;
+        }
+
+        if (selectionActionType === "select_min") {
+            return typeof selectionPracticeCandidateIndex === "number"
+                ? selectionPracticeCandidateIndex
+                : null;
+        }
+
+        if (selectionActionType === "swap") {
+            return selectionSwapToIndex;
+        }
+
+        return null;
+    }, [
+        feedbackIndices,
+        isPracticeMode,
+        isSelectionSortStep,
+        isSelectionSwapPhase,
+        recentPracticeAction,
+        selectionActionType,
+        selectionCandidateIndex,
+        selectionPracticeCandidateIndex,
+        selectionSwapToIndex,
+    ]);
     const isQuickSortStep = hasQuickSortMetadata && algorithmType === "sort";
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
     const heapIdentityData = useMemo(() => {
@@ -1333,7 +1381,7 @@ function AlgorithmVisualizer({
                                 Current i: <span className="text-text-primary">{selectionCurrentIndex ?? "--"}</span>
                             </span>
                             <span>
-                                Current min: <span className="text-text-primary">{selectionMinIndex ?? "--"}</span>
+                                Current min: <span className="text-text-primary">{effectiveSelectionMinIndex ?? "--"}</span>
                             </span>
                             <span>
                                 Candidate j: <span className="text-text-primary">{selectionCandidateIndex ?? "--"}</span>
@@ -1519,27 +1567,16 @@ function AlgorithmVisualizer({
                                     const isFeedbackTarget = feedbackIndexSet.has(index);
                                     const isDiscarded = discardedIndexSet.has(index);
                                     const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
-                                    const isMin = selectionMinIndex === index;
+                                    const isMin = effectiveSelectionMinIndex === index;
                                     const isCurrent = selectionCurrentIndex === index;
                                     const isCandidate = selectionCandidateIndex === index;
                                     const isSwapFrom = isSelectionSwapPhase && selectionSwapFromIndex === index;
-                                    const isSwapTo = isSelectionSwapPhase && selectionSwapToIndex === index;
                                     const isPracticeConfirmedMin = isPracticeMode
                                         && selectionPracticeConfirmedMinIndex === index;
                                     const isPracticeSwapAnchor = isPracticeMode
                                         && selectionPracticeSwapAnchorIndex === index;
-                                    const isPracticeCompareProbe = isPracticeMode
-                                        && recentPracticeAction === "scan_min"
-                                        && isFeedbackTarget
-                                        && selectionPracticeConfirmedMinIndex === null;
-                                    const isPracticeTrackedCandidate = isPracticeMode
-                                        && recentPracticeAction === "scan_min"
-                                        && selectionPracticeCandidateIndex === index
-                                        && selectionPracticeConfirmedMinIndex === null;
                                     const showCandidateHighlight = isSelectionSortStep
-                                        ? (isPracticeMode
-                                            ? isPracticeCompareProbe || isPracticeTrackedCandidate || isSwapTo
-                                            : isCandidate || isSwapTo)
+                                        ? selectionCandidateHighlightIndex === index
                                         : isCandidate;
                                     const shouldPulseCandidate = !isPracticeMode && isCandidate && !isSorted && !isMin && !shouldReduceMotion;
                                     const shouldPulseMin = !isPracticeMode && isMin && !isSorted && !shouldReduceMotion;
@@ -1557,7 +1594,7 @@ function AlgorithmVisualizer({
                                         "border-white/20 bg-slate-900/60 text-slate-100",
                                         isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
                                         !isSorted && (isMin || isCurrent || isSwapFrom) && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.3)]",
-                                        !isSorted && !isMin && (showCandidateHighlight || isSwapTo) && "border-red-200/80 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.34)]",
+                                        !isSorted && !isMin && showCandidateHighlight && "border-red-200/80 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.34)]",
                                         isPracticeMode && isPracticeConfirmedMin && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.34)]",
                                         isSuggested && isPracticeMode && !isSelectionSortStep && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
                                         isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
