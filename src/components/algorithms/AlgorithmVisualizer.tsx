@@ -600,7 +600,9 @@ function AlgorithmVisualizer({
         : (currentStep?.search?.state ?? currentStep?.actionLabel ?? "Waiting for steps");
     const heapStepMeta = currentStep?.heap ?? null;
     const quickSortMeta = currentStep?.quickSort ?? null;
+    const selectionSortMeta = currentStep?.selectionSort ?? null;
     const mergeSortMeta = currentStep?.mergeSort ?? null;
+    const isSelectionSortStep = Boolean(selectionSortMeta) && algorithmType === "sort";
     const isMergeSortStep = Boolean(mergeSortMeta);
     const quickSortRange = useMemo(
         () => getQuickSortRange(currentStep),
@@ -621,6 +623,21 @@ function AlgorithmVisualizer({
         () => getQuickSortPracticeAction(currentStep),
         [currentStep],
     );
+    const selectionCurrentIndex = typeof selectionSortMeta?.currentIndex === "number"
+        ? selectionSortMeta.currentIndex
+        : null;
+    const selectionMinIndex = typeof selectionSortMeta?.minIndex === "number"
+        ? selectionSortMeta.minIndex
+        : null;
+    const selectionCandidateIndex = typeof selectionSortMeta?.candidateIndex === "number"
+        ? selectionSortMeta.candidateIndex
+        : null;
+    const selectionSwapFromIndex = typeof selectionSortMeta?.swapFrom === "number"
+        ? selectionSortMeta.swapFrom
+        : currentStep?.activeIndices?.[0] ?? null;
+    const selectionSwapToIndex = typeof selectionSortMeta?.swapTo === "number"
+        ? selectionSortMeta.swapTo
+        : currentStep?.activeIndices?.[1] ?? null;
     const isQuickSortStep = hasQuickSortMetadata && algorithmType === "sort";
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
     const heapIdentityData = useMemo(() => {
@@ -893,7 +910,9 @@ function AlgorithmVisualizer({
                                                 ? "Click two heap nodes to validate a swap"
                                                 : (isMergeSortStep
                                                     ? "Click two boxes to validate a swap"
-                                                    : "Click two bars to validate a swap")))}
+                                                    : (isSelectionSortStep
+                                                        ? "Click two boxes to validate a swap"
+                                                        : "Click two bars to validate a swap"))))}
                                 </span>
                             ) : null}
                         </div>
@@ -936,6 +955,25 @@ function AlgorithmVisualizer({
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Sorted Array
+                                </span>
+                            </>
+                        ) : isSelectionSortStep ? (
+                            <>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-slate-300 to-slate-500" />
+                                    Unsorted
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-300 to-sky-500" />
+                                    Current Min
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-300 to-red-500" />
+                                    Candidate
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" />
+                                    Sorted Zone
                                 </span>
                             </>
                         ) : isMergeSortStep ? (
@@ -1024,6 +1062,21 @@ function AlgorithmVisualizer({
                             </span>
                             <span>
                                 Quick Sort Step: <span className="text-text-primary">{formatActionLabel(currentStep?.actionLabel ?? "--")}</span>
+                            </span>
+                        </div>
+                    ) : selectionSortMeta ? (
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                            <span>
+                                Phase: <span className="text-text-primary">{formatActionLabel(selectionSortMeta.type ?? currentStep?.actionLabel ?? "--")}</span>
+                            </span>
+                            <span>
+                                Current i: <span className="text-text-primary">{selectionCurrentIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Current min: <span className="text-text-primary">{selectionMinIndex ?? "--"}</span>
+                            </span>
+                            <span>
+                                Candidate j: <span className="text-text-primary">{selectionCandidateIndex ?? "--"}</span>
                             </span>
                         </div>
                     ) : mergeSortMeta ? (
@@ -1130,6 +1183,121 @@ function AlgorithmVisualizer({
                                 )}
                             </div>
                         </div>
+                    ) : isSelectionSortStep ? (
+                        <motion.div
+                            key={`selection-tiles-${mode}-${feedbackTone ?? "idle"}-${feedbackVersion}`}
+                            initial={shouldReduceMotion
+                                ? false
+                                : (feedbackTone === "incorrect"
+                                    ? { x: 0 }
+                                    : (feedbackTone === "correct" ? { scale: 0.995 } : false))}
+                            animate={shouldReduceMotion
+                                ? {}
+                                : (feedbackTone === "incorrect"
+                                    ? { x: [0, -8, 8, -5, 5, 0] }
+                                    : (feedbackTone === "correct"
+                                        ? { scale: [1, 1.015, 1] }
+                                        : { x: 0, scale: 1 }))}
+                            transition={{ duration: 0.36, ease: "easeOut" }}
+                            className="flex min-h-56 items-center gap-3 overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                        >
+                            {visualBars.length > 0 ? (
+                                visualBars.map((bar, index) => {
+                                    const isSorted = sortedIndices.has(index);
+                                    const isSelected = selectedIndexSet.has(index);
+                                    const isSuggested = suggestedIndexSet.has(index);
+                                    const isFeedbackTarget = feedbackIndexSet.has(index);
+                                    const isDiscarded = discardedIndexSet.has(index);
+                                    const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
+                                    const isMin = selectionMinIndex === index;
+                                    const isCurrent = selectionCurrentIndex === index;
+                                    const isCandidate = selectionCandidateIndex === index;
+                                    const isSwapFrom = selectionSwapFromIndex === index;
+                                    const isSwapTo = selectionSwapToIndex === index;
+                                    const shouldPulseCandidate = !isPracticeMode && isCandidate && !isSorted && !isMin && !shouldReduceMotion;
+                                    const shouldPulseMin = !isPracticeMode && isMin && !isSorted && !shouldReduceMotion;
+                                    const baseScale = isSelected ? 1.03 : 1;
+                                    const scaleSequence = shouldPulseCandidate
+                                        ? [baseScale, 1.07, baseScale]
+                                        : (shouldPulseMin
+                                            ? [baseScale, 1.05, baseScale]
+                                            : baseScale);
+
+                                    const tileClassName = cn(
+                                        "flex h-16 w-16 items-center justify-center rounded-xl border text-xl font-semibold transition-[transform,background-color,border-color,box-shadow] duration-300 sm:h-20 sm:w-20",
+                                        "border-white/20 bg-slate-900/60 text-slate-100",
+                                        isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
+                                        !isPracticeMode && !isSorted && (isMin || isCurrent || isSwapFrom) && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.3)]",
+                                        !isPracticeMode && !isSorted && !isMin && (isCandidate || isSwapTo) && "border-red-200/80 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.34)]",
+                                        isSuggested && isPracticeMode && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
+                                        isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
+                                        isFeedbackTarget && feedbackTone === "correct" && "border-emerald-300/80 bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.32)]",
+                                        isFeedbackTarget && feedbackTone === "incorrect" && "border-red-300/80 bg-red-500 text-red-50 shadow-[0_0_20px_rgba(248,113,113,0.35)]",
+                                        isDiscarded && "opacity-30 grayscale pointer-events-none",
+                                    );
+
+                                    return (
+                                        <motion.div
+                                            key={bar.id}
+                                            layout
+                                            transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
+                                            className={cn(
+                                                "flex flex-col items-center gap-2",
+                                                isInteractive && "cursor-pointer",
+                                                isInteractionDisabled && "cursor-not-allowed opacity-70",
+                                            )}
+                                            onClick={() => {
+                                                if (isInteractive && !isInteractionDisabled) {
+                                                    onBarClick(index);
+                                                }
+                                            }}
+                                            onKeyDown={(event) => {
+                                                if (!isInteractive || isInteractionDisabled) {
+                                                    return;
+                                                }
+
+                                                if (event.key === "Enter" || event.key === " ") {
+                                                    event.preventDefault();
+                                                    onBarClick(index);
+                                                }
+                                            }}
+                                            role={isInteractive ? "button" : undefined}
+                                            tabIndex={isInteractive && !isInteractionDisabled ? 0 : undefined}
+                                            aria-disabled={isInteractive ? isInteractionDisabled : undefined}
+                                            aria-pressed={isInteractive ? isSelected : undefined}
+                                        >
+                                            <motion.div
+                                                animate={shouldReduceMotion
+                                                    ? {}
+                                                    : {
+                                                        y: (isMin || isCandidate || isSelected) && !isSorted ? -3 : 0,
+                                                        scale: scaleSequence,
+                                                    }}
+                                                transition={{ duration: 0.28, ease: "easeOut" }}
+                                                className={tileClassName}
+                                                aria-label={`Index ${index}, value ${bar.value}`}
+                                                aria-current={isMin || isCandidate || isSelected ? "true" : undefined}
+                                            >
+                                                {bar.value}
+                                            </motion.div>
+                                            <span className={cn(
+                                                "text-[11px] text-text-secondary",
+                                                isSorted && "text-emerald-200",
+                                                !isSorted && isMin && "text-sky-100",
+                                                !isSorted && !isMin && isCandidate && "text-red-100",
+                                            )}
+                                            >
+                                                {index}
+                                            </span>
+                                        </motion.div>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-white/10 px-4 py-12 text-sm text-text-secondary">
+                                    No backend simulation steps available yet.
+                                </div>
+                            )}
+                        </motion.div>
                     ) : isMergeSortStep ? (
                         <MergeSortVisualizer
                             steps={steps}
