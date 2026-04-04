@@ -23,7 +23,7 @@ export default defineConfig({
         trace: "on-first-retry",
         screenshot: "only-on-failure",
         video: "retain-on-failure",
-        headless: !process.env.PLAYWRIGHT_HEADED,
+        headless: isCI,
     },
     outputDir: "test-results",
     webServer: isCI
