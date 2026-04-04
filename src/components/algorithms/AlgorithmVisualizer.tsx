@@ -732,6 +732,8 @@ function AlgorithmVisualizer({
     const selectionSwapToIndex = typeof selectionSortMeta?.swapTo === "number"
         ? selectionSortMeta.swapTo
         : currentStep?.activeIndices?.[1] ?? null;
+    const selectionActionType = (selectionSortMeta?.type ?? currentStep?.actionLabel ?? "").trim().toLowerCase();
+    const isSelectionSwapPhase = selectionActionType === "swap";
     const isQuickSortStep = hasQuickSortMetadata && algorithmType === "sort";
     const isHeapStep = Boolean(currentStep?.heap) && algorithmType === "sort";
     const heapIdentityData = useMemo(() => {
@@ -1520,19 +1522,25 @@ function AlgorithmVisualizer({
                                     const isMin = selectionMinIndex === index;
                                     const isCurrent = selectionCurrentIndex === index;
                                     const isCandidate = selectionCandidateIndex === index;
-                                    const isSwapFrom = selectionSwapFromIndex === index;
-                                    const isSwapTo = selectionSwapToIndex === index;
-                                    const isPracticeCandidate = isPracticeMode
-                                        && selectionPracticeCandidateIndex === index
-                                        && selectionPracticeConfirmedMinIndex === null;
+                                    const isSwapFrom = isSelectionSwapPhase && selectionSwapFromIndex === index;
+                                    const isSwapTo = isSelectionSwapPhase && selectionSwapToIndex === index;
                                     const isPracticeConfirmedMin = isPracticeMode
                                         && selectionPracticeConfirmedMinIndex === index;
                                     const isPracticeSwapAnchor = isPracticeMode
                                         && selectionPracticeSwapAnchorIndex === index;
-                                    const isPracticeScanProbe = isPracticeMode
+                                    const isPracticeCompareProbe = isPracticeMode
                                         && recentPracticeAction === "scan_min"
                                         && isFeedbackTarget
                                         && selectionPracticeConfirmedMinIndex === null;
+                                    const isPracticeTrackedCandidate = isPracticeMode
+                                        && recentPracticeAction === "scan_min"
+                                        && selectionPracticeCandidateIndex === index
+                                        && selectionPracticeConfirmedMinIndex === null;
+                                    const showCandidateHighlight = isSelectionSortStep
+                                        ? (isPracticeMode
+                                            ? isPracticeCompareProbe || isPracticeTrackedCandidate || isSwapTo
+                                            : isCandidate || isSwapTo)
+                                        : isCandidate;
                                     const shouldPulseCandidate = !isPracticeMode && isCandidate && !isSorted && !isMin && !shouldReduceMotion;
                                     const shouldPulseMin = !isPracticeMode && isMin && !isSorted && !shouldReduceMotion;
                                     const baseScale = isSelected ? 1.03 : 1;
@@ -1540,7 +1548,7 @@ function AlgorithmVisualizer({
                                         ? [baseScale, 1.07, baseScale]
                                         : (shouldPulseMin
                                             ? [baseScale, 1.05, baseScale]
-                                            : ((isPracticeCandidate || isPracticeScanProbe) && !shouldReduceMotion
+                                            : (showCandidateHighlight && !shouldReduceMotion
                                                 ? [baseScale, 1.06, baseScale]
                                                 : baseScale));
 
@@ -1548,16 +1556,13 @@ function AlgorithmVisualizer({
                                         "flex items-center justify-center rounded-xl border font-semibold transition-[transform,background-color,border-color,box-shadow] duration-300",
                                         "border-white/20 bg-slate-900/60 text-slate-100",
                                         isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
-                                        !isPracticeMode && !isSorted && (isMin || isCurrent || isSwapFrom) && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.3)]",
-                                        !isPracticeMode && !isSorted && !isMin && (isCandidate || isSwapTo) && "border-red-200/80 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.34)]",
-                                        isPracticeMode && isPracticeCandidate && "border-red-200/85 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.35)]",
+                                        !isSorted && (isMin || isCurrent || isSwapFrom) && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.3)]",
+                                        !isSorted && !isMin && (showCandidateHighlight || isSwapTo) && "border-red-200/80 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.34)]",
                                         isPracticeMode && isPracticeConfirmedMin && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.34)]",
-                                        isPracticeMode && isPracticeScanProbe && "ring-2 ring-amber-300/85 shadow-[0_0_0_2px_rgba(252,211,77,0.25)]",
-                                        isPracticeMode && isPracticeSwapAnchor && !isPracticeConfirmedMin && "ring-2 ring-accent/70 ring-offset-1 ring-offset-transparent",
-                                        isSuggested && isPracticeMode && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
+                                        isSuggested && isPracticeMode && !isSelectionSortStep && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
                                         isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
-                                        isFeedbackTarget && feedbackTone === "correct" && "border-emerald-300/80 bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.32)]",
-                                        isFeedbackTarget && feedbackTone === "incorrect" && "border-red-300/80 bg-red-500 text-red-50 shadow-[0_0_20px_rgba(248,113,113,0.35)]",
+                                        isFeedbackTarget && feedbackTone === "correct" && !isSelectionSortStep && "border-emerald-300/80 bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.32)]",
+                                        isFeedbackTarget && feedbackTone === "incorrect" && !isSelectionSortStep && "border-red-300/80 bg-red-500 text-red-50 shadow-[0_0_20px_rgba(248,113,113,0.35)]",
                                         isDiscarded && "opacity-30 grayscale pointer-events-none",
                                     );
 
@@ -1595,7 +1600,7 @@ function AlgorithmVisualizer({
                                                 animate={shouldReduceMotion
                                                     ? {}
                                                     : {
-                                                        y: (isMin || isCandidate || isSelected || isPracticeCandidate || isPracticeConfirmedMin || isPracticeScanProbe) && !isSorted ? -3 : 0,
+                                                        y: (isMin || showCandidateHighlight || isSelected || isPracticeConfirmedMin) && !isSorted ? -3 : 0,
                                                         scale: scaleSequence,
                                                     }}
                                                 transition={{ duration: 0.28, ease: "easeOut" }}
@@ -1606,7 +1611,7 @@ function AlgorithmVisualizer({
                                                     fontSize: `${selectionTileFontPx}px`,
                                                 }}
                                                 aria-label={`Index ${index}, value ${bar.value}`}
-                                                aria-current={isMin || isCandidate || isSelected ? "true" : undefined}
+                                                aria-current={isMin || showCandidateHighlight || isSelected || isPracticeSwapAnchor ? "true" : undefined}
                                             >
                                                 {bar.value}
                                             </motion.div>
@@ -1614,10 +1619,8 @@ function AlgorithmVisualizer({
                                                 "text-[11px] text-text-secondary",
                                                 isSorted && "text-emerald-200",
                                                 !isSorted && isMin && "text-sky-100",
-                                                !isSorted && !isMin && isCandidate && "text-red-100",
-                                                !isSorted && isPracticeCandidate && "text-red-100",
+                                                !isSorted && !isMin && showCandidateHighlight && "text-red-100",
                                                 !isSorted && isPracticeConfirmedMin && "text-sky-100",
-                                                !isSorted && isPracticeScanProbe && "text-amber-100",
                                             )}
                                             >
                                                 {index}
