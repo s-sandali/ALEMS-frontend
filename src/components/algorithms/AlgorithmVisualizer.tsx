@@ -24,6 +24,7 @@ type AlgorithmVisualizerProps = {
     discardedIndices?: number[];
     feedbackTone?: PracticeFeedbackTone;
     feedbackVersion?: number;
+    recentPracticeAction?: string | null;
     hintMessage?: string;
     practiceCompleted?: boolean;
     isInteractionDisabled?: boolean;
@@ -307,7 +308,36 @@ function getSearchTargetValue(steps: AlgorithmSimulationStep[]) {
     return foundStep.arrayState?.[midpointIndex] ?? null;
 }
 
-function reconcileBars(previousBars: VisualBar[], nextValues: number[], createBar: (value: number) => VisualBar) {
+function reconcileBars(
+    previousBars: VisualBar[],
+    nextValues: number[],
+    createBar: (value: number) => VisualBar,
+    preferredSwapIndices?: [number, number] | null,
+) {
+    if (
+        preferredSwapIndices
+        && previousBars.length === nextValues.length
+    ) {
+        const [leftIndex, rightIndex] = preferredSwapIndices;
+        const isValidSwap = Number.isInteger(leftIndex)
+            && Number.isInteger(rightIndex)
+            && leftIndex >= 0
+            && rightIndex >= 0
+            && leftIndex < previousBars.length
+            && rightIndex < previousBars.length
+            && leftIndex !== rightIndex;
+
+        if (isValidSwap) {
+            const swappedBars = previousBars.slice();
+            [swappedBars[leftIndex], swappedBars[rightIndex]] = [swappedBars[rightIndex], swappedBars[leftIndex]];
+
+            return swappedBars.map((bar, index) => ({
+                ...bar,
+                value: nextValues[index],
+            }));
+        }
+    }
+
     const availableBars = new Map<number, VisualBar[]>();
 
     previousBars.forEach((bar) => {
@@ -556,6 +586,7 @@ function AlgorithmVisualizer({
     discardedIndices = [],
     feedbackTone = null,
     feedbackVersion = 0,
+    recentPracticeAction = null,
     hintMessage = "",
     practiceCompleted = false,
     isInteractionDisabled = false,
@@ -898,6 +929,14 @@ function AlgorithmVisualizer({
             return;
         }
 
+        const shouldApplySwapIdentity = isPracticeMode
+            && feedbackTone === "correct"
+            && recentPracticeAction === "swap"
+            && feedbackIndices.length === 2;
+        const swapIndices = shouldApplySwapIdentity
+            ? [feedbackIndices[0], feedbackIndices[1]] as [number, number]
+            : null;
+
         setVisualBars((previousBars) => {
             if (
                 previousBars.length === 0 ||
@@ -907,9 +946,9 @@ function AlgorithmVisualizer({
                 return values.map((value) => createBar(value));
             }
 
-            return reconcileBars(previousBars, values, createBar);
+            return reconcileBars(previousBars, values, createBar, swapIndices);
         });
-    }, [currentStepIndex, isPracticeMode, values]);
+    }, [currentStepIndex, feedbackIndices, feedbackTone, isPracticeMode, recentPracticeAction, values]);
 
     return (
         <section
