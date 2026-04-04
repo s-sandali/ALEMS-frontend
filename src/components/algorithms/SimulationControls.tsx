@@ -23,7 +23,6 @@ type SimulationControlsProps = {
     feedbackMessage: string;
     hintMessage: string;
     selectedIndices: number[];
-    practiceQuestions?: Array<{ prompt: string; steps: string[] }>;
     isCorrect: boolean | null;
     isValidatingStep: boolean;
     practiceCompleted: boolean;
@@ -69,7 +68,6 @@ export default function SimulationControls({
     feedbackMessage,
     hintMessage,
     selectedIndices,
-    practiceQuestions = [],
     isCorrect,
     isValidatingStep,
     practiceCompleted,
@@ -332,28 +330,6 @@ export default function SimulationControls({
                                             : "Use the transport controls to inspect each step at your own pace."}
                                     </p>
                                 </div>
-
-                                {isPracticeMode && practiceQuestions.length > 0 ? (
-                                    <div className="rounded-2xl border border-white/[0.06] bg-bg/60 p-4 text-sm text-text-secondary">
-                                        <p className="font-semibold text-white">Practice questions</p>
-                                        <ol className="mt-3 space-y-3">
-                                            {practiceQuestions.map((question, questionIndex) => (
-                                                <li key={`practice-q-${questionIndex}`}>
-                                                    <p className="font-medium text-white">
-                                                        {questionIndex + 1}. {question.prompt}
-                                                    </p>
-                                                    <ol className="mt-1 list-decimal space-y-1 pl-5 text-xs leading-5 text-text-secondary/95">
-                                                        {question.steps.map((step, stepIndex) => (
-                                                            <li key={`practice-q-${questionIndex}-step-${stepIndex}`}>
-                                                                {step}
-                                                            </li>
-                                                        ))}
-                                                    </ol>
-                                                </li>
-                                            ))}
-                                        </ol>
-                                    </div>
-                                ) : null}
 
                                 {simulationError ? (
                                     <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm leading-6 text-amber-100">
