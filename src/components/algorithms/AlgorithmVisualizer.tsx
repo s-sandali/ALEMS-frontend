@@ -6,10 +6,39 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AlgorithmSimulationStep } from "@/lib/api";
 import MergeSortVisualizer from "./MergeSortVisualizer";
-
-type LearningMode = "auto" | "practice";
-type PracticeFeedbackTone = "correct" | "incorrect" | null;
-type SearchDecision = "left" | "right" | "found";
+import QuickSortTreeVisualizer from "./QuickSortTreeVisualizer";
+import {
+    type LearningMode,
+    type PracticeFeedbackTone,
+    type SearchDecision,
+    type VisualBar,
+    formatActionLabel,
+    getInsertionSortPracticeAction,
+    getPracticeTone,
+    getQuickSortPracticeAction,
+    getQuickSortRange,
+    getSafeStepIndex,
+    getSearchActiveIndices,
+    getSearchState,
+    getSearchTargetValue,
+    getSearchWindow,
+    getSortedIndices,
+    getStepTone,
+    isQuickSortPivotPlacedAction,
+    reconcileBars,
+} from "./stepUtils";
+import {
+    type HeapIdentityNode,
+    buildHeapVisualEdges,
+    buildHeapVisualNodes,
+    buildTrajectoryPath,
+    FALLING_NODE_RADIUS_PX,
+    formatHeapComparison,
+    getNodeAnimate,
+    getNodeClassName,
+    HEAP_NODE_RADIUS_PX,
+    reconcileHeapIdentityNodes,
+} from "./heapUtils";
 
 type AlgorithmVisualizerProps = {
     steps: AlgorithmSimulationStep[];
@@ -41,40 +70,6 @@ type AlgorithmVisualizerProps = {
     className?: string;
 };
 
-type VisualBar = {
-    id: string;
-    value: number;
-};
-
-type HeapNodeState = "normal" | "active" | "comparing" | "swapping" | "removing";
-
-type HeapVisualNode = {
-    id: string;
-    index: number;
-    value: number;
-    x: number;
-    y: number;
-    state: HeapNodeState;
-    incomingToRoot: boolean;
-};
-
-type HeapIdentityNode = {
-    id: string;
-    index: number;
-    value: number;
-};
-
-type HeapVisualEdge = {
-    id: string;
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-};
-
-const HEAP_NODE_RADIUS_PX = 22;
-const FALLING_NODE_RADIUS_PX = 20;
-
 const layoutTransition = {
     type: "spring" as const,
     stiffness: 360,
@@ -90,496 +85,6 @@ const activeBarTransition: Transition = {
     y: { duration: 0.22, ease: "easeOut" },
     scale: { duration: 0.22, ease: "easeOut" },
 };
-
-const actionLabelAliases: Record<string, string> = {
-    pivotplaced: "Pivot Placed",
-    partition_complete: "Pivot Placed",
-};
-
-function getStepTone(step: AlgorithmSimulationStep | undefined) {
-    const action = (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
-
-    if (action.includes("compare")) {
-        return {
-            badgeClassName: "border-yellow-300/35 bg-yellow-300/10 text-yellow-100",
-            activeBarClassName: "from-yellow-300 to-yellow-400 shadow-[0_0_18px_rgba(250,204,21,0.3)]",
-            emphasisLabel: "Comparing",
-        };
-    }
-
-    if (action.includes("sorted") || action.includes("complete")) {
-        return {
-            badgeClassName: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-            activeBarClassName: "from-emerald-400 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.3)]",
-            emphasisLabel: "Sorted",
-        };
-    }
-
-    if (action.includes("swap")) {
-        return {
-            badgeClassName: "border-red-400/30 bg-red-400/10 text-red-200",
-            activeBarClassName: "from-red-400 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.35)]",
-            emphasisLabel: "Swapped",
-        };
-    }
-
-    if (action === "not_found" || action.includes("not_found") || action.includes("not found")) {
-        return {
-            badgeClassName: "border-red-400/30 bg-red-400/10 text-red-200",
-            activeBarClassName: "from-red-400 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.35)]",
-            emphasisLabel: "Not Found",
-        };
-    }
-
-    if (action === "found" || action.includes("found")) {
-        return {
-            badgeClassName: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-            activeBarClassName: "from-emerald-400 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.3)]",
-            emphasisLabel: "Found",
-        };
-    }
-
-    if (action.includes("discard")) {
-        return {
-            badgeClassName: "border-slate-400/30 bg-slate-400/10 text-slate-300",
-            activeBarClassName: "from-slate-400 to-slate-500 shadow-[0_0_6px_rgba(148,163,184,0.2)]",
-            emphasisLabel: "Discarded",
-        };
-    }
-
-    return {
-        badgeClassName: "border-accent/20 bg-accent/10 text-accent",
-        activeBarClassName: "from-accent to-accent/70 shadow-[0_0_18px_rgba(213,255,64,0.3)]",
-        emphasisLabel: "Comparing",
-    };
-}
-
-function getPracticeTone(feedbackTone: PracticeFeedbackTone, practiceCompleted: boolean) {
-    if (practiceCompleted) {
-        return {
-            badgeClassName: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-            activeBarClassName: "from-emerald-400 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.3)]",
-            emphasisLabel: "Practice complete",
-            actionLabel: "complete",
-        };
-    }
-
-    if (feedbackTone === "incorrect") {
-        return {
-            badgeClassName: "border-red-400/30 bg-red-400/10 text-red-200",
-            activeBarClassName: "from-red-400 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.35)]",
-            emphasisLabel: "Try again",
-            actionLabel: "incorrect step",
-        };
-    }
-
-    if (feedbackTone === "correct") {
-        return {
-            badgeClassName: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-            activeBarClassName: "from-emerald-400 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.3)]",
-            emphasisLabel: "Correct move",
-            actionLabel: "validated swap",
-        };
-    }
-
-    return {
-        badgeClassName: "border-sky-400/30 bg-sky-400/10 text-sky-100",
-        activeBarClassName: "from-sky-400 to-sky-500 shadow-[0_0_18px_rgba(56,189,248,0.28)]",
-        emphasisLabel: "Your turn",
-        actionLabel: "practice mode",
-    };
-}
-
-function formatActionLabel(actionLabel: string) {
-    const normalizedLabel = actionLabel.trim().toLowerCase();
-    if (actionLabelAliases[normalizedLabel]) {
-        return actionLabelAliases[normalizedLabel];
-    }
-
-    return actionLabel
-        .split(/[_\s]+/)
-        .filter(Boolean)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
-}
-
-function getQuickSortRange(step: AlgorithmSimulationStep | undefined) {
-    const maybeRange = step?.quickSort?.range;
-    if (!Array.isArray(maybeRange) || maybeRange.length < 2) {
-        return null;
-    }
-
-    const low = Number(maybeRange[0]);
-    const high = Number(maybeRange[1]);
-    if (!Number.isFinite(low) || !Number.isFinite(high)) {
-        return null;
-    }
-
-    return {
-        low: Math.min(low, high),
-        high: Math.max(low, high),
-    };
-}
-
-function isQuickSortPivotPlacedAction(actionLabel: string | undefined) {
-    const normalized = (actionLabel ?? "").trim().toLowerCase();
-    return normalized === "pivotplaced" || normalized === "partition_complete";
-}
-
-function getSearchActiveIndices(step: AlgorithmSimulationStep | undefined) {
-    if (!step?.search) {
-        return step?.activeIndices ?? [];
-    }
-
-    if (typeof step.search.midpointIndex === "number") {
-        return [step.search.midpointIndex];
-    }
-
-    return step.activeIndices ?? [];
-}
-
-function getSearchState(step: AlgorithmSimulationStep | undefined) {
-    return (step?.search?.state ?? step?.actionLabel ?? "").trim().toLowerCase();
-}
-
-function getQuickSortPracticeAction(step: AlgorithmSimulationStep | undefined) {
-    const action = (step?.quickSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
-
-    if (action === "pivot_swap" || action === "swap") {
-        return "swap";
-    }
-
-    if (action === "compare") {
-        return "compare";
-    }
-
-    return action;
-}
-
-function getInsertionSortPracticeAction(step: AlgorithmSimulationStep | undefined) {
-    const action = (step?.insertionSort?.type ?? step?.actionLabel ?? "").trim().toLowerCase();
-
-    if (action === "compare" || action === "shift" || action === "insert") {
-        return action;
-    }
-
-    if (action === "complete" || action === "early_exit") {
-        return "complete";
-    }
-
-    return "compare";
-}
-
-function getSafeStepIndex(index: number | null | undefined, totalValues: number) {
-    if (typeof index !== "number") {
-        return null;
-    }
-
-    if (index < 0 || index >= totalValues) {
-        return null;
-    }
-
-    return index;
-}
-
-function getSearchWindow(step: AlgorithmSimulationStep | undefined, totalValues: number) {
-    if (totalValues <= 0) {
-        return { low: 0, high: -1, midpoint: null };
-    }
-
-    const low = typeof step?.search?.lowIndex === "number" ? step.search.lowIndex : 0;
-    const high = typeof step?.search?.highIndex === "number" ? step.search.highIndex : totalValues - 1;
-    const midpoint = typeof step?.search?.midpointIndex === "number"
-        ? step.search.midpointIndex
-        : Math.floor((low + high) / 2);
-
-    return { low, high, midpoint };
-}
-
-function getSearchTargetValue(steps: AlgorithmSimulationStep[]) {
-    const foundStep = steps.find((step) => {
-        const state = getSearchState(step);
-        return state === "found" || state === "target_found";
-    });
-
-    if (!foundStep) {
-        return null;
-    }
-
-    const midpointIndex = typeof foundStep.search?.midpointIndex === "number"
-        ? foundStep.search.midpointIndex
-        : foundStep.activeIndices?.[0];
-    if (typeof midpointIndex !== "number") {
-        return null;
-    }
-
-    return foundStep.arrayState?.[midpointIndex] ?? null;
-}
-
-function reconcileBars(
-    previousBars: VisualBar[],
-    nextValues: number[],
-    createBar: (value: number) => VisualBar,
-    preferredSwapIndices?: [number, number] | null,
-) {
-    if (
-        preferredSwapIndices
-        && previousBars.length === nextValues.length
-    ) {
-        const [leftIndex, rightIndex] = preferredSwapIndices;
-        const isValidSwap = Number.isInteger(leftIndex)
-            && Number.isInteger(rightIndex)
-            && leftIndex >= 0
-            && rightIndex >= 0
-            && leftIndex < previousBars.length
-            && rightIndex < previousBars.length
-            && leftIndex !== rightIndex;
-
-        if (isValidSwap) {
-            const swappedBars = previousBars.slice();
-            [swappedBars[leftIndex], swappedBars[rightIndex]] = [swappedBars[rightIndex], swappedBars[leftIndex]];
-
-            return swappedBars.map((bar, index) => ({
-                ...bar,
-                value: nextValues[index],
-            }));
-        }
-    }
-
-    const availableBars = new Map<number, VisualBar[]>();
-
-    previousBars.forEach((bar) => {
-        const queue = availableBars.get(bar.value) ?? [];
-        queue.push(bar);
-        availableBars.set(bar.value, queue);
-    });
-
-    return nextValues.map((value) => {
-        const queue = availableBars.get(value);
-        const reusedBar = queue?.shift();
-
-        return reusedBar ?? createBar(value);
-    });
-}
-
-function getSortedIndices(step: AlgorithmSimulationStep | undefined, totalValues: number) {
-    const action = step?.actionLabel.trim().toLowerCase() ?? "";
-
-    if (action.includes("complete")) {
-        return new Set(Array.from({ length: totalValues }, (_, index) => index));
-    }
-
-    if (action.includes("sorted")) {
-        return new Set(step?.activeIndices ?? []);
-    }
-
-    return new Set<number>();
-}
-
-function formatHeapComparison(step: AlgorithmSimulationStep | undefined) {
-    const compared = step?.heap?.comparedIndices;
-    if (!compared || compared.length < 2) {
-        return "--";
-    }
-
-    return `${compared[0]} vs ${compared[1]}`;
-}
-
-function getHeapNodePosition(index: number) {
-    const level = Math.floor(Math.log2(index + 1));
-    const nodesBeforeLevel = (2 ** level) - 1;
-    const indexInLevel = index - nodesBeforeLevel;
-    const slotsInLevel = 2 ** level;
-    const horizontalPadding = 8;
-    const usableWidth = 100 - (horizontalPadding * 2);
-
-    return {
-        x: horizontalPadding + (((indexInLevel + 0.5) / slotsInLevel) * usableWidth),
-        y: 12 + level * 17,
-    };
-}
-
-function reconcileHeapIdentityNodes(previousNodes: HeapIdentityNode[], nextValues: number[], createId: () => string) {
-    const availableByValue = new Map<number, HeapIdentityNode[]>();
-
-    previousNodes.forEach((node) => {
-        const queue = availableByValue.get(node.value) ?? [];
-        queue.push(node);
-        availableByValue.set(node.value, queue);
-    });
-
-    return nextValues.map((value, index) => {
-        const queue = availableByValue.get(value);
-        const reused = queue?.shift();
-
-        return {
-            id: reused?.id ?? createId(),
-            index,
-            value,
-        };
-    });
-}
-
-function buildHeapVisualNodes(
-    step: AlgorithmSimulationStep | undefined,
-    currentValues: number[],
-    idsByIndex: Map<number, string>,
-    incomingRootNodeId: string | null,
-    isPracticeMode: boolean,
-): HeapVisualNode[] {
-    if (!step?.heap || currentValues.length === 0) {
-        return [];
-    }
-
-    const values = currentValues;
-    const boundaryEnd = Math.min(Math.max(step.heap.heapBoundaryEnd ?? -1, -1), values.length - 1);
-    const comparedIndices = step.heap.comparedIndices ?? [];
-    const comparedMaxIndex = comparedIndices.length > 0 ? Math.max(...comparedIndices) : -1;
-    const effectiveBoundaryEnd = isPracticeMode
-        ? Math.min(Math.max(boundaryEnd, comparedMaxIndex), values.length - 1)
-        : boundaryEnd;
-    const action = (step.actionLabel ?? "").trim().toLowerCase();
-    const compared = new Set(comparedIndices);
-
-    const nodes: HeapVisualNode[] = [];
-    for (let index = 0; index <= effectiveBoundaryEnd; index += 1) {
-        const pos = getHeapNodePosition(index);
-        let state: HeapNodeState = "normal";
-        const nodeId = idsByIndex.get(index) ?? `heap-fallback-${index}-${values[index]}`;
-
-        if (isPracticeMode) {
-            nodes.push({
-                id: nodeId,
-                index,
-                value: values[index],
-                x: pos.x,
-                y: pos.y,
-                state: "normal",
-                incomingToRoot: false,
-            });
-            continue;
-        }
-
-        if (compared.has(index)) {
-            state = action.includes("swap") ? "swapping" : "comparing";
-        } else if (index === 0 && !action.includes("complete")) {
-            // Keep root emphasis only when not explicitly in compare/swap state.
-            state = "active";
-        }
-
-        if (index === 0 && action.includes("swap") && !compared.has(index)) {
-            // Extraction root action keeps a clear removed/root emphasis.
-            state = "removing";
-        } else if (index === 0 && action.includes("extract") && !compared.has(index)) {
-            state = "active";
-        }
-
-        if (compared.has(index) && action.includes("compare")) {
-            // Ensure a single consistent compare color for all compare operations.
-            state = "comparing";
-        }
-
-        nodes.push({
-            id: nodeId,
-            index,
-            value: values[index],
-            x: pos.x,
-            y: pos.y,
-            state,
-            incomingToRoot: incomingRootNodeId === nodeId,
-        });
-    }
-
-    return nodes;
-}
-
-function buildHeapVisualEdges(nodes: HeapVisualNode[]): HeapVisualEdge[] {
-    const byIndex = new Map(nodes.map((node) => [node.index, node]));
-    const edges: HeapVisualEdge[] = [];
-
-    nodes.forEach((node) => {
-        const left = byIndex.get((2 * node.index) + 1);
-        const right = byIndex.get((2 * node.index) + 2);
-
-        if (left) {
-            edges.push({
-                id: `${node.id}->${left.id}`,
-                x1: node.x,
-                y1: node.y,
-                x2: left.x,
-                y2: left.y,
-            });
-        }
-
-        if (right) {
-            edges.push({
-                id: `${node.id}->${right.id}`,
-                x1: node.x,
-                y1: node.y,
-                x2: right.x,
-                y2: right.y,
-            });
-        }
-    });
-
-    return edges;
-}
-
-function getNodeClassName(state: HeapNodeState) {
-    if (state === "comparing") {
-        return "border-yellow-300/70 bg-yellow-300/20 text-yellow-50";
-    }
-
-    if (state === "swapping") {
-        return "border-red-300/70 bg-red-400/20 text-red-50";
-    }
-
-    if (state === "removing") {
-        return "border-emerald-300/70 bg-emerald-400/25 text-emerald-50 shadow-[0_0_20px_rgba(52,211,153,0.3)]";
-    }
-
-    if (state === "active") {
-        return "border-accent/70 bg-accent/20 text-accent";
-    }
-
-    return "border-white/15 bg-white/[0.04] text-white";
-}
-
-function getNodeAnimate(state: HeapNodeState, shouldReduceMotion: boolean) {
-    if (shouldReduceMotion) {
-        return {};
-    }
-
-    if (state === "active") {
-        return { scale: [1, 1.06, 1] };
-    }
-
-    if (state === "comparing") {
-        return { scale: [1, 1.04, 1] };
-    }
-
-    if (state === "swapping") {
-        return { scale: [1, 1.08, 1] };
-    }
-
-    if (state === "removing") {
-        return { scale: [1, 1.08, 1] };
-    }
-
-    return { scale: 1 };
-}
-
-function buildTrajectoryPath(startX: number, startY: number, endX: number, endY: number) {
-    const deltaX = endX - startX;
-    const direction = deltaX >= 0 ? 1 : -1;
-    const horizontalSpan = Math.abs(deltaX);
-
-    // Keep control point between start/end to avoid overshooting far right/left.
-    const controlX = startX + (deltaX * 0.58) - (direction * Math.min(3.5, horizontalSpan * 0.06));
-    const controlY = ((startY + endY) / 2) - Math.min(11, 5 + horizontalSpan * 0.06);
-
-    return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
-}
 
 function AlgorithmVisualizer({
     steps,
@@ -1226,20 +731,20 @@ function AlgorithmVisualizer({
                         ) : isInsertionSortStep ? (
                             <>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
+                                    <span className="h-2.5 w-2.5 rounded-sm border border-yellow-300/60 bg-yellow-400" />
                                     Key / Compare
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-300 to-red-500" />
-                                    Shift
-                                </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-300 to-sky-500" />
+                                    <span className="h-2.5 w-2.5 rounded-sm border border-sky-300/60 bg-sky-400" />
                                     Insert Position
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" />
+                                    <span className="h-2.5 w-2.5 rounded-sm border border-emerald-300/40 bg-emerald-400/40" />
                                     Sorted Prefix
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="h-2.5 w-2.5 rounded-sm border border-emerald-300/70 bg-emerald-400" />
+                                    Sorted
                                 </span>
                             </>
                         ) : isHeapStep ? (
@@ -1672,6 +1177,128 @@ function AlgorithmVisualizer({
                             )}
                         </motion.div>
                         </div>
+                    ) : isInsertionSortStep ? (
+                        <motion.div
+                            key={`insertion-tiles-${mode}`}
+                            initial={shouldReduceMotion
+                                ? false
+                                : (feedbackTone === "incorrect"
+                                    ? { x: 0 }
+                                    : (feedbackTone === "correct" ? { scale: 0.995 } : false))}
+                            animate={shouldReduceMotion
+                                ? {}
+                                : (feedbackTone === "incorrect"
+                                    ? { x: [0, -8, 8, -5, 5, 0] }
+                                    : (feedbackTone === "correct"
+                                        ? { scale: [1, 1.015, 1] }
+                                        : { x: 0, scale: 1 }))}
+                            transition={{ duration: 0.36, ease: "easeOut" }}
+                            className="flex min-h-56 flex-wrap items-center overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                            style={{ gap: `${selectionGapPx}px` }}
+                        >
+                            {visualBars.length > 0 ? (
+                                visualBars.map((bar, index) => {
+                                    const isSorted = sortedIndices.has(index);
+                                    const isSelected = selectedIndexSet.has(index);
+                                    const isSuggested = suggestedIndexSet.has(index);
+                                    const isFeedbackTarget = feedbackIndexSet.has(index);
+                                    const isDiscarded = discardedIndexSet.has(index);
+                                    const isInteractive = isPracticeMode && typeof onBarClick === "function" && !isDiscarded;
+                                    const isKey = insertionKeyIndex === index;
+                                    const isCompare = insertionCompareIndex === index;
+                                    const isInsertPos = insertionPositionIndex === index;
+                                    const isSortedPrefix = insertionSortedBoundary !== null
+                                        && index <= insertionSortedBoundary
+                                        && !isSorted;
+                                    const isLifted = (isKey || isCompare || isInsertPos || isSelected) && !isSorted;
+                                    const baseScale = isSelected ? 1.03 : 1;
+                                    const shouldPulse = !isPracticeMode && (isKey || isCompare) && !shouldReduceMotion;
+                                    const scaleSequence = shouldPulse
+                                        ? [baseScale, 1.06, baseScale]
+                                        : baseScale;
+
+                                    const tileCls = cn(
+                                        "flex items-center justify-center rounded-xl border font-semibold transition-[background-color,border-color,box-shadow] duration-300",
+                                        "border-white/20 bg-slate-900/60 text-slate-100",
+                                        isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
+                                        isSortedPrefix && !isInsertPos && !(isKey || isCompare) && "border-emerald-300/40 bg-emerald-400/40 text-emerald-50 shadow-[0_0_14px_rgba(52,211,153,0.18)]",
+                                        (isKey || isCompare) && !isSorted && "border-yellow-300/60 bg-yellow-400 text-yellow-950 shadow-[0_0_18px_rgba(250,204,21,0.3)]",
+                                        isInsertPos && !isSorted && !(isKey || isCompare) && "border-sky-300/60 bg-sky-400 text-sky-950 shadow-[0_0_18px_rgba(56,189,248,0.28)]",
+                                        isSuggested && isPracticeMode && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
+                                        isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
+                                        isFeedbackTarget && feedbackTone === "correct" && "border-emerald-300/80 bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.32)]",
+                                        isFeedbackTarget && feedbackTone === "incorrect" && "border-red-300/80 bg-red-500 text-red-50 shadow-[0_0_20px_rgba(248,113,113,0.35)]",
+                                        isDiscarded && "opacity-30 grayscale pointer-events-none",
+                                    );
+
+                                    return (
+                                        <motion.div
+                                            key={bar.id}
+                                            layout
+                                            transition={shouldReduceMotion ? reducedMotionTransition : layoutTransition}
+                                            className={cn(
+                                                "flex flex-col items-center gap-2",
+                                                isInteractive && "cursor-pointer",
+                                                isInteractionDisabled && "cursor-not-allowed opacity-70",
+                                            )}
+                                            onClick={() => {
+                                                if (isInteractive && !isInteractionDisabled) {
+                                                    onBarClick(index);
+                                                }
+                                            }}
+                                            onKeyDown={(event) => {
+                                                if (!isInteractive || isInteractionDisabled) {
+                                                    return;
+                                                }
+
+                                                if (event.key === "Enter" || event.key === " ") {
+                                                    event.preventDefault();
+                                                    onBarClick(index);
+                                                }
+                                            }}
+                                            role={isInteractive ? "button" : undefined}
+                                            tabIndex={isInteractive && !isInteractionDisabled ? 0 : undefined}
+                                            aria-disabled={isInteractive ? isInteractionDisabled : undefined}
+                                            aria-pressed={isInteractive ? isSelected : undefined}
+                                        >
+                                            <motion.div
+                                                animate={shouldReduceMotion
+                                                    ? {}
+                                                    : {
+                                                        y: isLifted ? -3 : 0,
+                                                        scale: scaleSequence,
+                                                    }}
+                                                transition={{ duration: 0.28, ease: "easeOut" }}
+                                                className={tileCls}
+                                                style={{
+                                                    width: `${selectionTileSizePx}px`,
+                                                    height: `${selectionTileSizePx}px`,
+                                                    fontSize: `${selectionTileFontPx}px`,
+                                                }}
+                                                aria-label={`Index ${index}, value ${bar.value}`}
+                                                aria-current={isLifted || isSelected ? "true" : undefined}
+                                            >
+                                                {bar.value}
+                                            </motion.div>
+                                            <span className={cn(
+                                                "text-[11px] text-text-secondary",
+                                                isSorted && "text-emerald-200",
+                                                isSortedPrefix && !isSorted && "text-emerald-100/70",
+                                                (isKey || isCompare) && !isSorted && "text-yellow-100",
+                                                isInsertPos && !isSorted && "text-sky-100",
+                                                isSelected && "text-sky-50",
+                                            )}>
+                                                {index}
+                                            </span>
+                                        </motion.div>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-white/10 px-4 py-12 text-sm text-text-secondary">
+                                    No backend simulation steps available yet.
+                                </div>
+                            )}
+                        </motion.div>
                     ) : isMergeSortStep ? (
                         <MergeSortVisualizer
                             steps={steps}
@@ -1894,6 +1521,20 @@ function AlgorithmVisualizer({
                                 </div>
                             </div>
                         </div>
+                    ) : isQuickSortStep ? (
+                        <QuickSortTreeVisualizer
+                            steps={steps}
+                            currentStepIndex={safeIndex}
+                            mode={mode}
+                            values={values ?? []}
+                            selectedIndices={selectedIndices}
+                            suggestedIndices={suggestedIndices}
+                            feedbackIndices={feedbackIndices}
+                            feedbackTone={feedbackTone}
+                            isInteractionDisabled={isInteractionDisabled}
+                            onBarClick={onBarClick}
+                            shouldReduceMotion={shouldReduceMotion ?? false}
+                        />
                     ) : (
                         <motion.div
                             key={`bars-${mode}`}

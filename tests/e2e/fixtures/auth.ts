@@ -12,6 +12,26 @@ import {
     expectDashboardReady,
 } from "./selectors";
 
+async function handleFactorTwoChallenge(page: Page): Promise<void> {
+    const allowManualFactorTwo = process.env.PLAYWRIGHT_ALLOW_MANUAL_2FA === "1" && !process.env.CI;
+
+    if (!allowManualFactorTwo) {
+        throw new Error(
+            "Clerk redirected to /login/factor-two for email/device verification. " +
+            "Use a trusted seeded test account, or set PLAYWRIGHT_ALLOW_MANUAL_2FA=1 " +
+            "for local headed runs and enter the verification code manually in the browser.",
+        );
+    }
+
+    console.log(
+        "[Playwright E2E] Clerk factor-two verification detected. " +
+        "Enter the verification code in the open browser window to continue.",
+    );
+
+    await page.waitForURL(/\/dashboard(?:\/)?$/, { timeout: 180_000 });
+    await expectDashboardReady(page);
+}
+
 export async function loginViaClerk(page: Page, credentials: AuthCredentials): Promise<void> {
     await page.goto("/login", { waitUntil: "domcontentloaded", timeout: 60_000 });
     await expectClerkSignInForm(page);
@@ -23,15 +43,49 @@ export async function loginViaClerk(page: Page, credentials: AuthCredentials): P
     await clerkPasswordInput(page).fill(credentials.password);
     await clerkPrimaryContinueButton(page).click();
 
-    const verificationRequested = await clerkVerificationCodeInput(page)
-        .isVisible({ timeout: 5_000 })
-        .catch(() => false);
+    await page.waitForLoadState("domcontentloaded", { timeout: 15_000 }).catch(() => {});
+
+    // Clerk can redirect to /login/factor-two a moment after password submit.
+    // Poll both URL and verification UI so we don't miss that transition.
+    await expect
+        .poll(async () => {
+            if (page.url().includes("/dashboard")) {
+                return "dashboard";
+            }
+
+            if (page.url().includes("/factor-two")) {
+                return "factor-two";
+            }
+
+            const codeInputVisible = await clerkVerificationCodeInput(page)
+                .isVisible({ timeout: 1_000 })
+                .catch(() => false);
+            if (codeInputVisible) {
+                return "factor-two";
+            }
+
+            const checkEmailVisible = await page.getByText(/check your email/i)
+                .isVisible({ timeout: 1_000 })
+                .catch(() => false);
+            if (checkEmailVisible) {
+                return "factor-two";
+            }
+
+            return "pending";
+        }, { timeout: 60_000, intervals: [500, 1_000, 2_000] })
+        .not.toBe("pending");
+
+    const verificationRequested = page.url().includes("/factor-two")
+        || await clerkVerificationCodeInput(page)
+            .isVisible({ timeout: 2_000 })
+            .catch(() => false)
+        || await page.getByText(/check your email/i)
+            .isVisible({ timeout: 2_000 })
+            .catch(() => false);
 
     if (verificationRequested) {
-        throw new Error(
-            "Clerk requested email or device verification for the Playwright account. " +
-            "Use a trusted seeded test account that can sign in without interactive verification.",
-        );
+        await handleFactorTwoChallenge(page);
+        return;
     }
 
     await page.waitForURL(/\/dashboard(?:\/)?$/, { timeout: 60_000 });

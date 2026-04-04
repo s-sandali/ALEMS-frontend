@@ -5,9 +5,18 @@ import { defineConfig, devices } from "@playwright/test";
 process.loadEnvFile?.(".env");
 process.loadEnvFile?.(".env.local");
 
-const baseURL = process.env.PLAYWRIGHT_FRONTEND_URL ?? "http://127.0.0.1:5173";
-const backendUrl = process.env.PLAYWRIGHT_API_BASE_URL ?? process.env.VITE_API_BASE_URL ?? "http://127.0.0.1:5181/api";
+const baseURL = process.env.PLAYWRIGHT_FRONTEND_URL ?? "http://localhost:5173";
+const backendUrl = process.env.PLAYWRIGHT_API_BASE_URL ?? process.env.VITE_API_BASE_URL ?? "http://localhost:5181/api";
 const isCI = !!process.env.CI;
+
+function mergeAllowedOrigins(...values: Array<string | undefined>): string {
+    const normalized = values
+        .flatMap((value) => (value ?? "").split(","))
+        .map((origin) => origin.trim())
+        .filter(Boolean);
+
+    return [...new Set(normalized)].join(",");
+}
 
 export default defineConfig({
     testDir: "./tests/e2e",
@@ -37,10 +46,15 @@ export default defineConfig({
                 env: {
                     ...process.env,
                     ASPNETCORE_ENVIRONMENT: process.env.ASPNETCORE_ENVIRONMENT ?? "Development",
+                    ALLOWED_ORIGINS: mergeAllowedOrigins(
+                        process.env.ALLOWED_ORIGINS,
+                        "http://localhost:5173",
+                        "http://127.0.0.1:5173",
+                    ),
                 },
             },
             {
-                command: "npm run dev -- --host 127.0.0.1 --port 5173",
+                command: "npm run dev -- --host localhost --port 5173",
                 url: `${baseURL}/login`,
                 reuseExistingServer: true,
                 timeout: 120_000,
