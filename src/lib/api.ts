@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5181/api";
 const CLERK_JWT_TEMPLATE = import.meta.env.VITE_CLERK_JWT_TEMPLATE as string | undefined;
 
 // Matches Clerk's actual getToken signature so the template option can be passed through.
@@ -669,14 +669,20 @@ export type Badge = {
 export type EarnedBadge = {
     id: number;
     name: string;
-    icon: string;
+    description: string;
+    xpThreshold: number;
+    iconType: string;
+    iconColor: string;
     awardDate: string;
 };
 
 export type BadgeDashboard = {
     id: number;
     name: string;
-    icon: string;
+    description: string;
+    xpThreshold: number;
+    iconType: string;
+    iconColor: string;
     earned: boolean;
 };
 

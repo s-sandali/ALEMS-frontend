@@ -5,7 +5,7 @@ import { motion } from 'motion/react'
 import { LoaderCircle, BookOpen, PlayCircle, Target, Clock } from 'lucide-react'
 import DashboardNav from '@/components/dashboard/DashboardNav'
 import ExploreAlgorithmsSection from '@/components/algorithms/ExploreAlgorithmsSection'
-import BadgeSection from '@/components/dashboard/BadgeSection'
+import BadgesGrid from '@/components/dashboard/BadgesGrid'
 import { UserService, StudentQuizService, StudentService } from '@/lib/api'
 
 function QuizCard({ quiz, onStart }) {
@@ -129,20 +129,47 @@ export default function Dashboard() {
             console.log(`📡 Fetching dashboard for student ID: ${userId}`)
             const dashRes = await StudentService.getDashboard(userId, getToken)
             console.log('✅ Dashboard response:', dashRes)
+            console.log('Dashboard data type:', typeof dashRes?.data, 'Keys:', Object.keys(dashRes?.data || {}))
+            
             if (isMounted && dashRes?.data) {
-              setXpTotal(dashRes.data.xpTotal ?? 0)
-              
-              // Transform allBadges to include awardDate for earned badges
-              const earnedBadgeMap = new Map(
-                dashRes.data.earnedBadges?.map(b => [b.id, b.awardDate]) ?? []
-              )
-              
-              const badgesWithDates = dashRes.data.allBadges?.map(badge => ({
-                ...badge,
-                awardDate: badge.earned ? earnedBadgeMap.get(badge.id) : null
-              })) ?? []
-              
-              setBadges(badgesWithDates)
+              try {
+                // Backend returns camelCase properties (JSON serialization converts PascalCase to camelCase)
+                const xp = dashRes.data.xpTotal ?? 0
+                console.log('✅ xpTotal:', xp)
+                setXpTotal(xp)
+                
+                // Transform allBadges to include earned status and award dates for BadgesGrid
+                const earnedBadges = dashRes.data.earnedBadges || []
+                const allBadges = dashRes.data.allBadges || []
+                
+                console.log('✅ earnedBadges:', earnedBadges)
+                console.log('✅ allBadges:', allBadges)
+                
+                const earnedBadgeMap = new Map(
+                  earnedBadges.map(b => [b.id, b.awardDate])
+                )
+                
+                const badgesForGrid = allBadges.map(badge => {
+                  console.log('Processing badge:', badge)
+                  return {
+                    id: badge.id,
+                    name: badge.name,
+                    status: badge.earned ? 'earned' : 'locked',
+                    earnedDate: badge.earned ? earnedBadgeMap.get(badge.id) : null,
+                    description: badge.description || `Unlock this badge to show your progress`,
+                    iconType: badge.iconType || 'star',
+                    unlockHint: 'Keep learning to unlock',
+                    iconBg: 'rgba(200,255,62,0.1)',
+                    iconColor: badge.iconColor || '#c8ff3e',
+                  }
+                })
+                
+                console.log('✅ Badges for grid:', badgesForGrid)
+                setBadges(badgesForGrid)
+              } catch (transformErr) {
+                console.error('❌ Data transformation error:', transformErr)
+                throw transformErr
+              }
             }
           } catch (err) {
             console.error('❌ Dashboard fetch error:', err)
@@ -298,7 +325,7 @@ export default function Dashboard() {
               {dashboardError}
             </div>
           ) : (
-            <BadgeSection badges={badges} />
+            <BadgesGrid badges={badges} />
           )}
         </div>
       </div>
