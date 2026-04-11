@@ -656,6 +656,50 @@ export const StudentCodingQuestionService = {
             Promise<{ status: string; data: CodingQuestion }>,
 };
 
+// ── Student types ─────────────────────────────────────────────────────────────
+
+export type Badge = {
+    id: number;
+    name: string;
+    icon: string;
+    earned: boolean;
+    awardDate?: string | null;
+};
+
+export type EarnedBadge = {
+    id: number;
+    name: string;
+    icon: string;
+    awardDate: string;
+};
+
+export type BadgeDashboard = {
+    id: number;
+    name: string;
+    icon: string;
+    earned: boolean;
+};
+
+export type StudentDashboard = {
+    studentId: number;
+    xpTotal: number;
+    earnedBadges: EarnedBadge[];
+    allBadges: BadgeDashboard[];
+};
+
+// ── Student service ────────────────────────────────────────────────────────────
+
+export const StudentService = {
+    /**
+     * GET /students/{id}/dashboard
+     * Returns comprehensive dashboard data including XP total, earned badges with award dates,
+     * and full badge list for rendering locked placeholders.
+     */
+    getDashboard: (studentId: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/dashboard`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentDashboard }>,
+};
+
 export const SimulationService = {
     /**
      * POST /simulation/run

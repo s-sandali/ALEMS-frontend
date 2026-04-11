@@ -5,7 +5,8 @@ import { motion } from 'motion/react'
 import { LoaderCircle, BookOpen, PlayCircle, Target, Clock } from 'lucide-react'
 import DashboardNav from '@/components/dashboard/DashboardNav'
 import ExploreAlgorithmsSection from '@/components/algorithms/ExploreAlgorithmsSection'
-import { UserService, StudentQuizService } from '@/lib/api'
+import BadgeSection from '@/components/dashboard/BadgeSection'
+import { UserService, StudentQuizService, StudentService } from '@/lib/api'
 
 function QuizCard({ quiz, onStart }) {
   return (
@@ -98,6 +99,10 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   const [xpTotal, setXpTotal] = useState(0)
+  const [badges, setBadges] = useState([])
+  const [studentId, setStudentId] = useState(null)
+  const [dashboardLoading, setDashboardLoading] = useState(true)
+  const [dashboardError, setDashboardError] = useState('')
   const [quizzes, setQuizzes] = useState([])
   const [quizzesLoading, setQuizzesLoading] = useState(true)
   const [quizzesError, setQuizzesError] = useState('')
@@ -110,9 +115,54 @@ export default function Dashboard() {
     async function load() {
       try {
         const syncRes = await UserService.syncUser(getToken)
-        if (isMounted) setXpTotal(syncRes?.data?.xpTotal ?? 0)
-      } catch {
-        // xpTotal stays 0
+        console.log('🔍 syncUser response:', syncRes)
+        
+        // Extract UserId from response (backend returns UserId, not id)
+        const userId = syncRes?.data?.UserId || syncRes?.data?.userId
+        console.log('📍 Extracted UserID:', userId)
+        
+        if (isMounted && userId) {
+          setStudentId(userId)
+
+          // Now fetch the dashboard data
+          try {
+            console.log(`📡 Fetching dashboard for student ID: ${userId}`)
+            const dashRes = await StudentService.getDashboard(userId, getToken)
+            console.log('✅ Dashboard response:', dashRes)
+            if (isMounted && dashRes?.data) {
+              setXpTotal(dashRes.data.xpTotal ?? 0)
+              
+              // Transform allBadges to include awardDate for earned badges
+              const earnedBadgeMap = new Map(
+                dashRes.data.earnedBadges?.map(b => [b.id, b.awardDate]) ?? []
+              )
+              
+              const badgesWithDates = dashRes.data.allBadges?.map(badge => ({
+                ...badge,
+                awardDate: badge.earned ? earnedBadgeMap.get(badge.id) : null
+              })) ?? []
+              
+              setBadges(badgesWithDates)
+            }
+          } catch (err) {
+            console.error('❌ Dashboard fetch error:', err)
+            if (isMounted) setDashboardError(err instanceof Error ? err.message : 'Failed to load dashboard data.')
+          } finally {
+            if (isMounted) setDashboardLoading(false)
+          }
+        } else {
+          console.warn('⚠️ No UserId found in syncRes')
+          if (isMounted) {
+            setDashboardError('Could not determine user ID from sync')
+            setDashboardLoading(false)
+          }
+        }
+      } catch (err) {
+        console.error('❌ Sync user error:', err)
+        if (isMounted) {
+          setDashboardError(err instanceof Error ? err.message : 'Failed to sync user.')
+          setDashboardLoading(false)
+        }
       }
 
       try {
@@ -227,6 +277,28 @@ export default function Dashboard() {
                 </motion.div>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Badges section */}
+        <div style={{ marginTop: 32 }}>
+          {dashboardLoading ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              color: '#8a8b8e', fontSize: 14, minHeight: 120,
+            }}>
+              <LoaderCircle size={16} color="#c8ff3e" style={{ animation: 'spin 1s linear infinite' }} />
+              Loading badges…
+            </div>
+          ) : dashboardError ? (
+            <div style={{
+              background: 'rgba(255,90,90,0.06)', border: '1px solid rgba(255,90,90,0.2)',
+              borderRadius: 12, padding: '14px 18px', color: '#ff9a9a', fontSize: 13,
+            }}>
+              {dashboardError}
+            </div>
+          ) : (
+            <BadgeSection badges={badges} />
           )}
         </div>
       </div>
