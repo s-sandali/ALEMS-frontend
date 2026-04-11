@@ -5,7 +5,9 @@ import { motion } from 'motion/react'
 import { LoaderCircle, BookOpen, PlayCircle, Target, Clock } from 'lucide-react'
 import DashboardNav from '@/components/dashboard/DashboardNav'
 import ExploreAlgorithmsSection from '@/components/algorithms/ExploreAlgorithmsSection'
-import { UserService, StudentQuizService } from '@/lib/api'
+import BadgesGrid from '@/components/dashboard/BadgesGrid'
+import XPProgressBar from '@/components/ui/XPProgressBar'
+import { UserService, StudentQuizService, StudentService } from '@/lib/api'
 
 function QuizCard({ quiz, onStart }) {
   return (
@@ -98,6 +100,11 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   const [xpTotal, setXpTotal] = useState(0)
+  const [badges, setBadges] = useState([])
+  const [studentId, setStudentId] = useState(null)
+  const [progression, setProgression] = useState(null)
+  const [dashboardLoading, setDashboardLoading] = useState(true)
+  const [dashboardError, setDashboardError] = useState('')
   const [quizzes, setQuizzes] = useState([])
   const [quizzesLoading, setQuizzesLoading] = useState(true)
   const [quizzesError, setQuizzesError] = useState('')
@@ -110,9 +117,93 @@ export default function Dashboard() {
     async function load() {
       try {
         const syncRes = await UserService.syncUser(getToken)
-        if (isMounted) setXpTotal(syncRes?.data?.xpTotal ?? 0)
-      } catch {
-        // xpTotal stays 0
+        console.log('🔍 syncUser response:', syncRes)
+        
+        // Extract UserId from response (backend returns UserId, not id)
+        const userId = syncRes?.data?.UserId || syncRes?.data?.userId
+        console.log('📍 Extracted UserID:', userId)
+        
+        if (isMounted && userId) {
+          setStudentId(userId)
+
+          // Fetch progression data
+          try {
+            console.log(`📡 Fetching progression for student ID: ${userId}`)
+            const progRes = await UserService.getProgression(userId, getToken)
+            console.log('✅ Progression response:', progRes)
+            if (isMounted && progRes?.data) {
+              setProgression(progRes.data)
+            }
+          } catch (progErr) {
+            console.error('⚠️ Progression fetch warning (non-blocking):', progErr)
+          }
+
+          // Now fetch the dashboard data
+          try {
+            console.log(`📡 Fetching dashboard for student ID: ${userId}`)
+            const dashRes = await StudentService.getDashboard(userId, getToken)
+            console.log('✅ Dashboard response:', dashRes)
+            console.log('Dashboard data type:', typeof dashRes?.data, 'Keys:', Object.keys(dashRes?.data || {}))
+            
+            if (isMounted && dashRes?.data) {
+              try {
+                // Backend returns camelCase properties (JSON serialization converts PascalCase to camelCase)
+                const xp = dashRes.data.xpTotal ?? 0
+                console.log('✅ xpTotal:', xp)
+                setXpTotal(xp)
+                
+                // Transform allBadges to include earned status and award dates for BadgesGrid
+                const earnedBadges = dashRes.data.earnedBadges || []
+                const allBadges = dashRes.data.allBadges || []
+                
+                console.log('✅ earnedBadges:', earnedBadges)
+                console.log('✅ allBadges:', allBadges)
+                
+                const earnedBadgeMap = new Map(
+                  earnedBadges.map(b => [b.id, b.awardDate])
+                )
+                
+                const badgesForGrid = allBadges.map(badge => {
+                  console.log('Processing badge:', badge)
+                  return {
+                    id: badge.id,
+                    name: badge.name,
+                    status: badge.earned ? 'earned' : 'locked',
+                    earnedDate: badge.earned ? earnedBadgeMap.get(badge.id) : null,
+                    description: badge.description || `Unlock this badge to show your progress`,
+                    iconType: badge.iconType || 'star',
+                    unlockHint: 'Keep learning to unlock',
+                    iconBg: 'rgba(200,255,62,0.1)',
+                    iconColor: badge.iconColor || '#c8ff3e',
+                  }
+                })
+                
+                console.log('✅ Badges for grid:', badgesForGrid)
+                setBadges(badgesForGrid)
+              } catch (transformErr) {
+                console.error('❌ Data transformation error:', transformErr)
+                throw transformErr
+              }
+            }
+          } catch (err) {
+            console.error('❌ Dashboard fetch error:', err)
+            if (isMounted) setDashboardError(err instanceof Error ? err.message : 'Failed to load dashboard data.')
+          } finally {
+            if (isMounted) setDashboardLoading(false)
+          }
+        } else {
+          console.warn('⚠️ No UserId found in syncRes')
+          if (isMounted) {
+            setDashboardError('Could not determine user ID from sync')
+            setDashboardLoading(false)
+          }
+        }
+      } catch (err) {
+        console.error('❌ Sync user error:', err)
+        if (isMounted) {
+          setDashboardError(err instanceof Error ? err.message : 'Failed to sync user.')
+          setDashboardLoading(false)
+        }
       }
 
       try {
@@ -227,6 +318,58 @@ export default function Dashboard() {
                 </motion.div>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* XP Progress Bar */}
+        {progression && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ marginTop: 32, marginBottom: 24 }}
+          >
+            <div style={{ marginBottom: 12 }}>
+              <p style={{
+                fontSize: 11, color: '#4a4b4e',
+                letterSpacing: '1.5px', textTransform: 'uppercase',
+                fontFamily: "'Poppins', sans-serif", marginBottom: 4,
+              }}>
+                Level {progression.currentLevel}
+              </p>
+              <h3 style={{
+                fontSize: 14, fontWeight: 600,
+                color: '#c8ff3e', fontFamily: "'Poppins', sans-serif",
+              }}>
+                Experience Progress
+              </h3>
+            </div>
+            <XPProgressBar
+              xpTotal={progression.xpTotal}
+              xpPrevLevel={progression.xpPrevLevel}
+              xpForNextLevel={progression.xpForNextLevel}
+            />
+          </motion.div>
+        )}
+
+        {/* Badges section */}
+        <div style={{ marginTop: 32 }}>
+          {dashboardLoading ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              color: '#8a8b8e', fontSize: 14, minHeight: 120,
+            }}>
+              <LoaderCircle size={16} color="#c8ff3e" style={{ animation: 'spin 1s linear infinite' }} />
+              Loading badges…
+            </div>
+          ) : dashboardError ? (
+            <div style={{
+              background: 'rgba(255,90,90,0.06)', border: '1px solid rgba(255,90,90,0.2)',
+              borderRadius: 12, padding: '14px 18px', color: '#ff9a9a', fontSize: 13,
+            }}>
+              {dashboardError}
+            </div>
+          ) : (
+            <BadgesGrid badges={badges} />
           )}
         </div>
       </div>
