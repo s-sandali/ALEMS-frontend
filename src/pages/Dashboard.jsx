@@ -6,6 +6,7 @@ import { LoaderCircle, BookOpen, PlayCircle, Target, Clock } from 'lucide-react'
 import DashboardNav from '@/components/dashboard/DashboardNav'
 import ExploreAlgorithmsSection from '@/components/algorithms/ExploreAlgorithmsSection'
 import BadgesGrid from '@/components/dashboard/BadgesGrid'
+import XPProgressBar from '@/components/ui/XPProgressBar'
 import { UserService, StudentQuizService, StudentService } from '@/lib/api'
 
 function QuizCard({ quiz, onStart }) {
@@ -101,6 +102,7 @@ export default function Dashboard() {
   const [xpTotal, setXpTotal] = useState(0)
   const [badges, setBadges] = useState([])
   const [studentId, setStudentId] = useState(null)
+  const [progression, setProgression] = useState(null)
   const [dashboardLoading, setDashboardLoading] = useState(true)
   const [dashboardError, setDashboardError] = useState('')
   const [quizzes, setQuizzes] = useState([])
@@ -123,6 +125,18 @@ export default function Dashboard() {
         
         if (isMounted && userId) {
           setStudentId(userId)
+
+          // Fetch progression data
+          try {
+            console.log(`📡 Fetching progression for student ID: ${userId}`)
+            const progRes = await UserService.getProgression(userId, getToken)
+            console.log('✅ Progression response:', progRes)
+            if (isMounted && progRes?.data) {
+              setProgression(progRes.data)
+            }
+          } catch (progErr) {
+            console.error('⚠️ Progression fetch warning (non-blocking):', progErr)
+          }
 
           // Now fetch the dashboard data
           try {
@@ -236,6 +250,36 @@ export default function Dashboard() {
             Here's your learning progress at a glance.
           </p>
         </motion.div>
+
+        {/* XP Progress Bar */}
+        {progression && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ marginBottom: 32 }}
+          >
+            <div style={{ marginBottom: 12 }}>
+              <p style={{
+                fontSize: 11, color: '#4a4b4e',
+                letterSpacing: '1.5px', textTransform: 'uppercase',
+                fontFamily: "'Poppins', sans-serif", marginBottom: 4,
+              }}>
+                Level {progression.currentLevel}
+              </p>
+              <h3 style={{
+                fontSize: 14, fontWeight: 600,
+                color: '#c8ff3e', fontFamily: "'Poppins', sans-serif",
+              }}>
+                Experience Progress
+              </h3>
+            </div>
+            <XPProgressBar
+              xpTotal={progression.xpTotal}
+              xpPrevLevel={progression.xpPrevLevel}
+              xpForNextLevel={progression.xpForNextLevel}
+            />
+          </motion.div>
+        )}
 
         {/* Explore algorithms */}
         <ExploreAlgorithmsSection
