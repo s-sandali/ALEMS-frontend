@@ -251,36 +251,6 @@ export default function Dashboard() {
           </p>
         </motion.div>
 
-        {/* XP Progress Bar */}
-        {progression && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{ marginBottom: 32 }}
-          >
-            <div style={{ marginBottom: 12 }}>
-              <p style={{
-                fontSize: 11, color: '#4a4b4e',
-                letterSpacing: '1.5px', textTransform: 'uppercase',
-                fontFamily: "'Poppins', sans-serif", marginBottom: 4,
-              }}>
-                Level {progression.currentLevel}
-              </p>
-              <h3 style={{
-                fontSize: 14, fontWeight: 600,
-                color: '#c8ff3e', fontFamily: "'Poppins', sans-serif",
-              }}>
-                Experience Progress
-              </h3>
-            </div>
-            <XPProgressBar
-              xpTotal={progression.xpTotal}
-              xpPrevLevel={progression.xpPrevLevel}
-              xpForNextLevel={progression.xpForNextLevel}
-            />
-          </motion.div>
-        )}
-
         {/* Explore algorithms */}
         <ExploreAlgorithmsSection
           limit={4}
@@ -350,6 +320,36 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* XP Progress Bar */}
+        {progression && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ marginTop: 32, marginBottom: 24 }}
+          >
+            <div style={{ marginBottom: 12 }}>
+              <p style={{
+                fontSize: 11, color: '#4a4b4e',
+                letterSpacing: '1.5px', textTransform: 'uppercase',
+                fontFamily: "'Poppins', sans-serif", marginBottom: 4,
+              }}>
+                Level {progression.currentLevel}
+              </p>
+              <h3 style={{
+                fontSize: 14, fontWeight: 600,
+                color: '#c8ff3e', fontFamily: "'Poppins', sans-serif",
+              }}>
+                Experience Progress
+              </h3>
+            </div>
+            <XPProgressBar
+              xpTotal={progression.xpTotal}
+              xpPrevLevel={progression.xpPrevLevel}
+              xpForNextLevel={progression.xpForNextLevel}
+            />
+          </motion.div>
+        )}
 
         {/* Badges section */}
         <div style={{ marginTop: 32 }}>
