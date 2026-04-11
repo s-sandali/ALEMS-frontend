@@ -1,11 +1,14 @@
-import React, { useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import React from 'react';
+import { motion } from 'motion/react';
 
 interface XPProgressBarProps {
   xpTotal: number;
   xpPrevLevel: number;
   xpForNextLevel: number;
   className?: string;
+  variant?: 'default' | 'compact';
+  size?: 'sm' | 'md' | 'lg';
+  showPercentage?: boolean;
 }
 
 export const XPProgressBar: React.FC<XPProgressBarProps> = ({
@@ -13,62 +16,127 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
   xpPrevLevel,
   xpForNextLevel,
   className = '',
+  variant = 'default',
+  size = 'md',
+  showPercentage = true,
 }) => {
-  const fillRef = useRef<HTMLDivElement>(null);
-  
-  // Calculate progress percentage
+  // Calculate the progress percentage between previous and next level
   const xpInCurrentLevel = xpTotal - xpPrevLevel;
   const xpNeededForLevel = xpForNextLevel - xpPrevLevel;
-  const progressPercentage = Math.min((xpInCurrentLevel / xpNeededForLevel) * 100, 100);
+  const progressPercentage = (xpInCurrentLevel / xpNeededForLevel) * 100;
+  const clampedPercentage = Math.min(Math.max(progressPercentage, 0), 100);
 
-  useEffect(() => {
-    if (fillRef.current) {
-      // Animate the fill bar
-      gsap.to(fillRef.current, {
-        width: `${progressPercentage}%`,
-        duration: 1,
-        ease: 'power2.out',
-      });
-    }
-  }, [progressPercentage]);
+  // Size variants
+  const sizeVariants = {
+    sm: {
+      container: 'h-4',
+      label: 'text-xs',
+    },
+    md: {
+      container: 'h-6',
+      label: 'text-sm',
+    },
+    lg: {
+      container: 'h-8',
+      label: 'text-base',
+    },
+  };
+
+  const sizes = sizeVariants[size];
 
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    <div className={`flex flex-col ${variant === 'default' ? 'space-y-2' : 'space-y-1'} ${className}`}>
+      {/* Header with labels */}
+      {variant === 'default' && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline gap-1">
+            <span className="font-bold" style={{ color: '#c8ff3e' }}>
+              {xpTotal}
+            </span>
+            <span className="text-xs" style={{ color: '#8a8b8e' }}>
+              XP
+            </span>
+          </div>
+          {showPercentage && (
+            <span className="text-xs font-medium" style={{ color: '#8a8b8e' }}>
+              {Math.round(clampedPercentage)}%
+            </span>
+          )}
+          <div className="flex items-baseline gap-1">
+            <span className="text-xs" style={{ color: '#8a8b8e' }}>
+              Next:
+            </span>
+            <span className="font-semibold" style={{ color: '#e4e5e6' }}>
+              {xpForNextLevel}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Progress bar container */}
-      <div className="relative w-full h-8 bg-gradient-to-r from-slate-700 to-slate-800 rounded-full overflow-hidden border border-slate-600 shadow-lg">
+      <div
+        className={`relative w-full overflow-hidden rounded-full border ${sizes.container}`}
+        style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(10px)',
+        }}
+      >
         {/* Animated fill */}
-        <div
-          ref={fillRef}
-          className="h-full bg-gradient-to-r from-lime-400 via-emerald-500 to-teal-500 rounded-full shadow-inner transition-shadow duration-300"
+        <motion.div
+          className="h-full rounded-full shadow-lg"
           style={{
-            boxShadow: '0 0 20px rgba(163, 230, 53, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.2)',
-            width: '0%',
+            background: 'linear-gradient(to right, #c8ff3e, #00ffff, #0088ff)',
+            boxShadow: '0 0 20px rgba(200, 255, 62, 0.6)',
+          }}
+          initial={{ width: '0%' }}
+          animate={{ width: `${clampedPercentage}%` }}
+          transition={{
+            duration: 0.8,
+            ease: 'easeOut',
+            type: 'spring',
+            stiffness: 100,
+            damping: 20,
           }}
         />
-        
-        {/* Shine effect overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 pointer-events-none" />
+
+        {/* Shimmer effect */}
+        <motion.div
+          className="absolute inset-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none"
+          style={{ opacity: 0.2 }}
+          animate={{
+            x: ['-100%', '100%'],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+        />
+
+        {/* Compact variant - inline labels */}
+        {variant === 'compact' && (
+          <div className="absolute inset-0 flex items-center justify-between px-2">
+            <span className={`font-semibold ${sizes.label}`} style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+              {xpTotal}XP
+            </span>
+            {showPercentage && (
+              <span className={`${sizes.label}`} style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                {Math.round(clampedPercentage)}%
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Labels */}
-      <div className="flex justify-between items-center text-sm">
-        {/* Current XP */}
-        <div className="flex items-baseline gap-1">
-          <span className="font-semibold text-lime-400">{xpInCurrentLevel}</span>
-          <span className="text-slate-400">XP</span>
+      {/* Compact variant - footer label */}
+      {variant === 'compact' && (
+        <div className="flex justify-end">
+          <span className="text-xs" style={{ color: '#8a8b8e' }}>
+            Next: {xpForNextLevel}
+          </span>
         </div>
-
-        {/* Progress percentage */}
-        <div className="text-slate-400 font-medium">
-          {Math.round(progressPercentage)}%
-        </div>
-
-        {/* Next level threshold */}
-        <div className="flex items-baseline gap-1">
-          <span className="text-slate-400">Next:</span>
-          <span className="font-semibold text-emerald-400">{xpNeededForLevel}</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
