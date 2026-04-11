@@ -263,7 +263,14 @@ export const UserService = {
      * Admin only. Soft deletes a user.
      */
     deleteUser: (id: number, getToken: GetTokenFn) =>
-        apiFetch(`/users/${id}`, { method: "DELETE", getToken })
+        apiFetch(`/users/${id}`, { method: "DELETE", getToken }),
+
+    /**
+     * GET /students/{id}/progression
+     * Retrieves the user's XP progression data including current level and thresholds.
+     */
+    getProgression: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${id}/progression`, { method: "GET", getToken })
 };
 
 export const AlgorithmService = {
