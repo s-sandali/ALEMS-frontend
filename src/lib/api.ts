@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5181/api";
 const CLERK_JWT_TEMPLATE = import.meta.env.VITE_CLERK_JWT_TEMPLATE as string | undefined;
 
 // Matches Clerk's actual getToken signature so the template option can be passed through.
@@ -263,7 +263,14 @@ export const UserService = {
      * Admin only. Soft deletes a user.
      */
     deleteUser: (id: number, getToken: GetTokenFn) =>
-        apiFetch(`/users/${id}`, { method: "DELETE", getToken })
+        apiFetch(`/users/${id}`, { method: "DELETE", getToken }),
+
+    /**
+     * GET /students/{id}/progression
+     * Retrieves the user's XP progression data including current level and thresholds.
+     */
+    getProgression: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${id}/progression`, { method: "GET", getToken })
 };
 
 export const AlgorithmService = {
@@ -654,6 +661,56 @@ export const StudentCodingQuestionService = {
     getById: (id: number, getToken: GetTokenFn) =>
         apiFetch(`/student/coding-questions/${id}`, { method: "GET", getToken }) as
             Promise<{ status: string; data: CodingQuestion }>,
+};
+
+// ── Student types ─────────────────────────────────────────────────────────────
+
+export type Badge = {
+    id: number;
+    name: string;
+    icon: string;
+    earned: boolean;
+    awardDate?: string | null;
+};
+
+export type EarnedBadge = {
+    id: number;
+    name: string;
+    description: string;
+    xpThreshold: number;
+    iconType: string;
+    iconColor: string;
+    awardDate: string;
+};
+
+export type BadgeDashboard = {
+    id: number;
+    name: string;
+    description: string;
+    xpThreshold: number;
+    iconType: string;
+    iconColor: string;
+    earned: boolean;
+};
+
+export type StudentDashboard = {
+    studentId: number;
+    xpTotal: number;
+    earnedBadges: EarnedBadge[];
+    allBadges: BadgeDashboard[];
+};
+
+// ── Student service ────────────────────────────────────────────────────────────
+
+export const StudentService = {
+    /**
+     * GET /students/{id}/dashboard
+     * Returns comprehensive dashboard data including XP total, earned badges with award dates,
+     * and full badge list for rendering locked placeholders.
+     */
+    getDashboard: (studentId: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/dashboard`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentDashboard }>,
 };
 
 export const SimulationService = {
