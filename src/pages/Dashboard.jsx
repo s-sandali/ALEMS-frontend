@@ -8,6 +8,7 @@ import ExploreAlgorithmsSection from '@/components/algorithms/ExploreAlgorithmsS
 import BadgesGrid from '@/components/dashboard/BadgesGrid'
 import XPProgressBar from '@/components/ui/XPProgressBar'
 import { UserService, StudentQuizService, StudentService } from '@/lib/api'
+import StatCards from '@/components/dashboard/StatCards'
 
 function QuizCard({ quiz, onStart }) {
   return (
@@ -250,6 +251,13 @@ export default function Dashboard() {
             Here's your learning progress at a glance.
           </p>
         </motion.div>
+
+        {/* Stat cards */}
+        <StatCards user={{
+          xpTotal,
+          totalPassed: 0,
+          passRate: null,
+        }} />
 
         {/* Explore algorithms */}
         <ExploreAlgorithmsSection
