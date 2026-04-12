@@ -1,10 +1,10 @@
 import { motion } from 'motion/react'
-import { Zap, BookOpen, Flame } from 'lucide-react'
+import { Zap, BookOpen, TrendingUp } from 'lucide-react'
 
 const cards = [
   {
     label: 'Total XP',
-    getValue: u => u.xp,
+    getValue: u => u.xpTotal ?? 0,
     sub: 'Experience points earned',
     iconColor: '#c8ff3e',
     iconBg: 'rgba(200,255,62,0.1)',
@@ -12,22 +12,22 @@ const cards = [
     Icon: Zap,
   },
   {
-    label: 'Modules Completed',
-    getValue: u => u.modulesCompleted,
-    getSub: u => `${u.modulesCompleted} of ${u.totalModules} modules`,
+    label: 'Quizzes Passed',
+    getValue: u => u.totalPassed ?? 0,
+    sub: 'Quizzes passed',
     iconColor: '#4da6ff',
     iconBg: 'rgba(77,166,255,0.1)',
     valueColor: '#4da6ff',
     Icon: BookOpen,
   },
   {
-    label: 'Current Streak',
-    getValue: u => u.streakDays,
-    sub: 'days — keep it going!',
+    label: 'Pass Rate',
+    getValue: u => u.passRate != null ? `${u.passRate}%` : '—',
+    sub: 'Overall pass rate',
     iconColor: '#ffb830',
     iconBg: 'rgba(255,184,48,0.1)',
     valueColor: '#ffb830',
-    Icon: Flame,
+    Icon: TrendingUp,
   },
 ]
 
