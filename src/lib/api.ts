@@ -693,11 +693,34 @@ export type BadgeDashboard = {
     earned: boolean;
 };
 
+export type PerformanceSummary = {
+    totalAttempts: number;
+    totalPassed: number;
+    passRate: number;
+    averageScore: number;
+    totalXpFromQuizzes: number;
+};
+
+export type QuizAttemptHistoryItem = {
+    attemptId: number;
+    quizId: number;
+    quizTitle: string;
+    algorithmName: string;
+    score: number;
+    totalQuestions: number;
+    scorePercent: number;
+    xpEarned: number;
+    passed: boolean;
+    completedAt: string | null;
+};
+
 export type StudentDashboard = {
     studentId: number;
     xpTotal: number;
     earnedBadges: EarnedBadge[];
     allBadges: BadgeDashboard[];
+    performanceSummary: PerformanceSummary;
+    quizAttemptHistory: QuizAttemptHistoryItem[];
 };
 
 // ── Student service ────────────────────────────────────────────────────────────
