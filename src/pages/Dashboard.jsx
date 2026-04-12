@@ -9,6 +9,7 @@ import BadgesGrid from '@/components/dashboard/BadgesGrid'
 import XPProgressBar from '@/components/ui/XPProgressBar'
 import { UserService, StudentQuizService, StudentService } from '@/lib/api'
 import StatCards from '@/components/dashboard/StatCards'
+import QuizAttemptHistoryTable from '@/components/dashboard/QuizAttemptHistoryTable'
 
 /** Converts a hex color string (#rrggbb) to rgba(r,g,b,0.1) for badge icon backgrounds. */
 function iconBgFromColor(hex = '#c8ff3e') {
@@ -113,6 +114,8 @@ export default function Dashboard() {
   const [badges, setBadges] = useState([])
   const [studentId, setStudentId] = useState(null)
   const [progression, setProgression] = useState(null)
+  const [performanceSummary, setPerformanceSummary] = useState(null)
+  const [attemptHistory, setAttemptHistory] = useState([])
   const [dashboardLoading, setDashboardLoading] = useState(true)
   const [dashboardError, setDashboardError] = useState('')
   const [quizzes, setQuizzes] = useState([])
@@ -184,8 +187,12 @@ export default function Dashboard() {
                   }
                 })
                 
-                console.log('✅ Badges for grid:', badgesForGrid)
                 setBadges(badgesForGrid)
+
+                if (dashRes.data.performanceSummary) {
+                  setPerformanceSummary(dashRes.data.performanceSummary)
+                }
+                setAttemptHistory(dashRes.data.quizAttemptHistory || [])
               } catch (transformErr) {
                 console.error('❌ Data transformation error:', transformErr)
                 throw transformErr
@@ -260,8 +267,8 @@ export default function Dashboard() {
         {/* Stat cards */}
         <StatCards user={{
           xpTotal,
-          totalPassed: 0,
-          passRate: null,
+          totalPassed: performanceSummary?.totalPassed ?? 0,
+          passRate: performanceSummary?.passRate ?? null,
         }} />
 
         {/* Explore algorithms */}
@@ -385,6 +392,13 @@ export default function Dashboard() {
             <BadgesGrid badges={badges} />
           )}
         </div>
+
+        {/* Quiz attempt history */}
+        {!dashboardLoading && !dashboardError && (
+          <div style={{ marginTop: 32 }}>
+            <QuizAttemptHistoryTable attempts={attemptHistory} />
+          </div>
+        )}
       </div>
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
