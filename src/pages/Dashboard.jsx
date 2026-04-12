@@ -10,6 +10,15 @@ import XPProgressBar from '@/components/ui/XPProgressBar'
 import { UserService, StudentQuizService, StudentService } from '@/lib/api'
 import StatCards from '@/components/dashboard/StatCards'
 
+/** Converts a hex color string (#rrggbb) to rgba(r,g,b,0.1) for badge icon backgrounds. */
+function iconBgFromColor(hex = '#c8ff3e') {
+  const h = hex.replace('#', '')
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `rgba(${r},${g},${b},0.1)`
+}
+
 function QuizCard({ quiz, onStart }) {
   return (
     <motion.div
@@ -134,6 +143,7 @@ export default function Dashboard() {
             console.log('✅ Progression response:', progRes)
             if (isMounted && progRes?.data) {
               setProgression(progRes.data)
+              setXpTotal(progRes.data.xpTotal ?? 0)
             }
           } catch (progErr) {
             console.error('⚠️ Progression fetch warning (non-blocking):', progErr)
@@ -148,11 +158,6 @@ export default function Dashboard() {
             
             if (isMounted && dashRes?.data) {
               try {
-                // Backend returns camelCase properties (JSON serialization converts PascalCase to camelCase)
-                const xp = dashRes.data.xpTotal ?? 0
-                console.log('✅ xpTotal:', xp)
-                setXpTotal(xp)
-                
                 // Transform allBadges to include earned status and award dates for BadgesGrid
                 const earnedBadges = dashRes.data.earnedBadges || []
                 const allBadges = dashRes.data.allBadges || []
@@ -165,17 +170,17 @@ export default function Dashboard() {
                 )
                 
                 const badgesForGrid = allBadges.map(badge => {
-                  console.log('Processing badge:', badge)
+                  const color = badge.iconColor || '#c8ff3e'
                   return {
                     id: badge.id,
                     name: badge.name,
                     status: badge.earned ? 'earned' : 'locked',
-                    earnedDate: badge.earned ? earnedBadgeMap.get(badge.id) : null,
-                    description: badge.description || `Unlock this badge to show your progress`,
+                    earnedDate: badge.earned ? earnedBadgeMap.get(badge.id) ?? null : null,
+                    description: badge.description || 'Unlock this badge to show your progress',
                     iconType: badge.iconType || 'star',
                     unlockHint: 'Keep learning to unlock',
-                    iconBg: 'rgba(200,255,62,0.1)',
-                    iconColor: badge.iconColor || '#c8ff3e',
+                    iconColor: color,
+                    iconBg: iconBgFromColor(color),
                   }
                 })
                 
