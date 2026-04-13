@@ -29,14 +29,14 @@ export default function AlgorithmQuizCTA({ algorithm }) {
         : quiz.available;
 
     return (
-        <section className="rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-8 lg:p-10">
+        <section className="rounded-[2rem] border p-6 sm:p-8 lg:p-10" style={{ borderColor: "var(--db-border)", background: "var(--surface)" }}>
             <div >
                 <p className="text-s font-semibold uppercase tracking-[0.3em] text-accent">
                     05 - Challenge
                 </p>
 
-                <div className="mt-5 rounded-[1.75rem] border border-white/[0.08] bg-bg/40 px-6 py-8 text-center sm:px-10 sm:py-10">
-                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                <div className="mt-5 rounded-[1.75rem] border px-6 py-8 text-center sm:px-10 sm:py-10" style={{ borderColor: "var(--db-border2)", background: "var(--surface)" }}>
+                    <h2 className="text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
                         Ready to test your <span className="text-accent">knowledge</span>?
                     </h2>
                     <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-text-secondary sm:text-base">
@@ -59,7 +59,7 @@ export default function AlgorithmQuizCTA({ algorithm }) {
                             <ArrowRight className="h-4 w-4" />
                         </button>
                     ) : (
-                        <div className="mt-8 inline-flex rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-3 text-sm font-semibold text-text-secondary">
+                        <div className="mt-8 inline-flex rounded-2xl border px-6 py-3 text-sm font-semibold text-text-secondary" style={{ borderColor: "var(--db-border2)", background: "var(--db-bg2)" }}>
                             Coming Soon
                         </div>
                     )}

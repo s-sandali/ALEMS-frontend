@@ -101,7 +101,7 @@ export default function AdminQuizListPage() {
                 <p style={{ color: "#ff9a9a", fontSize: 15 }}>
                     Admin access required.
                 </p>
-                <Link to="/dashboard" style={{ color: "#c8ff3e", fontSize: 13, textDecoration: "none" }}>
+                <Link to="/dashboard" style={{ color: "var(--primary)", fontSize: 13, textDecoration: "none" }}>
                     Back to Dashboard
                 </Link>
             </div>
@@ -130,7 +130,7 @@ export default function AdminQuizListPage() {
                             Admin Panel
                         </p>
                          <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
-                            Quiz <span style={{ color: "#c8ff3e" }}>Management</span>
+                            Quiz <span style={{ color: "var(--primary)" }}>Management</span>
                         </h1>
                          <p className="mt-4 text-base leading-7 text-text-secondary">
                         Pick a challenge, and try to solve it.
@@ -146,11 +146,11 @@ export default function AdminQuizListPage() {
                             display: "inline-flex",
                             alignItems: "center",
                             gap: 7,
-                            background: "rgba(200,255,62,0.1)",
-                            border: "1px solid rgba(200,255,62,0.3)",
+                            background: "rgba(var(--primary-rgb),0.1)",
+                            border: "1px solid rgba(var(--primary-rgb),0.3)",
                             borderRadius: 10,
                             padding: "10px 18px",
-                            color: "#c8ff3e",
+                            color: "var(--primary)",
                             fontSize: 13,
                             fontWeight: 600,
                             cursor: "pointer",
@@ -168,11 +168,11 @@ export default function AdminQuizListPage() {
                         alignItems: "center",
                         justifyContent: "center",
                         gap: 10,
-                        color: "#8a8b8e",
+                        color: "var(--text-secondary)",
                         fontSize: 14,
                         minHeight: 200,
                     }}>
-                        <LoaderCircle size={16} color="#c8ff3e" style={{ animation: "spin 1s linear infinite" }} />
+                        <LoaderCircle size={16} color="var(--primary)" style={{ animation: "spin 1s linear infinite" }} />
                         Loading quizzes...
                     </div>
                 ) : error ? (
@@ -189,8 +189,8 @@ export default function AdminQuizListPage() {
                     </div>
                 ) : successMessage ? (
                     <div style={{
-                        background: "rgba(200,255,62,0.08)",
-                        border: "1px solid rgba(200,255,62,0.2)",
+                        background: "rgba(var(--primary-rgb),0.08)",
+                        border: "1px solid rgba(var(--primary-rgb),0.2)",
                         borderRadius: 12,
                         padding: "16px 20px",
                         color: "#dfff7b",
@@ -208,7 +208,7 @@ export default function AdminQuizListPage() {
                         borderRadius: 16,
                         padding: "48px 24px",
                         textAlign: "center",
-                        color: "#4a4b4e",
+                        color: "var(--text-tertiary)",
                         fontSize: 14,
                     }}>
                         No quizzes found.
@@ -237,7 +237,7 @@ export default function AdminQuizListPage() {
                                 <span key={column} style={{
                                     fontSize: 11,
                                     fontWeight: 600,
-                                    color: "#4a4b4e",
+                                    color: "var(--text-tertiary)",
                                     textTransform: "uppercase",
                                     letterSpacing: "1.2px",
                                     fontFamily: "'Poppins', sans-serif",
@@ -275,18 +275,18 @@ export default function AdminQuizListPage() {
                                             height: 32,
                                             borderRadius: 8,
                                             flexShrink: 0,
-                                            background: "rgba(200,255,62,0.08)",
-                                            border: "1px solid rgba(200,255,62,0.15)",
+                                            background: "rgba(var(--primary-rgb),0.08)",
+                                            border: "1px solid rgba(var(--primary-rgb),0.15)",
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
                                         }}>
-                                            <BookOpen size={14} color="#c8ff3e" />
+                                            <BookOpen size={14} color="var(--primary)" />
                                         </div>
                                         <span style={{
                                             fontSize: 14,
                                             fontWeight: 600,
-                                            color: "#e4e5e6",
+                                            color: "var(--text-primary)",
                                             overflow: "hidden",
                                             textOverflow: "ellipsis",
                                             whiteSpace: "nowrap",
@@ -297,7 +297,7 @@ export default function AdminQuizListPage() {
 
                                     <span style={{
                                         fontSize: 13,
-                                        color: "#8a8b8e",
+                                        color: "var(--text-secondary)",
                                         overflow: "hidden",
                                         textOverflow: "ellipsis",
                                         whiteSpace: "nowrap",
@@ -315,12 +315,12 @@ export default function AdminQuizListPage() {
                                         borderRadius: 20,
                                         ...(quiz.isActive
                                             ? {
-                                                color: "#c8ff3e",
-                                                background: "rgba(200,255,62,0.08)",
-                                                border: "1px solid rgba(200,255,62,0.2)",
+                                                color: "var(--primary)",
+                                                background: "rgba(var(--primary-rgb),0.08)",
+                                                border: "1px solid rgba(var(--primary-rgb),0.2)",
                                             }
                                             : {
-                                                color: "#8a8b8e",
+                                                color: "var(--text-secondary)",
                                                 background: "rgba(255,255,255,0.04)",
                                                 border: "1px solid #2e2f30",
                                             }),
@@ -329,7 +329,7 @@ export default function AdminQuizListPage() {
                                             width: 5,
                                             height: 5,
                                             borderRadius: "50%",
-                                            background: quiz.isActive ? "#c8ff3e" : "#4a4b4e",
+                                            background: quiz.isActive ? "var(--primary)" : "var(--text-tertiary)",
                                             flexShrink: 0,
                                         }} />
                                         {quiz.isActive ? "Active" : "Inactive"}
@@ -345,7 +345,7 @@ export default function AdminQuizListPage() {
                                                 border: "1px solid #2e2f30",
                                                 borderRadius: 6,
                                                 padding: "5px 9px",
-                                                color: "#8a8b8e",
+                                                color: "var(--text-secondary)",
                                                 cursor: "pointer",
                                                 display: "inline-flex",
                                                 alignItems: "center",
@@ -386,7 +386,7 @@ export default function AdminQuizListPage() {
                 ) : null}
 
                 {!loading && !error && quizzes.length > 0 ? (
-                    <p style={{ marginTop: 12, fontSize: 12, color: "#4a4b4e", textAlign: "right" }}>
+                    <p style={{ marginTop: 12, fontSize: 12, color: "var(--text-tertiary)", textAlign: "right" }}>
                         {quizzes.length} quiz{quizzes.length !== 1 ? "zes" : ""}
                     </p>
                 ) : null}
@@ -398,3 +398,4 @@ export default function AdminQuizListPage() {
         </div>
     );
 }
+

@@ -3,7 +3,7 @@ import { motion } from 'motion/react'
 /** Maps API event type to a dot colour. */
 const DOT_COLOR = {
   quiz:  '#3ddc84',
-  badge: '#c8ff3e',
+  badge: 'var(--primary)',
 }
 
 /**
@@ -29,7 +29,7 @@ function relativeTime(isoString) {
  * Returns { dotColor, beforeHighlight, highlight, afterHighlight, timeAgo }.
  */
 function deriveDisplay(item) {
-  const dotColor = DOT_COLOR[item.type] ?? '#8a8b8e'
+  const dotColor = DOT_COLOR[item.type] ?? 'var(--text-secondary)'
   const timeAgo  = relativeTime(item.createdAt)
   const title    = item.title
 
@@ -45,7 +45,7 @@ function deriveDisplay(item) {
  * RecentActivityFeed
  *
  * Props:
- *   activities  ActivityItem[]  — raw items from GET /students/{id}/activity
+ *   activities  ActivityItem[]  - raw items from GET /students/{id}/activity
  */
 export default function RecentActivityFeed({ activities = [] }) {
   if (activities.length === 0) {
@@ -61,7 +61,7 @@ export default function RecentActivityFeed({ activities = [] }) {
         <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--db-text)', marginBottom: 12 }}>
           Recent activity
         </p>
-        <p style={{ fontSize: 13, color: 'var(--db-text3)' }}>No activity yet — complete a quiz to get started.</p>
+        <p style={{ fontSize: 13, color: 'var(--db-text3)' }}>No activity yet - complete a quiz to get started.</p>
       </div>
     )
   }
@@ -151,3 +151,4 @@ export default function RecentActivityFeed({ activities = [] }) {
     </div>
   )
 }
+

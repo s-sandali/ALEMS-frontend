@@ -149,7 +149,7 @@ export default function QuizzesPage() {
                         Student Portal
                     </p>
                     <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
-                        Available <span style={{ color: "#c8ff3e" }}>Quizzes</span>
+                        Available <span style={{ color: "var(--primary)" }}>Quizzes</span>
                     </h1>
                     <p className="mt-4 text-base leading-7 text-text-secondary">
                         Test your knowledge on algorithms. Pass score and time limit are shown on each card.
@@ -160,11 +160,11 @@ export default function QuizzesPage() {
                 {loading ? (
                     <div style={{
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        gap: 10, color: "#8a8b8e", fontSize: 14,
+                        gap: 10, color: "var(--text-secondary)", fontSize: 14,
                         minHeight: 200,
                     }}>
-                        <LoaderCircle size={16} color="#c8ff3e" style={{ animation: "spin 1s linear infinite" }} />
-                        Loading quizzes…
+                        <LoaderCircle size={16} color="var(--primary)" style={{ animation: "spin 1s linear infinite" }} />
+                        Loading quizzes...
                     </div>
                 ) : error ? (
                     <div style={{
@@ -177,7 +177,7 @@ export default function QuizzesPage() {
                     <div style={{
                         background: "var(--surface)", border: "1px dashed var(--db-border2)",
                         borderRadius: 16, padding: "48px 24px",
-                        textAlign: "center", color: "#4a4b4e", fontSize: 14,
+                        textAlign: "center", color: "var(--text-tertiary)", fontSize: 14,
                     }}>
                         No quizzes are available yet.
                     </div>
@@ -208,3 +208,4 @@ export default function QuizzesPage() {
         </div>
     );
 }
+

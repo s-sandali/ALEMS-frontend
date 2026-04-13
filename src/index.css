@@ -4,31 +4,53 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .text-text-primary {
+    color: var(--text-primary);
+  }
+
+  .text-text-secondary {
+    color: var(--text-secondary);
+  }
+
+  .text-text-tertiary {
+    color: var(--text-tertiary);
+  }
+}
+
 /* ─── Theme Variables: Light = Netlify Flow (default) ────────────────────── */
 :root {
   color-scheme: light;
 
   /* Requested palette */
   --primary: #00C7B7;
+  --primary-rgb: 0, 199, 183;
   --secondary: #014847;
+  --secondary-rgb: 1, 72, 71;
   --accent: #00AD9F;
+  --accent-rgb: 0, 173, 159;
   --bg: #FFFFFF;
+  --bg-rgb: 255, 255, 255;
   --text-primary: #0E1E25;
+  --text-primary-rgb: 14, 30, 37;
   --muted: #8B9FA8;
+  --muted-rgb: 139, 159, 168;
 
   /* Derived tokens */
-  --accent-rgb: 0, 173, 159;
   --surface: #F4F9F9;
+  --surface-rgb: 244, 249, 249;
   --surface-2: #EAF3F4;
   --surface-3: #DCE9EB;
   --border: #C6D8DC;
   --border-strong: #94B1B8;
   --text-secondary: #5D747D;
-  --text-tertiary: #7F959D;
+  --text-secondary-rgb: 93, 116, 125;
+  --text-tertiary: #222627;
   --shadow-hard: 4px 4px 0 #0E1E25;
 
   /* Backward-compatible dashboard aliases */
   --lime: var(--primary);
+  --lime-rgb: var(--primary-rgb);
   --lime2: var(--accent);
   --lime-dim: rgba(var(--accent-rgb), 0.14);
   --lime-border: rgba(var(--accent-rgb), 0.34);
@@ -60,25 +82,33 @@
 
   /* Requested palette */
   --primary: #00FF88;
+  --primary-rgb: 0, 255, 136;
   --secondary: #FF00FF;
+  --secondary-rgb: 255, 0, 255;
   --accent: #00FFFF;
+  --accent-rgb: 0, 255, 255;
   --bg: #0A0A0A;
+  --bg-rgb: 10, 10, 10;
   --text-primary: #FFFFFF;
+  --text-primary-rgb: 255, 255, 255;
   --muted: #1A1A1A;
+  --muted-rgb: 26, 26, 26;
 
   /* Derived tokens */
-  --accent-rgb: 0, 255, 255;
   --surface: #111111;
+  --surface-rgb: 17, 17, 17;
   --surface-2: #161616;
   --surface-3: #1E1E1E;
   --border: #2A2A2A;
   --border-strong: #3C3C3C;
   --text-secondary: #B7C2C6;
+  --text-secondary-rgb: 183, 194, 198;
   --text-tertiary: #7D8C91;
   --shadow-hard: 6px 6px 0 var(--secondary);
 
   /* Backward-compatible dashboard aliases */
   --lime: var(--primary);
+  --lime-rgb: var(--primary-rgb);
   --lime2: var(--accent);
   --lime-dim: rgba(0, 255, 136, 0.14);
   --lime-border: rgba(0, 255, 136, 0.4);

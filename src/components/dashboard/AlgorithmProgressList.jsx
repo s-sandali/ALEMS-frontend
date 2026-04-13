@@ -1,8 +1,8 @@
-import { motion } from 'motion/react'
+﻿import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 
-const CIRCUMFERENCE = 2 * Math.PI * 20 // r=20 → ≈125.7
+const CIRCUMFERENCE = 2 * Math.PI * 20 // r=20 -> ~125.7
 
 function ProgressRing({ percent, accentColor, locked, index }) {
   const offset = CIRCUMFERENCE * (1 - percent / 100)
@@ -46,7 +46,7 @@ export default function AlgorithmProgressList({ algorithms }) {
 
   return (
     <div style={{
-      background: '#131415',
+      background: 'var(--surface)',
       border: '1px solid #252627',
       borderRadius: 14,
       padding: '20px',
@@ -65,12 +65,12 @@ export default function AlgorithmProgressList({ algorithms }) {
           onClick={() => navigate('/algorithms')}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 12, color: '#4a4b4e', transition: 'color 0.15s',
+            fontSize: 12, color: 'var(--text-tertiary)', transition: 'color 0.15s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#c8ff3e')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#4a4b4e')}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--primary)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
         >
-          View all →
+          {"View all ->"}
         </button>
       </div>
 
@@ -118,11 +118,11 @@ export default function AlgorithmProgressList({ algorithms }) {
                 <h2 className="text-4xl font-bold tracking-tight text-text-primary sm:text-xl">
                   {algo.name}
                 </h2>
-                <p style={{ fontSize: 11, color: '#4a4b4e', marginBottom: 8 }}>
-                  {algo.category} · {algo.difficulty}
+                <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 8 }}>
+                  {algo.category} - {algo.difficulty}
                 </p>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {[algo.timeComplexity, algo.spaceComplexity].filter(c => c && c !== '—').map(c => (
+                  {[algo.timeComplexity, algo.spaceComplexity].filter(c => c && c !== '-').map(c => (
                     <span
                       key={c}
                       style={{
@@ -130,7 +130,7 @@ export default function AlgorithmProgressList({ algorithms }) {
                         fontFamily: "'Poppins', sans-serif",
                         padding: '3px 9px',
                         borderRadius: 5,
-                        background: isLocked ? '#1a1b1c' : algo.accentDim,
+                        background: isLocked ? 'var(--surface-2)' : algo.accentDim,
                         border: `1px solid ${isLocked ? '#252627' : algo.accentColor + '33'}`,
                         color: isLocked ? '#3a3b3e' : algo.accentColor,
                         letterSpacing: '0.2px',
@@ -146,7 +146,7 @@ export default function AlgorithmProgressList({ algorithms }) {
               {isLocked ? (
                 <div style={{
                   width: 32, height: 32, borderRadius: 8,
-                  background: '#1a1b1c',
+                  background: 'var(--surface-2)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
                 }}>
@@ -161,7 +161,7 @@ export default function AlgorithmProgressList({ algorithms }) {
                   }}>
                     {algo.quizzesDone}/{algo.quizzesTotal}
                   </p>
-                  <p style={{ fontSize: 10, color: '#4a4b4e', marginTop: 2 }}>
+                  <p style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 2 }}>
                     Quizzes done
                   </p>
                 </div>
@@ -173,3 +173,4 @@ export default function AlgorithmProgressList({ algorithms }) {
     </div>
   )
 }
+

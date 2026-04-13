@@ -8,9 +8,9 @@ import { StudentCodingQuestionService } from "@/lib/api";
 
 const DIFFICULTY_STYLES = {
     easy: {
-        color: "#c8ff3e",
-        bg: "rgba(200,255,62,0.08)",
-        border: "rgba(200,255,62,0.2)",
+        color: "var(--primary)",
+        bg: "rgba(var(--primary-rgb),0.08)",
+        border: "rgba(var(--primary-rgb),0.2)",
     },
     medium: {
         color: "#ffb830",
@@ -26,7 +26,7 @@ const DIFFICULTY_STYLES = {
 
 function CodingChallengeCard({ challenge, onOpen }) {
     const difficultyStyle = DIFFICULTY_STYLES[challenge.difficulty] ?? {
-        color: "#8a8b8e",
+        color: "var(--text-secondary)",
         bg: "rgba(138,139,142,0.08)",
         border: "rgba(138,139,142,0.2)",
     };
@@ -208,7 +208,7 @@ export default function CodingChallengesPage() {
                     </p>
 
                     <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
-                        Coding <span style={{ color: "#c8ff3e" }}>Challenges</span>
+                        Coding <span style={{ color: "var(--primary)" }}>Challenges</span>
                     </h1>
 
                      <p className="mt-4 text-base leading-7 text-text-secondary">
@@ -223,12 +223,12 @@ export default function CodingChallengesPage() {
                             alignItems: "center",
                             justifyContent: "center",
                             gap: 10,
-                            color: "#8a8b8e",
+                            color: "var(--text-secondary)",
                             fontSize: 14,
                             minHeight: 200,
                         }}
                     >
-                        <LoaderCircle size={16} color="#c8ff3e" style={{ animation: "spin 1s linear infinite" }} />
+                        <LoaderCircle size={16} color="var(--primary)" style={{ animation: "spin 1s linear infinite" }} />
                         Loading coding challenges...
                     </div>
                 ) : error ? (
@@ -252,7 +252,7 @@ export default function CodingChallengesPage() {
                             borderRadius: 16,
                             padding: "48px 24px",
                             textAlign: "center",
-                            color: "#4a4b4e",
+                            color: "var(--text-tertiary)",
                             fontSize: 14,
                         }}
                     >
@@ -290,3 +290,4 @@ export default function CodingChallengesPage() {
         </div>
     );
 }
+

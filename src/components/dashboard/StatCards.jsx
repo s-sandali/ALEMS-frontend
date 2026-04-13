@@ -6,9 +6,9 @@ const cards = [
     label: 'Total XP',
     getValue: u => u.xpTotal ?? 0,
     sub: 'Experience points earned',
-    iconColor: '#c8ff3e',
-    iconBg: 'rgba(200,255,62,0.1)',
-    valueColor: '#c8ff3e',
+    iconColor: 'var(--primary)',
+    iconBg: 'rgba(var(--primary-rgb),0.1)',
+    valueColor: 'var(--primary)',
     Icon: Zap,
   },
   {
@@ -22,7 +22,7 @@ const cards = [
   },
   {
     label: 'Pass Rate',
-    getValue: u => u.passRate != null ? `${u.passRate}%` : '—',
+    getValue: u => u.passRate != null ? `${u.passRate}%` : '-',
     sub: 'Overall pass rate',
     iconColor: '#ffb830',
     iconBg: 'rgba(255,184,48,0.1)',
@@ -48,7 +48,7 @@ export default function StatCards({ user }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.08 }}
           style={{
-            background: '#131415',
+            background: 'var(--surface)',
             border: '1px solid #252627',
             borderRadius: 12,
             padding: '18px 20px',
@@ -94,3 +94,4 @@ export default function StatCards({ user }) {
     </div>
   )
 }
+

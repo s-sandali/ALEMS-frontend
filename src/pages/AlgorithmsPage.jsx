@@ -3,7 +3,7 @@ import ExploreAlgorithmsSection from "../components/algorithms/ExploreAlgorithms
 
 export default function AlgorithmsPage() {
     return (
-        <div className="min-h-screen bg-bg">
+        <div className="min-h-screen" style={{ background: "var(--bg)" }}>
             <DashboardNav />
 
             <main className="mx-auto max-w-7xl px-6 py-8 sm:py-10">

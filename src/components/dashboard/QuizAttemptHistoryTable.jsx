@@ -2,7 +2,7 @@ import { motion } from 'motion/react'
 import { CheckCircle, XCircle, Zap } from 'lucide-react'
 
 function formatDate(iso) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   try {
     return new Date(iso).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -10,7 +10,7 @@ function formatDate(iso) {
       day: 'numeric',
     })
   } catch {
-    return '—'
+    return '-'
   }
 }
 
@@ -20,7 +20,7 @@ const TH_STYLE = {
   fontWeight: 700,
   letterSpacing: '1.2px',
   textTransform: 'uppercase',
-  color: '#4a4b4e',
+  color: 'var(--text-tertiary)',
   textAlign: 'left',
   borderBottom: '1px solid #252627',
   whiteSpace: 'nowrap',
@@ -50,7 +50,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
       </div>
 
       <div style={{
-        background: '#131415',
+        background: 'var(--surface)',
         border: '1px solid #252627',
         borderRadius: 12,
         overflow: 'hidden',
@@ -59,7 +59,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
           <div style={{
             padding: '36px 24px',
             textAlign: 'center',
-            color: '#4a4b4e',
+            color: 'var(--text-tertiary)',
             fontSize: 14,
           }}>
             No quiz attempts yet. Take a quiz to see your history here.
@@ -85,12 +85,12 @@ export default function QuizAttemptHistoryTable({ attempts }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
                     style={{ transition: 'background 0.15s' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#1a1b1c' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-2)' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                   >
                     {/* Quiz */}
                     <td style={TD_STYLE}>
-                      <span style={{ color: '#e4e5e6', fontWeight: 600 }}>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
                         {attempt.quizTitle}
                       </span>
                     </td>
@@ -99,11 +99,11 @@ export default function QuizAttemptHistoryTable({ attempts }) {
                     <td style={TD_STYLE}>
                       <span style={{
                         fontSize: 11,
-                        background: '#1a1b1c',
+                        background: 'var(--surface-2)',
                         border: '1px solid #2e2f30',
                         borderRadius: 20,
                         padding: '2px 10px',
-                        color: '#8a8b8e',
+                        color: 'var(--text-secondary)',
                         whiteSpace: 'nowrap',
                       }}>
                         {attempt.algorithmName}
@@ -114,12 +114,12 @@ export default function QuizAttemptHistoryTable({ attempts }) {
                     <td style={{ ...TD_STYLE, textAlign: 'center' }}>
                       <span style={{
                         fontWeight: 700,
-                        color: attempt.scorePercent >= 70 ? '#c8ff3e' : '#ff9a9a',
+                        color: attempt.scorePercent >= 70 ? 'var(--primary)' : '#ff9a9a',
                         fontFamily: "'Poppins', sans-serif",
                       }}>
                         {Math.round(attempt.scorePercent)}%
                       </span>
-                      <span style={{ color: '#4a4b4e', fontSize: 11, marginLeft: 4 }}>
+                      <span style={{ color: 'var(--text-tertiary)', fontSize: 11, marginLeft: 4 }}>
                         ({attempt.score}/{attempt.totalQuestions})
                       </span>
                     </td>
@@ -127,7 +127,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
                     {/* Passed */}
                     <td style={{ ...TD_STYLE, textAlign: 'center' }}>
                       {attempt.passed
-                        ? <CheckCircle size={16} color="#c8ff3e" style={{ display: 'inline' }} />
+                        ? <CheckCircle size={16} color="var(--primary)" style={{ display: 'inline' }} />
                         : <XCircle size={16} color="#ff6b6b" style={{ display: 'inline' }} />
                       }
                     </td>
@@ -139,7 +139,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 3,
-                          color: '#c8ff3e',
+                          color: 'var(--primary)',
                           fontWeight: 700,
                           fontSize: 12,
                         }}>
@@ -147,12 +147,12 @@ export default function QuizAttemptHistoryTable({ attempts }) {
                           +{attempt.xpEarned}
                         </span>
                       ) : (
-                        <span style={{ color: '#4a4b4e', fontSize: 12 }}>—</span>
+                        <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>-</span>
                       )}
                     </td>
 
                     {/* Date */}
-                    <td style={{ ...TD_STYLE, textAlign: 'right', color: '#8a8b8e', fontSize: 12 }}>
+                    <td style={{ ...TD_STYLE, textAlign: 'right', color: 'var(--text-secondary)', fontSize: 12 }}>
                       {formatDate(attempt.completedAt)}
                     </td>
                   </motion.tr>
@@ -165,3 +165,4 @@ export default function QuizAttemptHistoryTable({ attempts }) {
     </div>
   )
 }
+

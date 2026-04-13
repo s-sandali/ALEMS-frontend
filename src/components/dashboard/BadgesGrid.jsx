@@ -16,7 +16,11 @@ const ICON_MAP = {
 }
 
 function hexToRgba(hex, alpha) {
-  const normalized = (hex || '#c8ff3e').replace('#', '')
+  if (!hex || hex.startsWith('var(')) {
+    return `rgba(var(--primary-rgb),${alpha})`
+  }
+
+  const normalized = hex.replace('#', '')
   const r = Number.parseInt(normalized.slice(0, 2), 16)
   const g = Number.parseInt(normalized.slice(2, 4), 16)
   const b = Number.parseInt(normalized.slice(4, 6), 16)
@@ -30,7 +34,7 @@ export default function BadgesGrid({ badges }) {
     <TooltipProvider>
       <div
         style={{
-          background: '#131415',
+          background: 'var(--surface)',
           border: '1px solid #252627',
           borderRadius: 12,
           padding: 20,
@@ -45,14 +49,14 @@ export default function BadgesGrid({ badges }) {
             marginBottom: 16,
           }}
         >
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#e4e5e6' }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
             Badges
           </span>
           <span
             style={{
-              background: 'rgba(200,255,62,0.1)',
-              color: '#c8ff3e',
-              border: '1px solid rgba(200,255,62,0.25)',
+              background: 'rgba(var(--primary-rgb),0.1)',
+              color: 'var(--primary)',
+              border: '1px solid rgba(var(--primary-rgb),0.25)',
               fontSize: 11,
               padding: '2px 8px',
               borderRadius: 20,
@@ -79,8 +83,8 @@ export default function BadgesGrid({ badges }) {
             const glowSoft = hexToRgba(badge.iconColor, 0.22)
             const cardTint = hexToRgba(badge.iconColor, 0.07)
             const tooltipContent = isEarned
-              ? `${badge.description}${badge.earnedDate ? ` · Earned ${badge.earnedDate}` : ''}`
-              : `${badge.description} — ${badge.unlockHint || 'Locked'}`
+              ? `${badge.description}${badge.earnedDate ? ` - Earned ${badge.earnedDate}` : ''}`
+              : `${badge.description} - ${badge.unlockHint || 'Locked'}`
 
             return (
               <Tooltip key={badge.id} content={tooltipContent} side="top">
@@ -138,7 +142,7 @@ export default function BadgesGrid({ badges }) {
                       textTransform: 'uppercase',
                       letterSpacing: '1px',
                       fontWeight: 700,
-                      color: isEarned ? '#c8ff3e' : '#4f535b',
+                      color: isEarned ? 'var(--primary)' : '#4f535b',
                       lineHeight: 1.3,
                     }}
                   >
@@ -153,3 +157,4 @@ export default function BadgesGrid({ badges }) {
     </TooltipProvider>
   )
 }
+

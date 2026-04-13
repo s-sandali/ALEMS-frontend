@@ -14,19 +14,23 @@ import AlgorithmProgressList from '@/components/dashboard/AlgorithmProgressList'
 import LeaderboardPanel from '@/components/dashboard/LeaderboardPanel'
 import RecentActivityFeed from '@/components/dashboard/RecentActivityFeed'
 
-/** Converts a hex color string (#rrggbb) to rgba(r,g,b,0.1) for badge icon backgrounds. */
-function iconBgFromColor(hex = '#c8ff3e') {
-  const h = hex.replace('#', '')
+/** Converts a hex color string (#rrggbb) or CSS var to rgba(r,g,b,0.1) for badge icon backgrounds. */
+function iconBgFromColor(color = 'var(--primary)') {
+  if (color.startsWith('var(')) {
+    return 'rgba(var(--primary-rgb),0.1)'
+  }
+
+  const h = color.replace('#', '')
   const r = parseInt(h.slice(0, 2), 16)
   const g = parseInt(h.slice(2, 4), 16)
   const b = parseInt(h.slice(4, 6), 16)
   return `rgba(${r},${g},${b},0.1)`
 }
 
-// ── Algorithm progress helpers ─────────────────────────────────────────────────
+// -- Algorithm progress helpers -------------------------------------------------
 
 const CATEGORY_COLORS = {
-  'Sorting':             '#c8ff3e',
+  'Sorting':             'var(--primary)',
   'Searching':           '#4da6ff',
   'Graph':               '#ff9a3e',
   'Dynamic Programming': '#b57cf5',
@@ -36,7 +40,7 @@ const CATEGORY_COLORS = {
 function deriveDifficulty(avgComplexity = '') {
   const c = avgComplexity.toLowerCase()
   if (c === 'o(1)' || c === 'o(log n)') return 'Easy'
-  if (c.includes('n²') || c.includes('n^2') || c.includes('2^n')) return 'Hard'
+  if (c.includes('n^2') || c.includes('2^n')) return 'Hard'
   return 'Medium'
 }
 
@@ -44,7 +48,7 @@ function mergeAlgorithmCoverage(algorithmList, coverage) {
   const covMap = new Map(coverage.map(c => [c.algorithmId, c]))
   return algorithmList.map(algo => {
     const cov = covMap.get(algo.algorithmId)
-    const accentColor = CATEGORY_COLORS[algo.category] ?? '#c8ff3e'
+    const accentColor = CATEGORY_COLORS[algo.category] ?? 'var(--primary)'
     return {
       id: algo.algorithmId,
       name: algo.name,
@@ -54,8 +58,8 @@ function mergeAlgorithmCoverage(algorithmList, coverage) {
       progressPercent: Math.round(cov?.bestScorePercent ?? 0),
       accentColor,
       accentDim: accentColor + '18',
-      timeComplexity: algo.timeComplexityAverage || '—',
-      spaceComplexity: '—',
+      timeComplexity: algo.timeComplexityAverage || '-',
+      spaceComplexity: '-',
       route: `/algorithms/${algo.algorithmId}`,
       quizzesDone: cov?.hasPassedQuiz ? 1 : 0,
       quizzesTotal: algo.quizAvailable ? 1 : 0,
@@ -69,7 +73,7 @@ function QuizCard({ quiz, onStart }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       style={{
-        background: '#131415',
+        background: 'var(--surface)',
         border: '1px solid #252627',
         borderRadius: 16,
         padding: '20px',
@@ -79,24 +83,24 @@ function QuizCard({ quiz, onStart }) {
         cursor: 'pointer',
         transition: 'border-color 0.2s',
       }}
-      whileHover={{ borderColor: 'rgba(200,255,62,0.3)' }}
+      whileHover={{ borderColor: 'rgba(var(--primary-rgb),0.3)' }}
       onClick={() => onStart(quiz.quizId)}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{
           width: 36, height: 36, borderRadius: 9,
-          background: 'rgba(200,255,62,0.1)',
-          border: '1px solid rgba(200,255,62,0.2)',
+          background: 'rgba(var(--primary-rgb),0.1)',
+          border: '1px solid rgba(var(--primary-rgb),0.2)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
-          <BookOpen size={16} color="#c8ff3e" />
+          <BookOpen size={16} color="var(--primary)" />
         </div>
         {quiz.timeLimitMins && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 4,
-            fontSize: 11, color: '#8a8b8e',
-            background: '#1a1b1c', borderRadius: 20,
+            fontSize: 11, color: 'var(--text-secondary)',
+            background: 'var(--surface-2)', borderRadius: 20,
             padding: '3px 10px', border: '1px solid #252627',
           }}>
             <Clock size={10} />
@@ -107,14 +111,14 @@ function QuizCard({ quiz, onStart }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
         <h3 style={{
-          fontSize: 16, fontWeight: 700, color: '#e4e5e6',
+          fontSize: 16, fontWeight: 700, color: 'var(--text-primary)',
           fontFamily: "'Poppins', sans-serif",
           letterSpacing: '-0.3px', lineHeight: 1.2,
         }}>
           {quiz.title}
         </h3>
         {quiz.description && (
-          <p style={{ fontSize: 12, color: '#8a8b8e', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
             {quiz.description}
           </p>
         )}
@@ -123,9 +127,9 @@ function QuizCard({ quiz, onStart }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 4,
-          fontSize: 11, color: '#c8ff3e',
-          background: 'rgba(200,255,62,0.08)', borderRadius: 20,
-          padding: '3px 10px', border: '1px solid rgba(200,255,62,0.2)',
+          fontSize: 11, color: 'var(--primary)',
+          background: 'rgba(var(--primary-rgb),0.08)', borderRadius: 20,
+          padding: '3px 10px', border: '1px solid rgba(var(--primary-rgb),0.2)',
         }}>
           <Target size={10} />
           Pass: {quiz.passScore}%
@@ -136,10 +140,10 @@ function QuizCard({ quiz, onStart }) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         borderTop: '1px solid #252627', paddingTop: 12, marginTop: 2,
       }}>
-        <span style={{ fontSize: 11, color: '#4a4b4e', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
           Start Quiz
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#c8ff3e', fontSize: 13, fontWeight: 600 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--primary)', fontSize: 13, fontWeight: 600 }}>
           <PlayCircle size={15} />
           Play
         </div>
@@ -178,42 +182,42 @@ export default function Dashboard() {
     async function load() {
       try {
         const syncRes = await UserService.syncUser(getToken)
-        console.log('🔍 syncUser response:', syncRes)
+        console.log('syncUser response:', syncRes)
         
         // Extract UserId from response (backend returns UserId, not id)
         const userId = syncRes?.data?.UserId || syncRes?.data?.userId
-        console.log('📍 Extracted UserID:', userId)
+        console.log('Extracted UserID:', userId)
         
         if (isMounted && userId) {
           setStudentId(userId)
 
           // Fetch progression data
           try {
-            console.log(`📡 Fetching progression for student ID: ${userId}`)
+            console.log(`Fetching progression for student ID: ${userId}`)
             const progRes = await UserService.getProgression(userId, getToken)
-            console.log('✅ Progression response:', progRes)
+            console.log('Progression response:', progRes)
             if (isMounted && progRes?.data) {
               setProgression(progRes.data)
               setXpTotal(progRes.data.xpTotal ?? 0)
             }
           } catch (progErr) {
-            console.error('⚠️ Progression fetch warning (non-blocking):', progErr)
+            console.error('Progression fetch warning (non-blocking):', progErr)
           }
 
-          // Fetch activity feed and heatmap (non-blocking — run alongside dashboard)
+          // Fetch activity feed and heatmap (non-blocking - run alongside dashboard)
           StudentService.getActivity(userId, getToken).then(res => {
             if (isMounted && Array.isArray(res?.data)) setActivity(res.data)
-          }).catch(err => console.warn('⚠️ Activity fetch warning (non-blocking):', err))
+          }).catch(err => console.warn('Activity fetch warning (non-blocking):', err))
 
           StudentService.getActivityHeatmap(userId, getToken).then(res => {
             if (isMounted && Array.isArray(res?.data)) setHeatmap(res.data)
-          }).catch(err => console.warn('⚠️ Heatmap fetch warning (non-blocking):', err))
+          }).catch(err => console.warn('Heatmap fetch warning (non-blocking):', err))
 
           // Now fetch the dashboard data
           try {
-            console.log(`📡 Fetching dashboard for student ID: ${userId}`)
+            console.log(`Fetching dashboard for student ID: ${userId}`)
             const dashRes = await StudentService.getDashboard(userId, getToken)
-            console.log('✅ Dashboard response:', dashRes)
+            console.log('Dashboard response:', dashRes)
             console.log('Dashboard data type:', typeof dashRes?.data, 'Keys:', Object.keys(dashRes?.data || {}))
             
             if (isMounted && dashRes?.data) {
@@ -222,15 +226,15 @@ export default function Dashboard() {
                 const earnedBadges = dashRes.data.earnedBadges || []
                 const allBadges = dashRes.data.allBadges || []
                 
-                console.log('✅ earnedBadges:', earnedBadges)
-                console.log('✅ allBadges:', allBadges)
+                console.log('earnedBadges:', earnedBadges)
+                console.log('allBadges:', allBadges)
                 
                 const earnedBadgeMap = new Map(
                   earnedBadges.map(b => [b.id, b.awardDate])
                 )
                 
                 const badgesForGrid = allBadges.map(badge => {
-                  const color = badge.iconColor || '#c8ff3e'
+                  const color = badge.iconColor || 'var(--primary)'
                   return {
                     id: badge.id,
                     name: badge.name,
@@ -252,32 +256,32 @@ export default function Dashboard() {
                 setAttemptHistory(dashRes.data.quizAttemptHistory || [])
                 setAlgorithmCoverage(dashRes.data.algorithmCoverage || [])
               } catch (transformErr) {
-                console.error('❌ Data transformation error:', transformErr)
+                console.error('Data transformation error:', transformErr)
                 throw transformErr
               }
             }
           } catch (err) {
-            console.error('❌ Dashboard fetch error:', err)
+            console.error('Dashboard fetch error:', err)
             if (isMounted) setDashboardError(err instanceof Error ? err.message : 'Failed to load dashboard data.')
           } finally {
             if (isMounted) setDashboardLoading(false)
           }
         } else {
-          console.warn('⚠️ No UserId found in syncRes')
+          console.warn('No UserId found in syncRes')
           if (isMounted) {
             setDashboardError('Could not determine user ID from sync')
             setDashboardLoading(false)
           }
         }
       } catch (err) {
-        console.error('❌ Sync user error:', err)
+        console.error('Sync user error:', err)
         if (isMounted) {
           setDashboardError(err instanceof Error ? err.message : 'Failed to sync user.')
           setDashboardLoading(false)
         }
       }
 
-      // Quizzes, algorithm list, and leaderboard are independent of userId — run in parallel
+      // Quizzes, algorithm list, and leaderboard are independent of userId - run in parallel
       const [quizRes, algoRes, leaderboardRes] = await Promise.allSettled([
         StudentQuizService.getActiveQuizzes(getToken),
         AlgorithmService.getAll(getToken),
@@ -315,7 +319,7 @@ export default function Dashboard() {
   }, [getToken])
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0d0e0f' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <DashboardNav user={{ xpTotal }} />
 
       <div style={{ maxWidth: 1160, margin: '0 auto', padding: '28px 24px 60px' }}>
@@ -330,7 +334,7 @@ export default function Dashboard() {
           </p>
           <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
             Welcome back,{' '}
-            <span style={{ color: '#c8ff3e' }}>{displayName}</span>
+            <span style={{ color: 'var(--primary)' }}>{displayName}</span>
           </h1>
           <p className="mt-4 text-base leading-7 text-text-secondary">
             Here's your learning progress at a glance.
@@ -373,10 +377,10 @@ export default function Dashboard() {
           {dashboardLoading ? (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 10,
-              color: '#8a8b8e', fontSize: 14, minHeight: 120,
+              color: 'var(--text-secondary)', fontSize: 14, minHeight: 120,
             }}>
-              <LoaderCircle size={16} color="#c8ff3e" style={{ animation: 'spin 1s linear infinite' }} />
-              Loading badges…
+              <LoaderCircle size={16} color="var(--primary)" style={{ animation: 'spin 1s linear infinite' }} />
+              Loading badges...
             </div>
           ) : dashboardError ? (
             <div style={{
@@ -443,3 +447,4 @@ export default function Dashboard() {
     </div>
   )
 }
+

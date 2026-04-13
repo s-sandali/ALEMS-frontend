@@ -42,14 +42,14 @@ type SimulationControlsProps = {
 
 function getFeedbackClassName(isCorrect: boolean | null) {
     if (isCorrect === true) {
-        return "border-emerald-400/20 bg-emerald-400/5 text-emerald-100";
+        return "border-emerald-400/20 bg-emerald-400/5 text-[var(--green)]";
     }
 
     if (isCorrect === false) {
-        return "border-red-400/20 bg-red-400/5 text-red-100";
+        return "border-red-400/20 bg-red-400/5 text-[var(--red)]";
     }
 
-    return "border-white/[0.06] bg-bg/60 text-text-secondary";
+    return "border-border bg-surface text-text-secondary";
 }
 
 export default function SimulationControls({
@@ -94,9 +94,10 @@ export default function SimulationControls({
     return (
         <section
             className={cn(
-                "rounded-[2rem] border border-white/[0.06] bg-surface p-6",
+                "rounded-[2rem] border p-6",
                 className,
             )}
+            style={{ borderColor: "var(--db-border)", background: "var(--surface)" }}
         >
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -104,7 +105,7 @@ export default function SimulationControls({
                         <p className="text-s font-semibold uppercase tracking-[0.28em] text-accent">
                             03- Simulation
                         </p>
-                        <h2 className="mt-3 text-2xl font-bold tracking-tight text-white">
+                        <h2 className="mt-3 text-2xl font-bold tracking-tight text-text-primary">
                             Simulation controls
                         </h2>
                         
@@ -122,7 +123,7 @@ export default function SimulationControls({
                             </div>
                         ) : null}
                         
-                        <div className="inline-flex rounded-full border border-white/10 bg-bg/60 p-1">
+                        <div className="inline-flex rounded-full border border-border bg-surface p-1">
                             <Button
                                 data-testid="simulation-auto-mode"
                                 variant={isPracticeMode ? "ghost" : "default"}
@@ -145,7 +146,7 @@ export default function SimulationControls({
                     </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.06] bg-bg/50 p-4 sm:p-5">
+                <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
                     <div className="flex flex-col gap-5">
                         <div className="flex flex-wrap items-center gap-3">
                             <Button
@@ -191,7 +192,7 @@ export default function SimulationControls({
 
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
                             <div className="min-w-0 md:w-52">
-                                <p className="text-sm font-semibold text-white">
+                                <p className="text-sm font-semibold text-text-primary">
                                     Playback speed
                                 </p>
                                 
@@ -219,7 +220,7 @@ export default function SimulationControls({
                         </div>
 
                         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
-                            <div className="rounded-2xl border border-white/[0.06] bg-surface/60 p-4">
+                            <div className="rounded-2xl border border-border bg-surface p-4">
                                 <div className={cn(
                                     "grid gap-4",
                                     algorithmType === "search"
@@ -227,7 +228,7 @@ export default function SimulationControls({
                                         : "lg:grid-cols-[100px_minmax(0,2fr)_auto]",
                                 )}>
                                     <label className="flex flex-col gap-2 text-sm">
-                                        <span className="font-medium text-white">Array size</span>
+                                        <span className="font-medium text-text-primary">Array size</span>
                                         <input
                                             data-testid="simulation-array-size-input"
                                             type="number"
@@ -239,7 +240,7 @@ export default function SimulationControls({
                                     </label>
 
                                     <label className="flex min-w-0 flex-col gap-2 text-sm">
-                                        <span className="font-medium text-white">Elements</span>
+                                        <span className="font-medium text-text-primary">Elements</span>
                                         <input
                                             data-testid="simulation-elements-input"
                                             type="text"
@@ -252,7 +253,7 @@ export default function SimulationControls({
 
                                     {algorithmType === "search" ? (
                                         <label className="flex flex-col gap-2 text-sm">
-                                            <span className="font-medium text-white">Target</span>
+                                            <span className="font-medium text-text-primary">Target</span>
                                             <input
                                                 data-testid="simulation-target-input"
                                                 type="number"
@@ -289,16 +290,16 @@ export default function SimulationControls({
                                     </div>
                                 </div>
 
-                                <div className="mt-4 rounded-2xl border border-white/[0.06] bg-bg/60 p-4">
+                                <div className="mt-4 rounded-2xl border border-border bg-surface p-4">
                                     <div className="flex items-center justify-between gap-4 text-sm">
                                         <span className="text-text-secondary">Sample input</span>
-                                        <span className="font-medium text-white">
+                                        <span className="font-medium text-text-primary">
                                             [{sampleInput.join(", ")}]
                                         </span>
                                     </div>
                                     <div className="mt-4 flex items-center justify-between gap-4 text-sm">
                                         <span className="text-text-secondary">Steps returned</span>
-                                        <span className="font-medium text-white">{totalSteps}</span>
+                                        <span className="font-medium text-text-primary">{totalSteps}</span>
                                     </div>
                                 </div>
                             </div>
@@ -308,7 +309,7 @@ export default function SimulationControls({
                                     "rounded-2xl border p-4 text-sm leading-6",
                                     getFeedbackClassName(isCorrect),
                                 )}>
-                                    <p className="font-semibold text-white">
+                                    <p className="font-semibold text-text-primary">
                                         {isPracticeMode ? "Practice feedback" : "Current mode"}
                                     </p>
                                     <p className="mt-2">
@@ -321,14 +322,14 @@ export default function SimulationControls({
                                                 : "Watch as Auto Mode swaps the elements.")}
                                     </p>
                                     {isPracticeMode && algorithmType === "sort" ? (
-                                        <p className="mt-2 text-xs text-sky-100/90">
+                                        <p className="mt-2 text-xs text-text-secondary">
                                             Selected indexes: {selectedIndices.length > 0 ? selectedIndices.join(", ") : "none"}
                                         </p>
                                     ) : null}
                                 </div>
 
-                                <div className="rounded-2xl border border-white/[0.06] bg-bg/60 p-4 text-sm leading-6 text-text-secondary">
-                                    <p className="font-semibold text-white">Current hint</p>
+                                <div className="rounded-2xl border border-border bg-surface p-4 text-sm leading-6 text-text-secondary">
+                                    <p className="font-semibold text-text-primary">Current hint</p>
                                     <p className="mt-2">
                                         {isPracticeMode
                                             ? hintMessage || (algorithmType === "search"
