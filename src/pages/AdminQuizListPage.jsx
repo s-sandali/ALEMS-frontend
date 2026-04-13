@@ -90,7 +90,7 @@ export default function AdminQuizListPage() {
         return (
             <div style={{
                 minHeight: "100vh",
-                background: "#0d0e0f",
+                background: "var(--bg)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -109,10 +109,10 @@ export default function AdminQuizListPage() {
     }
 
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
             <DashboardNav />
 
-            <main style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 24px 60px" }}>
+            <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 60px" }}>
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -203,8 +203,8 @@ export default function AdminQuizListPage() {
 
                 {!loading && !error && quizzes.length === 0 ? (
                     <div style={{
-                        background: "#131415",
-                        border: "1px dashed #2e2f30",
+                        background: "var(--surface)",
+                        border: "1px dashed var(--db-border2)",
                         borderRadius: 16,
                         padding: "48px 24px",
                         textAlign: "center",
@@ -220,8 +220,8 @@ export default function AdminQuizListPage() {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         style={{
-                            background: "#131415",
-                            border: "1px solid #252627",
+                            background: "var(--surface)",
+                            border: "1px solid var(--db-border)",
                             borderRadius: 16,
                             overflow: "hidden",
                         }}
@@ -230,8 +230,8 @@ export default function AdminQuizListPage() {
                             display: "grid",
                             gridTemplateColumns: "1fr 180px 100px 96px",
                             padding: "12px 20px",
-                            borderBottom: "1px solid #252627",
-                            background: "#0f1011",
+                            borderBottom: "1px solid var(--db-border)",
+                            background: "var(--db-bg3)",
                         }}>
                             {["Title", "Algorithm", "Status", "Actions"].map((column) => (
                                 <span key={column} style={{
@@ -263,11 +263,11 @@ export default function AdminQuizListPage() {
                                         gridTemplateColumns: "1fr 180px 100px 96px",
                                         padding: "14px 20px",
                                         alignItems: "center",
-                                        borderBottom: index < quizzes.length - 1 ? "1px solid #1e1f20" : "none",
+                                        borderBottom: index < quizzes.length - 1 ? "1px solid var(--db-border2)" : "none",
                                         transition: "background 0.15s, opacity 0.15s",
                                         opacity: isInactive ? 0.75 : 1,
                                     }}
-                                    whileHover={{ background: "#1a1b1c" }}
+                                    whileHover={{ background: "var(--db-bg3)" }}
                                 >
                                     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                                         <div style={{

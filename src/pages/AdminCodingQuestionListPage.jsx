@@ -63,7 +63,7 @@ export default function AdminCodingQuestionListPage() {
     if (role !== "Admin") {
         return (
             <div style={{
-                minHeight: "100vh", background: "#0d0e0f",
+                minHeight: "100vh", background: "var(--bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexDirection: "column", gap: 12,
             }}>
@@ -77,10 +77,10 @@ export default function AdminCodingQuestionListPage() {
     }
 
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
             <DashboardNav />
 
-            <main style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 24px 60px" }}>
+            <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 60px" }}>
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -135,7 +135,7 @@ export default function AdminCodingQuestionListPage() {
                     </div>
                 ) : questions.length === 0 ? (
                     <div style={{
-                        background: "#131415", border: "1px dashed #2e2f30",
+                        background: "var(--surface)", border: "1px dashed var(--db-border2)",
                         borderRadius: 16, padding: "48px 24px",
                         textAlign: "center", color: "#4a4b4e", fontSize: 14,
                     }}>
@@ -146,8 +146,8 @@ export default function AdminCodingQuestionListPage() {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         style={{
-                            background: "#131415",
-                            border: "1px solid #252627",
+                            background: "var(--surface)",
+                            border: "1px solid var(--db-border)",
                             borderRadius: 16,
                             overflow: "hidden",
                         }}
@@ -157,8 +157,8 @@ export default function AdminCodingQuestionListPage() {
                             display: "grid",
                             gridTemplateColumns: "1fr 120px 96px",
                             padding: "12px 20px",
-                            borderBottom: "1px solid #252627",
-                            background: "#0f1011",
+                            borderBottom: "1px solid var(--db-border)",
+                            background: "var(--db-bg3)",
                         }}>
                             {["Title", "Difficulty", "Actions"].map((col) => (
                                 <span key={col} style={{
@@ -189,10 +189,10 @@ export default function AdminCodingQuestionListPage() {
                                         gridTemplateColumns: "1fr 120px 96px",
                                         padding: "14px 20px",
                                         alignItems: "center",
-                                        borderBottom: i < questions.length - 1 ? "1px solid #1e1f20" : "none",
+                                        borderBottom: i < questions.length - 1 ? "1px solid var(--db-border2)" : "none",
                                         transition: "background 0.15s",
                                     }}
-                                    whileHover={{ background: "#1a1b1c" }}
+                                    whileHover={{ background: "var(--db-bg3)" }}
                                 >
                                     {/* Title */}
                                     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>

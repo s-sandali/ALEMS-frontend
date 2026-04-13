@@ -10,11 +10,11 @@ import { useRole } from "../context/RoleContext";
 // ─── Shared style tokens (same as AdminQuizFormPage) ────────────────────────
 const INPUT = {
     width: "100%",
-    background: "#0f1011",
-    border: "1px solid #2e2f30",
+    background: "var(--db-bg3)",
+    border: "1px solid var(--db-border2)",
     borderRadius: 8,
     padding: "10px 12px",
-    color: "#e4e5e6",
+    color: "var(--db-text)",
     fontSize: 14,
     outline: "none",
     boxSizing: "border-box",
@@ -23,7 +23,7 @@ const INPUT = {
 
 const LABEL = {
     fontSize: 12,
-    color: "#8a8b8e",
+    color: "var(--db-text2)",
     marginBottom: 6,
     display: "block",
     fontFamily: "'Poppins', sans-serif",
@@ -38,8 +38,8 @@ function FieldError({ msg }) {
 function SectionCard({ children }) {
     return (
         <div style={{
-            background: "#131415",
-            border: "1px solid #252627",
+            background: "var(--surface)",
+            border: "1px solid var(--db-border)",
             borderRadius: 16,
             padding: 24,
             display: "flex",
@@ -159,7 +159,7 @@ export default function AdminCodingQuestionFormPage() {
     if (role !== "Admin") {
         return (
             <div style={{
-                minHeight: "100vh", background: "#0d0e0f",
+                minHeight: "100vh", background: "var(--bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexDirection: "column", gap: 12,
             }}>
@@ -173,10 +173,10 @@ export default function AdminCodingQuestionFormPage() {
     }
 
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
             <DashboardNav />
 
-            <main style={{ maxWidth: 720, margin: "0 auto", padding: "36px 24px 60px" }}>
+            <main style={{ maxWidth: 960, margin: "0 auto", padding: "36px 24px 60px" }}>
                 {/* Back link */}
                 <Link
                     to="/admin/coding-questions"

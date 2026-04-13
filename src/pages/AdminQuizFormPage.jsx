@@ -12,11 +12,11 @@ import { useRole } from "../context/RoleContext";
 // ─── Shared style tokens ────────────────────────────────────────────────────
 const INPUT = {
     width: "100%",
-    background: "#0f1011",
-    border: "1px solid #2e2f30",
+    background: "var(--db-bg3)",
+    border: "1px solid var(--db-border2)",
     borderRadius: 8,
     padding: "10px 12px",
-    color: "#e4e5e6",
+    color: "var(--db-text)",
     fontSize: 14,
     outline: "none",
     boxSizing: "border-box",
@@ -47,8 +47,8 @@ function FieldError({ msg }) {
 function SectionCard({ children, style }) {
     return (
         <div style={{
-            background: "#131415",
-            border: "1px solid #252627",
+            background: "var(--surface)",
+            border: "1px solid var(--db-border)",
             borderRadius: 16,
             padding: 24,
             display: "flex",
@@ -440,7 +440,7 @@ export default function AdminQuizFormPage() {
     if (role !== "Admin") {
         return (
             <div style={{
-                minHeight: "100vh", background: "#0d0e0f",
+                minHeight: "100vh", background: "var(--bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexDirection: "column", gap: 12,
             }}>
@@ -456,7 +456,7 @@ export default function AdminQuizFormPage() {
     if (pageLoading) {
         return (
             <div style={{
-                minHeight: "100vh", background: "#0d0e0f",
+                minHeight: "100vh", background: "var(--bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 gap: 10, color: "#8a8b8e", fontSize: 14,
             }}>
@@ -470,7 +470,7 @@ export default function AdminQuizFormPage() {
     if (pageError) {
         return (
             <div style={{
-                minHeight: "100vh", background: "#0d0e0f",
+                minHeight: "100vh", background: "var(--bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexDirection: "column", gap: 12,
             }}>
@@ -485,7 +485,7 @@ export default function AdminQuizFormPage() {
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
             <DashboardNav />
 
             {/* Main */}
