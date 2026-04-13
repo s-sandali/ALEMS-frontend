@@ -663,6 +663,16 @@ export const StudentCodingQuestionService = {
             Promise<{ status: string; data: CodingQuestion }>,
 };
 
+// ── Activity types ────────────────────────────────────────────────────────────
+
+export type ActivityItem = {
+    type: 'quiz' | 'badge';
+    title: string;
+    xpEarned: number;
+    createdAt: string;  // ISO-8601 datetime string
+    metadata?: string | null;
+};
+
 // ── Student types ─────────────────────────────────────────────────────────────
 
 export type Badge = {
@@ -723,6 +733,16 @@ export type StudentDashboard = {
     quizAttemptHistory: QuizAttemptHistoryItem[];
 };
 
+// ── Leaderboard types ─────────────────────────────────────────────────────────
+
+export type LeaderboardEntry = {
+    userId: number;
+    username: string;
+    xpTotal: number;
+    rank: number;
+    isCurrentUser: boolean;
+};
+
 // ── Student service ────────────────────────────────────────────────────────────
 
 export const StudentService = {
@@ -734,6 +754,37 @@ export const StudentService = {
     getDashboard: (studentId: number, getToken: GetTokenFn) =>
         apiFetch(`/students/${studentId}/dashboard`, { method: "GET", getToken }) as
             Promise<{ status: string; data: StudentDashboard }>,
+
+    /**
+     * GET /students/{id}/activity?limit={limit}
+     * Returns the student's most recent activity events (quiz completions + badge awards),
+     * ordered by date descending. Defaults to the last 10 events.
+     */
+    getActivity: (studentId: number, getToken: GetTokenFn, limit = 10) =>
+        apiFetch(`/students/${studentId}/activity?limit=${limit}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: ActivityItem[] }>,
+
+    /**
+     * GET /students/{id}/activity-heatmap
+     * Returns one entry per calendar day the student completed at least one quiz attempt.
+     * Days with zero activity are omitted; the frontend fills the gaps.
+     */
+    getActivityHeatmap: (studentId: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/activity-heatmap`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: { date: string; count: number }[] }>,
+};
+
+// ── Leaderboard service ───────────────────────────────────────────────────────
+
+export const LeaderboardService = {
+    /**
+     * GET /leaderboard
+     * Returns the top 10 users by XP. The authenticated user is always included;
+     * if they are outside the top 10 they are appended with their actual rank.
+     */
+    getLeaderboard: (getToken: GetTokenFn) =>
+        apiFetch("/leaderboard", { method: "GET", getToken }) as
+            Promise<{ status: string; data: LeaderboardEntry[] }>,
 };
 
 export const SimulationService = {

@@ -7,10 +7,12 @@ import DashboardNav from '@/components/dashboard/DashboardNav'
 import ExploreAlgorithmsSection from '@/components/algorithms/ExploreAlgorithmsSection'
 import BadgesGrid from '@/components/dashboard/BadgesGrid'
 import XPProgressBar from '@/components/ui/XPProgressBar'
-import { UserService, StudentQuizService, StudentService, AlgorithmService } from '@/lib/api'
+import { UserService, StudentQuizService, StudentService, AlgorithmService, LeaderboardService } from '@/lib/api'
 import StatCards from '@/components/dashboard/StatCards'
 import QuizAttemptHistoryTable from '@/components/dashboard/QuizAttemptHistoryTable'
 import AlgorithmProgressList from '@/components/dashboard/AlgorithmProgressList'
+import LeaderboardPanel from '@/components/dashboard/LeaderboardPanel'
+import RecentActivityFeed from '@/components/dashboard/RecentActivityFeed'
 
 /** Converts a hex color string (#rrggbb) to rgba(r,g,b,0.1) for badge icon backgrounds. */
 function iconBgFromColor(hex = '#c8ff3e') {
@@ -164,6 +166,9 @@ export default function Dashboard() {
   const [quizzes, setQuizzes] = useState([])
   const [quizzesLoading, setQuizzesLoading] = useState(true)
   const [quizzesError, setQuizzesError] = useState('')
+  const [leaderboard, setLeaderboard] = useState([])
+  const [activity, setActivity] = useState([])
+  const [heatmap, setHeatmap] = useState([])
 
   const displayName = user?.firstName ?? user?.username ?? 'there'
 
@@ -194,6 +199,15 @@ export default function Dashboard() {
           } catch (progErr) {
             console.error('⚠️ Progression fetch warning (non-blocking):', progErr)
           }
+
+          // Fetch activity feed and heatmap (non-blocking — run alongside dashboard)
+          StudentService.getActivity(userId, getToken).then(res => {
+            if (isMounted && Array.isArray(res?.data)) setActivity(res.data)
+          }).catch(err => console.warn('⚠️ Activity fetch warning (non-blocking):', err))
+
+          StudentService.getActivityHeatmap(userId, getToken).then(res => {
+            if (isMounted && Array.isArray(res?.data)) setHeatmap(res.data)
+          }).catch(err => console.warn('⚠️ Heatmap fetch warning (non-blocking):', err))
 
           // Now fetch the dashboard data
           try {
@@ -263,10 +277,11 @@ export default function Dashboard() {
         }
       }
 
-      // Quizzes and algorithm list are independent of userId — run in parallel
-      const [quizRes, algoRes] = await Promise.allSettled([
+      // Quizzes, algorithm list, and leaderboard are independent of userId — run in parallel
+      const [quizRes, algoRes, leaderboardRes] = await Promise.allSettled([
         StudentQuizService.getActiveQuizzes(getToken),
         AlgorithmService.getAll(getToken),
+        LeaderboardService.getLeaderboard(getToken),
       ])
 
       if (isMounted) {
@@ -279,6 +294,18 @@ export default function Dashboard() {
 
         if (algoRes.status === 'fulfilled') {
           setRawAlgorithms(Array.isArray(algoRes.value?.data) ? algoRes.value.data : [])
+        }
+
+        if (leaderboardRes.status === 'fulfilled') {
+          const entries = Array.isArray(leaderboardRes.value?.data) ? leaderboardRes.value.data : []
+          setLeaderboard(entries.map(entry => ({
+            rank:          entry.rank,
+            userId:        entry.userId,
+            username:      entry.username,
+            initials:      entry.username.slice(0, 2).toUpperCase(),
+            xp:            entry.xpTotal,
+            isCurrentUser: entry.isCurrentUser,
+          })))
         }
       }
     }
@@ -326,17 +353,10 @@ export default function Dashboard() {
             style={{ marginTop: 32, marginBottom: 24 }}
           >
             <div style={{ marginBottom: 12 }}>
-              <p style={{
-                fontSize: 11, color: '#4a4b4e',
-                letterSpacing: '1.5px', textTransform: 'uppercase',
-                fontFamily: "'Poppins', sans-serif", marginBottom: 4,
-              }}>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                 Level {progression.currentLevel}
               </p>
-              <h3 style={{
-                fontSize: 14, fontWeight: 600,
-                color: '#c8ff3e', fontFamily: "'Poppins', sans-serif",
-              }}>
+              <h3 className="text-4xl font-bold tracking-tight text-text-primary sm:text-3xl">
                 Experience Progress
               </h3>
             </div>
@@ -379,12 +399,41 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Quiz attempt history */}
+       
+        {/* Activity + side panels */}
+        {!dashboardLoading && (
+          <div className="mt-8 grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,1fr)]">
+            <div className="flex flex-col gap-5">
+              
+
+              {/* Leaderboard */}
+              {leaderboard.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <LeaderboardPanel entries={leaderboard} />
+                </motion.div>
+              )}
+            </div>
+
+            {/* Recent activity */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <RecentActivityFeed activities={activity} />
+            </motion.div>
+
+          </div>
+        )}
+         {/* Quiz attempt history */}
         {!dashboardLoading && !dashboardError && (
           <div style={{ marginTop: 32 }}>
             <QuizAttemptHistoryTable attempts={attemptHistory} />
           </div>
         )}
+
       </div>
       
 
