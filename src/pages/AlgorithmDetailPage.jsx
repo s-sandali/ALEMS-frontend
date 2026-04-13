@@ -1435,12 +1435,12 @@ export default function AlgorithmDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-bg">
+        <div className="min-h-screen" style={{ background: "var(--bg)" }}>
             <DashboardNav />
 
             <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8 sm:py-10">
                 {loading ? (
-                    <div className="flex min-h-[50vh] items-center justify-center rounded-[2rem] bg-surface/60" style={{ border: "1px solid var(--db-border)" }}>
+                    <div className="flex min-h-[50vh] items-center justify-center rounded-[2rem]" style={{ border: "1px solid var(--db-border)", background: "var(--surface-2)" }}>
                         <span className="inline-flex items-center gap-3 text-sm text-text-secondary">
                             <LoaderCircle className="h-4 w-4 animate-spin text-accent" />
                             Loading algorithm details
@@ -1452,7 +1452,7 @@ export default function AlgorithmDetailPage() {
                     </div>
                 ) : algorithm ? (
                     <>
-                        <section className="rounded-[2rem] bg-surface p-6 sm:p-8 lg:p-10" style={{ border: "1px solid var(--db-border)" }}>
+                        <section className="rounded-[2rem] p-6 sm:p-8 lg:p-10" style={{ border: "1px solid var(--db-border)", background: "var(--surface)" }}>
                             <div className="max-w-4xl">
                                 {AlgorithmIcon ? (
                                     <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/15 bg-accent/10 text-accent">
@@ -1588,7 +1588,8 @@ export default function AlgorithmDetailPage() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 16 }}
                         transition={{ duration: 0.22, ease: "easeOut" }}
-                        className="fixed bottom-6 right-6 z-50 rounded-2xl border border-accent/20 bg-surface/95 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+                        className="fixed bottom-6 right-6 z-50 rounded-2xl border border-accent/20 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+                        style={{ background: "color-mix(in srgb, var(--surface) 95%, transparent)" }}
                     >
                         <p className="text-sm font-semibold text-text-primary">
                             {mode === "practice" ? "Practice complete" : "Search complete"}

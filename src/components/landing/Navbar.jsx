@@ -6,10 +6,13 @@ import {
     SignedOut,
     UserButton,
 } from "@clerk/clerk-react";
+import { useTheme } from "../../hooks/useTheme";
+import ThemeToggle from "../ui/ThemeToggle";
 
 export default function Navbar() {
     const navRef = useRef(null);
     const [menuOpen, setMenuOpen] = useState(false);
+    const { isDark, toggleTheme } = useTheme();
 
     useEffect(() => {
         const onScroll = () => {
@@ -48,9 +51,9 @@ export default function Navbar() {
                                 key={link}
                                 to="/dashboard"
                                 className="text-text-secondary text-sm font-medium transition-colors duration-200"
-                                style={{ color: "#A1A1A1" }}
-                                onMouseEnter={(e) => (e.target.style.color = "#D5FF40")}
-                                onMouseLeave={(e) => (e.target.style.color = "#A1A1A1")}
+                                style={{ color: "var(--text-secondary)" }}
+                                onMouseEnter={(e) => (e.target.style.color = "var(--primary)")}
+                                onMouseLeave={(e) => (e.target.style.color = "var(--text-secondary)")}
                             >
                                 {link}
                             </Link>
@@ -59,9 +62,9 @@ export default function Navbar() {
                                 key={link}
                                 href={`#${link.toLowerCase().replace(/\s/g, "-")}`}
                                 className="text-text-secondary text-sm font-medium transition-colors duration-200"
-                                style={{ color: "#A1A1A1" }}
-                                onMouseEnter={(e) => (e.target.style.color = "#D5FF40")}
-                                onMouseLeave={(e) => (e.target.style.color = "#A1A1A1")}
+                                style={{ color: "var(--text-secondary)" }}
+                                onMouseEnter={(e) => (e.target.style.color = "var(--primary)")}
+                                onMouseLeave={(e) => (e.target.style.color = "var(--text-secondary)")}
                             >
                                 {link}
                             </a>
@@ -71,6 +74,16 @@ export default function Navbar() {
 
                 {/* Auth Buttons */}
                 <div className="hidden md:flex items-center gap-3">
+                    <ThemeToggle
+                        isDark={isDark}
+                        onToggle={toggleTheme}
+                        className="inline-flex items-center justify-center rounded-full p-2"
+                        style={{
+                            border: "1px solid var(--db-border2)",
+                            background: "var(--db-bg2)",
+                            color: "var(--db-text)",
+                        }}
+                    />
                     <SignedOut>
                         <Link to="/login" className="btn-secondary px-4 py-2 text-sm">
                             Sign In
@@ -93,7 +106,8 @@ export default function Navbar() {
 
                 {/* Mobile hamburger */}
                 <button
-                    className="md:hidden text-text-secondary hover:text-white"
+                    className="md:hidden"
+                    style={{ color: "var(--text-secondary)" }}
                     onClick={() => setMenuOpen(!menuOpen)}
                 >
                     <div className="w-6 space-y-1.5">
@@ -113,7 +127,7 @@ export default function Navbar() {
                                 key={link}
                                 to="/dashboard"
                                 className="block py-1 text-sm"
-                                style={{ color: "#A1A1A1" }}
+                                style={{ color: "var(--text-secondary)" }}
                                 onClick={() => setMenuOpen(false)}
                             >
                                 {link}
@@ -123,7 +137,7 @@ export default function Navbar() {
                                 key={link}
                                 href={`#${link.toLowerCase().replace(/\s/g, "-")}`}
                                 className="block py-1 text-sm"
-                                style={{ color: "#A1A1A1" }}
+                                style={{ color: "var(--text-secondary)" }}
                                 onClick={() => setMenuOpen(false)}
                             >
                                 {link}
@@ -131,6 +145,16 @@ export default function Navbar() {
                         )
                     )}
                     <div className="flex gap-2 pt-2">
+                        <ThemeToggle
+                            isDark={isDark}
+                            onToggle={toggleTheme}
+                            className="inline-flex items-center justify-center rounded-lg px-3"
+                            style={{
+                                border: "1px solid var(--db-border2)",
+                                background: "var(--db-bg2)",
+                                color: "var(--db-text)",
+                            }}
+                        />
                         <SignedOut>
                             <Link to="/login" className="btn-secondary flex-1 py-2 text-sm text-center" onClick={() => setMenuOpen(false)}>
                                 Sign In

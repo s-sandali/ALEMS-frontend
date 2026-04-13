@@ -67,7 +67,7 @@ export function getStepTone(step: AlgorithmSimulationStep | undefined) {
 
     return {
         badgeClassName: "border-accent/20 bg-accent/10 text-accent",
-        activeBarClassName: "from-accent to-accent/70 shadow-[0_0_18px_rgba(213,255,64,0.3)]",
+        activeBarClassName: "from-accent to-accent/70 shadow-[0_0_18px_rgba(var(--primary-rgb),0.3)]",
         emphasisLabel: "Comparing",
     };
 }
@@ -293,3 +293,4 @@ export function getSortedIndices(step: AlgorithmSimulationStep | undefined, tota
 
     return new Set<number>();
 }
+

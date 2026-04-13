@@ -38,32 +38,32 @@ export default function CTASection() {
     }, []);
 
     return (
-        <section ref={sectionRef} className="cta-bg py-32 relative overflow-hidden">
+        <section ref={sectionRef} className="py-32 relative overflow-hidden" style={{ background: "var(--bg)" }}>
             {/* Animated neon blobs */}
             <div
                 ref={blob1Ref}
                 className="absolute top-10 left-1/4 w-80 h-80 rounded-full opacity-10"
-                style={{ background: "radial-gradient(circle, #D5FF40, transparent 70%)" }}
+                style={{ background: "radial-gradient(circle, var(--primary), transparent 70%)" }}
             />
             <div
                 ref={blob2Ref}
                 className="absolute bottom-10 right-1/4 w-64 h-64 rounded-full opacity-10"
-                style={{ background: "radial-gradient(circle, #D5FF40, transparent 70%)" }}
+                style={{ background: "radial-gradient(circle, var(--primary), transparent 70%)" }}
             />
             <div
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-[0.05]"
-                style={{ background: "radial-gradient(circle, #D5FF40, transparent 70%)" }}
+                style={{ background: "radial-gradient(circle, var(--primary), transparent 70%)" }}
             />
 
             <div ref={contentRef} className="max-w-[1200px] mx-auto px-6 text-center relative z-10">
 
 
-                <h2 className="text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight">
+                <h2 className="text-4xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
                     Ready to visualise algorithms{" "}
                     <span className="gradient-text">like never before?</span>
                 </h2>
 
-                <p className="text-xl mb-10 max-w-xl mx-auto" style={{ color: "#A1A1A1" }}>
+                <p className="text-xl mb-10 max-w-xl mx-auto" style={{ color: "var(--text-secondary)" }}>
                     Join students already learning smarter with BigO
                 </p>
 
@@ -77,3 +77,4 @@ export default function CTASection() {
         </section>
     );
 }
+

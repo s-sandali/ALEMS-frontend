@@ -50,23 +50,23 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
       {variant === 'default' && (
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-1">
-            <span className="font-bold" style={{ color: '#c8ff3e' }}>
+            <span className="font-bold" style={{ color: 'var(--primary)' }}>
               {xpTotal}
             </span>
-            <span className="text-xs" style={{ color: '#8a8b8e' }}>
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               XP
             </span>
           </div>
           {showPercentage && (
-            <span className="text-xs font-medium" style={{ color: '#8a8b8e' }}>
+            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
               {Math.round(clampedPercentage)}%
             </span>
           )}
           <div className="flex items-baseline gap-1">
-            <span className="text-xs" style={{ color: '#8a8b8e' }}>
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               Next:
             </span>
-            <span className="font-semibold" style={{ color: '#e4e5e6' }}>
+            <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
               {xpForNextLevel}
             </span>
           </div>
@@ -86,7 +86,7 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
         <motion.div
           className="h-full rounded-full shadow-lg"
           style={{
-            background: 'linear-gradient(to right, #c8ff3e, #00ffff, #0088ff)',
+            background: 'linear-gradient(to right, var(--primary), var(--accent), #0088ff)',
             boxShadow: '0 0 20px rgba(200, 255, 62, 0.6)',
           }}
           initial={{ width: '0%' }}
@@ -132,7 +132,7 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
       {/* Compact variant - footer label */}
       {variant === 'compact' && (
         <div className="flex justify-end">
-          <span className="text-xs" style={{ color: '#8a8b8e' }}>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Next: {xpForNextLevel}
           </span>
         </div>
@@ -142,3 +142,4 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
 };
 
 export default XPProgressBar;
+

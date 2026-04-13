@@ -12,8 +12,8 @@ export default function ContinueLearningCard({ data }) {
       transition={{ delay: 0.25 }}
       style={{
         position: 'relative',
-        background: '#131415',
-        border: '1px solid rgba(200,255,62,0.25)',
+        background: 'var(--surface)',
+        border: '1px solid rgba(var(--primary-rgb),0.25)',
         borderRadius: 12,
         padding: '18px 20px',
         display: 'flex',
@@ -30,7 +30,7 @@ export default function ContinueLearningCard({ data }) {
           left: 0,
           right: 0,
           height: 1,
-          background: 'linear-gradient(90deg, transparent, #c8ff3e, transparent)',
+          background: 'linear-gradient(90deg, transparent, var(--primary), transparent)',
         }}
       />
 
@@ -40,15 +40,15 @@ export default function ContinueLearningCard({ data }) {
           width: 44,
           height: 44,
           borderRadius: 10,
-          background: 'rgba(200,255,62,0.12)',
-          border: '1px solid rgba(200,255,62,0.25)',
+          background: 'rgba(var(--primary-rgb),0.12)',
+          border: '1px solid rgba(var(--primary-rgb),0.25)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
         }}
       >
-        <BookOpen size={20} color="#c8ff3e" />
+        <BookOpen size={20} color="var(--primary)" />
       </div>
 
       {/* Text */}
@@ -59,7 +59,7 @@ export default function ContinueLearningCard({ data }) {
             fontWeight: 700,
             letterSpacing: '1.5px',
             textTransform: 'uppercase',
-            color: '#c8ff3e',
+            color: 'var(--primary)',
             marginBottom: 4,
           }}
         >
@@ -69,17 +69,17 @@ export default function ContinueLearningCard({ data }) {
           style={{
             fontSize: 16,
             fontWeight: 700,
-            color: '#e4e5e6',
+            color: 'var(--text-primary)',
             marginBottom: 4,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}
         >
-          {data.algorithmName} — {data.stepLabel}
+          {data.algorithmName} - {data.stepLabel}
         </p>
-        <p style={{ fontSize: 12, color: '#8a8b8e' }}>
-          Step {data.stepCurrent} of {data.stepTotal} · {data.progressPercent}% complete · +{data.xpAvailable} XP available
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+          Step {data.stepCurrent} of {data.stepTotal} - {data.progressPercent}% complete - +{data.xpAvailable} XP available
         </p>
       </div>
 
@@ -89,7 +89,7 @@ export default function ContinueLearningCard({ data }) {
         whileTap={{ scale: 0.97 }}
         onClick={() => navigate(data.route)}
         style={{
-          background: '#c8ff3e',
+          background: 'var(--primary)',
           color: '#0d0e0f',
           border: 'none',
           borderRadius: 8,
@@ -110,3 +110,4 @@ export default function ContinueLearningCard({ data }) {
     </motion.div>
   )
 }
+

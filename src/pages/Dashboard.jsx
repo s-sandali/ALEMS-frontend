@@ -7,7 +7,65 @@ import DashboardNav from '@/components/dashboard/DashboardNav'
 import ExploreAlgorithmsSection from '@/components/algorithms/ExploreAlgorithmsSection'
 import BadgesGrid from '@/components/dashboard/BadgesGrid'
 import XPProgressBar from '@/components/ui/XPProgressBar'
-import { UserService, StudentQuizService, StudentService } from '@/lib/api'
+import { UserService, StudentQuizService, StudentService, AlgorithmService, LeaderboardService } from '@/lib/api'
+import StatCards from '@/components/dashboard/StatCards'
+import QuizAttemptHistoryTable from '@/components/dashboard/QuizAttemptHistoryTable'
+import AlgorithmProgressList from '@/components/dashboard/AlgorithmProgressList'
+import LeaderboardPanel from '@/components/dashboard/LeaderboardPanel'
+import RecentActivityFeed from '@/components/dashboard/RecentActivityFeed'
+
+/** Converts a hex color string (#rrggbb) or CSS var to rgba(r,g,b,0.1) for badge icon backgrounds. */
+function iconBgFromColor(color = 'var(--primary)') {
+  if (color.startsWith('var(')) {
+    return 'rgba(var(--primary-rgb),0.1)'
+  }
+
+  const h = color.replace('#', '')
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `rgba(${r},${g},${b},0.1)`
+}
+
+// -- Algorithm progress helpers -------------------------------------------------
+
+const CATEGORY_COLORS = {
+  'Sorting':             'var(--primary)',
+  'Searching':           '#4da6ff',
+  'Graph':               '#ff9a3e',
+  'Dynamic Programming': '#b57cf5',
+  'Tree':                '#ff6b9d',
+}
+
+function deriveDifficulty(avgComplexity = '') {
+  const c = avgComplexity.toLowerCase()
+  if (c === 'o(1)' || c === 'o(log n)') return 'Easy'
+  if (c.includes('n^2') || c.includes('2^n')) return 'Hard'
+  return 'Medium'
+}
+
+function mergeAlgorithmCoverage(algorithmList, coverage) {
+  const covMap = new Map(coverage.map(c => [c.algorithmId, c]))
+  return algorithmList.map(algo => {
+    const cov = covMap.get(algo.algorithmId)
+    const accentColor = CATEGORY_COLORS[algo.category] ?? 'var(--primary)'
+    return {
+      id: algo.algorithmId,
+      name: algo.name,
+      category: algo.category,
+      difficulty: deriveDifficulty(algo.timeComplexityAverage),
+      status: algo.quizAvailable ? 'active' : 'locked',
+      progressPercent: Math.round(cov?.bestScorePercent ?? 0),
+      accentColor,
+      accentDim: accentColor + '18',
+      timeComplexity: algo.timeComplexityAverage || '-',
+      spaceComplexity: '-',
+      route: `/algorithms/${algo.algorithmId}`,
+      quizzesDone: cov?.hasPassedQuiz ? 1 : 0,
+      quizzesTotal: algo.quizAvailable ? 1 : 0,
+    }
+  })
+}
 
 function QuizCard({ quiz, onStart }) {
   return (
@@ -15,7 +73,7 @@ function QuizCard({ quiz, onStart }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       style={{
-        background: '#131415',
+        background: 'var(--surface)',
         border: '1px solid #252627',
         borderRadius: 16,
         padding: '20px',
@@ -25,24 +83,24 @@ function QuizCard({ quiz, onStart }) {
         cursor: 'pointer',
         transition: 'border-color 0.2s',
       }}
-      whileHover={{ borderColor: 'rgba(200,255,62,0.3)' }}
+      whileHover={{ borderColor: 'rgba(var(--primary-rgb),0.3)' }}
       onClick={() => onStart(quiz.quizId)}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{
           width: 36, height: 36, borderRadius: 9,
-          background: 'rgba(200,255,62,0.1)',
-          border: '1px solid rgba(200,255,62,0.2)',
+          background: 'rgba(var(--primary-rgb),0.1)',
+          border: '1px solid rgba(var(--primary-rgb),0.2)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
-          <BookOpen size={16} color="#c8ff3e" />
+          <BookOpen size={16} color="var(--primary)" />
         </div>
         {quiz.timeLimitMins && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 4,
-            fontSize: 11, color: '#8a8b8e',
-            background: '#1a1b1c', borderRadius: 20,
+            fontSize: 11, color: 'var(--text-secondary)',
+            background: 'var(--surface-2)', borderRadius: 20,
             padding: '3px 10px', border: '1px solid #252627',
           }}>
             <Clock size={10} />
@@ -53,14 +111,14 @@ function QuizCard({ quiz, onStart }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
         <h3 style={{
-          fontSize: 16, fontWeight: 700, color: '#e4e5e6',
+          fontSize: 16, fontWeight: 700, color: 'var(--text-primary)',
           fontFamily: "'Poppins', sans-serif",
           letterSpacing: '-0.3px', lineHeight: 1.2,
         }}>
           {quiz.title}
         </h3>
         {quiz.description && (
-          <p style={{ fontSize: 12, color: '#8a8b8e', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
             {quiz.description}
           </p>
         )}
@@ -69,9 +127,9 @@ function QuizCard({ quiz, onStart }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 4,
-          fontSize: 11, color: '#c8ff3e',
-          background: 'rgba(200,255,62,0.08)', borderRadius: 20,
-          padding: '3px 10px', border: '1px solid rgba(200,255,62,0.2)',
+          fontSize: 11, color: 'var(--primary)',
+          background: 'rgba(var(--primary-rgb),0.08)', borderRadius: 20,
+          padding: '3px 10px', border: '1px solid rgba(var(--primary-rgb),0.2)',
         }}>
           <Target size={10} />
           Pass: {quiz.passScore}%
@@ -82,10 +140,10 @@ function QuizCard({ quiz, onStart }) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         borderTop: '1px solid #252627', paddingTop: 12, marginTop: 2,
       }}>
-        <span style={{ fontSize: 11, color: '#4a4b4e', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
           Start Quiz
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#c8ff3e', fontSize: 13, fontWeight: 600 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--primary)', fontSize: 13, fontWeight: 600 }}>
           <PlayCircle size={15} />
           Play
         </div>
@@ -103,11 +161,18 @@ export default function Dashboard() {
   const [badges, setBadges] = useState([])
   const [studentId, setStudentId] = useState(null)
   const [progression, setProgression] = useState(null)
+  const [performanceSummary, setPerformanceSummary] = useState(null)
+  const [attemptHistory, setAttemptHistory] = useState([])
+  const [algorithmCoverage, setAlgorithmCoverage] = useState([])
+  const [rawAlgorithms, setRawAlgorithms] = useState([])
   const [dashboardLoading, setDashboardLoading] = useState(true)
   const [dashboardError, setDashboardError] = useState('')
   const [quizzes, setQuizzes] = useState([])
   const [quizzesLoading, setQuizzesLoading] = useState(true)
   const [quizzesError, setQuizzesError] = useState('')
+  const [leaderboard, setLeaderboard] = useState([])
+  const [activity, setActivity] = useState([])
+  const [heatmap, setHeatmap] = useState([])
 
   const displayName = user?.firstName ?? user?.username ?? 'there'
 
@@ -117,102 +182,135 @@ export default function Dashboard() {
     async function load() {
       try {
         const syncRes = await UserService.syncUser(getToken)
-        console.log('🔍 syncUser response:', syncRes)
+        console.log('syncUser response:', syncRes)
         
         // Extract UserId from response (backend returns UserId, not id)
         const userId = syncRes?.data?.UserId || syncRes?.data?.userId
-        console.log('📍 Extracted UserID:', userId)
+        console.log('Extracted UserID:', userId)
         
         if (isMounted && userId) {
           setStudentId(userId)
 
           // Fetch progression data
           try {
-            console.log(`📡 Fetching progression for student ID: ${userId}`)
+            console.log(`Fetching progression for student ID: ${userId}`)
             const progRes = await UserService.getProgression(userId, getToken)
-            console.log('✅ Progression response:', progRes)
+            console.log('Progression response:', progRes)
             if (isMounted && progRes?.data) {
               setProgression(progRes.data)
+              setXpTotal(progRes.data.xpTotal ?? 0)
             }
           } catch (progErr) {
-            console.error('⚠️ Progression fetch warning (non-blocking):', progErr)
+            console.error('Progression fetch warning (non-blocking):', progErr)
           }
+
+          // Fetch activity feed and heatmap (non-blocking - run alongside dashboard)
+          StudentService.getActivity(userId, getToken).then(res => {
+            if (isMounted && Array.isArray(res?.data)) setActivity(res.data)
+          }).catch(err => console.warn('Activity fetch warning (non-blocking):', err))
+
+          StudentService.getActivityHeatmap(userId, getToken).then(res => {
+            if (isMounted && Array.isArray(res?.data)) setHeatmap(res.data)
+          }).catch(err => console.warn('Heatmap fetch warning (non-blocking):', err))
 
           // Now fetch the dashboard data
           try {
-            console.log(`📡 Fetching dashboard for student ID: ${userId}`)
+            console.log(`Fetching dashboard for student ID: ${userId}`)
             const dashRes = await StudentService.getDashboard(userId, getToken)
-            console.log('✅ Dashboard response:', dashRes)
+            console.log('Dashboard response:', dashRes)
             console.log('Dashboard data type:', typeof dashRes?.data, 'Keys:', Object.keys(dashRes?.data || {}))
             
             if (isMounted && dashRes?.data) {
               try {
-                // Backend returns camelCase properties (JSON serialization converts PascalCase to camelCase)
-                const xp = dashRes.data.xpTotal ?? 0
-                console.log('✅ xpTotal:', xp)
-                setXpTotal(xp)
-                
                 // Transform allBadges to include earned status and award dates for BadgesGrid
                 const earnedBadges = dashRes.data.earnedBadges || []
                 const allBadges = dashRes.data.allBadges || []
                 
-                console.log('✅ earnedBadges:', earnedBadges)
-                console.log('✅ allBadges:', allBadges)
+                console.log('earnedBadges:', earnedBadges)
+                console.log('allBadges:', allBadges)
                 
                 const earnedBadgeMap = new Map(
                   earnedBadges.map(b => [b.id, b.awardDate])
                 )
                 
                 const badgesForGrid = allBadges.map(badge => {
-                  console.log('Processing badge:', badge)
+                  const color = badge.iconColor || 'var(--primary)'
                   return {
                     id: badge.id,
                     name: badge.name,
                     status: badge.earned ? 'earned' : 'locked',
-                    earnedDate: badge.earned ? earnedBadgeMap.get(badge.id) : null,
-                    description: badge.description || `Unlock this badge to show your progress`,
+                    earnedDate: badge.earned ? earnedBadgeMap.get(badge.id) ?? null : null,
+                    description: badge.description || 'Unlock this badge to show your progress',
                     iconType: badge.iconType || 'star',
                     unlockHint: 'Keep learning to unlock',
-                    iconBg: 'rgba(200,255,62,0.1)',
-                    iconColor: badge.iconColor || '#c8ff3e',
+                    iconColor: color,
+                    iconBg: iconBgFromColor(color),
                   }
                 })
                 
-                console.log('✅ Badges for grid:', badgesForGrid)
                 setBadges(badgesForGrid)
+
+                if (dashRes.data.performanceSummary) {
+                  setPerformanceSummary(dashRes.data.performanceSummary)
+                }
+                setAttemptHistory(dashRes.data.quizAttemptHistory || [])
+                setAlgorithmCoverage(dashRes.data.algorithmCoverage || [])
               } catch (transformErr) {
-                console.error('❌ Data transformation error:', transformErr)
+                console.error('Data transformation error:', transformErr)
                 throw transformErr
               }
             }
           } catch (err) {
-            console.error('❌ Dashboard fetch error:', err)
+            console.error('Dashboard fetch error:', err)
             if (isMounted) setDashboardError(err instanceof Error ? err.message : 'Failed to load dashboard data.')
           } finally {
             if (isMounted) setDashboardLoading(false)
           }
         } else {
-          console.warn('⚠️ No UserId found in syncRes')
+          console.warn('No UserId found in syncRes')
           if (isMounted) {
             setDashboardError('Could not determine user ID from sync')
             setDashboardLoading(false)
           }
         }
       } catch (err) {
-        console.error('❌ Sync user error:', err)
+        console.error('Sync user error:', err)
         if (isMounted) {
           setDashboardError(err instanceof Error ? err.message : 'Failed to sync user.')
           setDashboardLoading(false)
         }
       }
 
-      try {
-        const quizRes = await StudentQuizService.getActiveQuizzes(getToken)
-        if (isMounted) setQuizzes(Array.isArray(quizRes?.data) ? quizRes.data : [])
-      } catch (err) {
-        if (isMounted) setQuizzesError(err instanceof Error ? err.message : 'Failed to load quizzes.')
-      } finally {
-        if (isMounted) setQuizzesLoading(false)
+      // Quizzes, algorithm list, and leaderboard are independent of userId - run in parallel
+      const [quizRes, algoRes, leaderboardRes] = await Promise.allSettled([
+        StudentQuizService.getActiveQuizzes(getToken),
+        AlgorithmService.getAll(getToken),
+        LeaderboardService.getLeaderboard(getToken),
+      ])
+
+      if (isMounted) {
+        if (quizRes.status === 'fulfilled') {
+          setQuizzes(Array.isArray(quizRes.value?.data) ? quizRes.value.data : [])
+        } else {
+          setQuizzesError(quizRes.reason instanceof Error ? quizRes.reason.message : 'Failed to load quizzes.')
+        }
+        setQuizzesLoading(false)
+
+        if (algoRes.status === 'fulfilled') {
+          setRawAlgorithms(Array.isArray(algoRes.value?.data) ? algoRes.value.data : [])
+        }
+
+        if (leaderboardRes.status === 'fulfilled') {
+          const entries = Array.isArray(leaderboardRes.value?.data) ? leaderboardRes.value.data : []
+          setLeaderboard(entries.map(entry => ({
+            rank:          entry.rank,
+            userId:        entry.userId,
+            username:      entry.username,
+            initials:      entry.username.slice(0, 2).toUpperCase(),
+            xp:            entry.xpTotal,
+            isCurrentUser: entry.isCurrentUser,
+          })))
+        }
       }
     }
 
@@ -221,7 +319,7 @@ export default function Dashboard() {
   }, [getToken])
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0d0e0f' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <DashboardNav user={{ xpTotal }} />
 
       <div style={{ maxWidth: 1160, margin: '0 auto', padding: '28px 24px 60px' }}>
@@ -231,96 +329,26 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           style={{ marginBottom: 32 }}
         >
-          <p style={{
-            fontSize: 11, color: '#4a4b4e',
-            letterSpacing: '1.5px', textTransform: 'uppercase',
-            fontFamily: "'Poppins', sans-serif", marginBottom: 6,
-          }}>
+           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
             Dashboard
           </p>
-          <h1 style={{
-            fontSize: 26, fontWeight: 700,
-            letterSpacing: '-0.8px', lineHeight: 1.1,
-            fontFamily: "'Poppins', sans-serif", color: '#e4e5e6',
-          }}>
+          <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
             Welcome back,{' '}
-            <span style={{ color: '#c8ff3e' }}>{displayName}</span>
+            <span style={{ color: 'var(--primary)' }}>{displayName}</span>
           </h1>
-          <p style={{ color: '#8a8b8e', fontSize: 13, marginTop: 4 }}>
+          <p className="mt-4 text-base leading-7 text-text-secondary">
             Here's your learning progress at a glance.
           </p>
         </motion.div>
 
-        {/* Explore algorithms */}
-        <ExploreAlgorithmsSection
-          limit={4}
-          showViewAll
-          description="Explore the algorithm library. Each card highlights the name, average complexity, and difficulty before you open its dedicated route."
-        />
+        {/* Stat cards */}
+        <StatCards user={{
+          xpTotal,
+          totalPassed: performanceSummary?.totalPassed ?? 0,
+          passRate: performanceSummary?.passRate ?? null,
+        }} />
 
-        {/* Active quizzes */}
-        <div style={{ marginTop: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div>
-              <p style={{
-                fontSize: 11, color: '#4a4b4e',
-                letterSpacing: '1.5px', textTransform: 'uppercase',
-                fontFamily: "'Poppins', sans-serif", marginBottom: 4,
-              }}>
-                Active
-              </p>
-              <h2 style={{
-                fontSize: 20, fontWeight: 700, color: '#e4e5e6',
-                fontFamily: "'Poppins', sans-serif", letterSpacing: '-0.4px',
-              }}>
-                Quizzes
-              </h2>
-            </div>
-          </div>
-
-          {quizzesLoading ? (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              color: '#8a8b8e', fontSize: 14, minHeight: 120,
-            }}>
-              <LoaderCircle size={16} color="#c8ff3e" style={{ animation: 'spin 1s linear infinite' }} />
-              Loading quizzes…
-            </div>
-          ) : quizzesError ? (
-            <div style={{
-              background: 'rgba(255,90,90,0.06)', border: '1px solid rgba(255,90,90,0.2)',
-              borderRadius: 12, padding: '14px 18px', color: '#ff9a9a', fontSize: 13,
-            }}>
-              {quizzesError}
-            </div>
-          ) : quizzes.length === 0 ? (
-            <div style={{
-              background: '#131415', border: '1px dashed #2e2f30',
-              borderRadius: 16, padding: '36px 24px',
-              textAlign: 'center', color: '#4a4b4e', fontSize: 14,
-            }}>
-              No quizzes are available yet.
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-              gap: 14,
-            }}>
-              {quizzes.map((quiz, i) => (
-                <motion.div
-                  key={quiz.quizId}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <QuizCard quiz={quiz} onStart={(id) => navigate(`/quiz/${id}`)} />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
-
+        
         {/* XP Progress Bar */}
         {progression && (
           <motion.div
@@ -329,17 +357,10 @@ export default function Dashboard() {
             style={{ marginTop: 32, marginBottom: 24 }}
           >
             <div style={{ marginBottom: 12 }}>
-              <p style={{
-                fontSize: 11, color: '#4a4b4e',
-                letterSpacing: '1.5px', textTransform: 'uppercase',
-                fontFamily: "'Poppins', sans-serif", marginBottom: 4,
-              }}>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                 Level {progression.currentLevel}
               </p>
-              <h3 style={{
-                fontSize: 14, fontWeight: 600,
-                color: '#c8ff3e', fontFamily: "'Poppins', sans-serif",
-              }}>
+              <h3 className="text-4xl font-bold tracking-tight text-text-primary sm:text-3xl">
                 Experience Progress
               </h3>
             </div>
@@ -356,10 +377,10 @@ export default function Dashboard() {
           {dashboardLoading ? (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 10,
-              color: '#8a8b8e', fontSize: 14, minHeight: 120,
+              color: 'var(--text-secondary)', fontSize: 14, minHeight: 120,
             }}>
-              <LoaderCircle size={16} color="#c8ff3e" style={{ animation: 'spin 1s linear infinite' }} />
-              Loading badges…
+              <LoaderCircle size={16} color="var(--primary)" style={{ animation: 'spin 1s linear infinite' }} />
+              Loading badges...
             </div>
           ) : dashboardError ? (
             <div style={{
@@ -372,9 +393,58 @@ export default function Dashboard() {
             <BadgesGrid badges={badges} />
           )}
         </div>
+
+        {/* Algorithm progress */}
+        {!dashboardLoading && !dashboardError && rawAlgorithms.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <AlgorithmProgressList
+              algorithms={mergeAlgorithmCoverage(rawAlgorithms, algorithmCoverage)}
+            />
+          </div>
+        )}
+
+       
+        {/* Activity + side panels */}
+        {!dashboardLoading && (
+          <div className="mt-8 grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,1fr)]">
+            <div className="flex flex-col gap-5">
+              
+
+              {/* Leaderboard */}
+              {leaderboard.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <LeaderboardPanel entries={leaderboard} />
+                </motion.div>
+              )}
+            </div>
+
+            {/* Recent activity */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <RecentActivityFeed activities={activity} />
+            </motion.div>
+
+          </div>
+        )}
+         {/* Quiz attempt history */}
+        {!dashboardLoading && !dashboardError && (
+          <div style={{ marginTop: 32 }}>
+            <QuizAttemptHistoryTable attempts={attemptHistory} />
+          </div>
+        )}
+
       </div>
+      
+
+        
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
+

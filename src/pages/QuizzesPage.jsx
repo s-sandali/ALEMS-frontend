@@ -6,50 +6,48 @@ import { Clock, Target, PlayCircle, LoaderCircle, BookOpen } from "lucide-react"
 import DashboardNav from "@/components/dashboard/DashboardNav";
 import { StudentQuizService } from "../lib/api";
 
-const DIFFICULTY_COLORS = {
-    easy: { color: "#c8ff3e", bg: "rgba(200,255,62,0.08)", border: "rgba(200,255,62,0.2)" },
-    medium: { color: "#ffb830", bg: "rgba(255,184,48,0.08)", border: "rgba(255,184,48,0.2)" },
-    hard: { color: "#ff5a5a", bg: "rgba(255,90,90,0.08)", border: "rgba(255,90,90,0.2)" },
-};
-
 function QuizCard({ quiz, onStart }) {
     return (
-        <motion.div
+        <motion.button
+            type="button"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
+            className="group algo-card relative overflow-hidden rounded-3xl border p-6 text-left"
             style={{
-                background: "#131415",
-                border: "1px solid #252627",
-                borderRadius: 16,
-                padding: "24px",
+                background: "var(--surface)",
+                border: "1px solid var(--db-border)",
                 display: "flex",
                 flexDirection: "column",
-                gap: 16,
-                transition: "border-color 0.2s",
+                gap: 18,
                 cursor: "pointer",
             }}
-            whileHover={{ borderColor: "rgba(200,255,62,0.3)" }}
             onClick={() => onStart(quiz.quizId)}
         >
+            <div className="absolute inset-0 bg-accent/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+            <div className="relative flex h-full flex-col gap-4">
             {/* Header */}
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                 <div
                     style={{
-                        width: 40, height: 40, borderRadius: 10,
-                        background: "rgba(200,255,62,0.1)",
-                        border: "1px solid rgba(200,255,62,0.2)",
+                        width: 48, height: 48, borderRadius: 14,
+                        background: "rgba(var(--accent-rgb),0.1)",
+                        border: "1px solid rgba(var(--accent-rgb),0.15)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         flexShrink: 0,
                     }}
                 >
-                    <BookOpen size={18} color="#c8ff3e" />
+                    <BookOpen size={20} color="var(--accent)" />
                 </div>
                 {quiz.timeLimitMins && (
                     <div style={{
                         display: "flex", alignItems: "center", gap: 4,
-                        fontSize: 11, color: "#8a8b8e",
-                        background: "#1a1b1c", borderRadius: 20,
-                        padding: "3px 10px", border: "1px solid #252627",
+                        fontSize: 11,
+                        color: "var(--db-text2)",
+                        background: "var(--db-bg3)",
+                        borderRadius: 999,
+                        padding: "4px 10px",
+                        border: "1px solid var(--db-border)",
                     }}>
                         <Clock size={10} />
                         {quiz.timeLimitMins} min
@@ -58,16 +56,15 @@ function QuizCard({ quiz, onStart }) {
             </div>
 
             {/* Title + description */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-                <h3 style={{
-                    fontSize: 18, fontWeight: 700, color: "#e4e5e6",
-                    fontFamily: "'Poppins', sans-serif",
-                    letterSpacing: "-0.3px", lineHeight: 1.2,
-                }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <h3
+                        className="text-2xl font-bold tracking-tight transition-colors duration-300 group-hover:text-accent"
+                        style={{ color: "var(--db-text)" }}
+                    >
                     {quiz.title}
                 </h3>
                 {quiz.description && (
-                    <p style={{ fontSize: 13, color: "#8a8b8e", lineHeight: 1.6 }}>
+                     <p className="text-sm leading-6 text-text-secondary">
                         {quiz.description}
                     </p>
                 )}
@@ -77,9 +74,12 @@ function QuizCard({ quiz, onStart }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <div style={{
                     display: "flex", alignItems: "center", gap: 4,
-                    fontSize: 11, color: "#c8ff3e",
-                    background: "rgba(200,255,62,0.08)", borderRadius: 20,
-                    padding: "3px 10px", border: "1px solid rgba(200,255,62,0.2)",
+                    fontSize: 11,
+                    color: "var(--accent)",
+                    background: "rgba(var(--accent-rgb),0.1)",
+                    borderRadius: 999,
+                    padding: "4px 10px",
+                    border: "1px solid rgba(var(--accent-rgb),0.2)",
                 }}>
                     <Target size={10} />
                     Pass: {quiz.passScore}%
@@ -89,20 +89,21 @@ function QuizCard({ quiz, onStart }) {
             {/* Start button */}
             <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                borderTop: "1px solid #252627", paddingTop: 14, marginTop: 4,
+                borderTop: "1px solid var(--db-border)", paddingTop: 14, marginTop: 2,
             }}>
-                <span style={{ fontSize: 11, color: "#4a4b4e", textTransform: "uppercase", letterSpacing: "1.5px" }}>
+                <span style={{ fontSize: 11, color: "var(--db-text3)", textTransform: "uppercase", letterSpacing: "1.5px" }}>
                     Start Quiz
                 </span>
-                <div style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    color: "#c8ff3e", fontSize: 13, fontWeight: 600,
-                }}>
+                <div
+                    className="flex items-center gap-1.5 text-sm font-medium transition-transform duration-300 group-hover:translate-x-1 group-hover:text-accent"
+                    style={{ color: "var(--db-text)" }}
+                >
                     <PlayCircle size={16} />
                     Play
                 </div>
             </div>
-        </motion.div>
+            </div>
+        </motion.button>
     );
 }
 
@@ -137,28 +138,20 @@ export default function QuizzesPage() {
     }, [getToken]);
 
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
             <DashboardNav />
 
             {/* Main */}
-            <main style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 24px 60px" }}>
+            <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 60px" }}>
                 {/* Page title */}
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
-                    <p style={{
-                        fontSize: 11, color: "#4a4b4e",
-                        letterSpacing: "1.5px", textTransform: "uppercase",
-                        fontFamily: "'Poppins', sans-serif", marginBottom: 8,
-                    }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                         Student Portal
                     </p>
-                    <h1 style={{
-                        fontSize: 28, fontWeight: 700, color: "#e4e5e6",
-                        fontFamily: "'Poppins', sans-serif",
-                        letterSpacing: "-0.5px", lineHeight: 1.1, marginBottom: 8,
-                    }}>
-                        Available <span style={{ color: "#c8ff3e" }}>Quizzes</span>
+                    <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
+                        Available <span style={{ color: "var(--primary)" }}>Quizzes</span>
                     </h1>
-                    <p style={{ fontSize: 14, color: "#8a8b8e" }}>
+                    <p className="mt-4 text-base leading-7 text-text-secondary">
                         Test your knowledge on algorithms. Pass score and time limit are shown on each card.
                     </p>
                 </motion.div>
@@ -167,11 +160,11 @@ export default function QuizzesPage() {
                 {loading ? (
                     <div style={{
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        gap: 10, color: "#8a8b8e", fontSize: 14,
+                        gap: 10, color: "var(--text-secondary)", fontSize: 14,
                         minHeight: 200,
                     }}>
-                        <LoaderCircle size={16} color="#c8ff3e" style={{ animation: "spin 1s linear infinite" }} />
-                        Loading quizzes…
+                        <LoaderCircle size={16} color="var(--primary)" style={{ animation: "spin 1s linear infinite" }} />
+                        Loading quizzes...
                     </div>
                 ) : error ? (
                     <div style={{
@@ -182,17 +175,18 @@ export default function QuizzesPage() {
                     </div>
                 ) : quizzes.length === 0 ? (
                     <div style={{
-                        background: "#131415", border: "1px dashed #2e2f30",
+                        background: "var(--surface)", border: "1px dashed var(--db-border2)",
                         borderRadius: 16, padding: "48px 24px",
-                        textAlign: "center", color: "#4a4b4e", fontSize: 14,
+                        textAlign: "center", color: "var(--text-tertiary)", fontSize: 14,
                     }}>
                         No quizzes are available yet.
                     </div>
                 ) : (
                     <div style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                        gap: 16,
+                        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                        gap: 18,
+                        alignItems: "start",
                     }}>
                         {quizzes.map((quiz, i) => (
                             <motion.div
@@ -214,3 +208,4 @@ export default function QuizzesPage() {
         </div>
     );
 }
+

@@ -53,7 +53,7 @@ export default function StatsSection() {
         <section
             ref={sectionRef}
             className="py-20"
-            style={{ background: "#151515" }}
+            style={{ background: "var(--bg)" }}
         >
             <div className="max-w-[1200px] mx-auto px-6">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
@@ -64,14 +64,14 @@ export default function StatsSection() {
                                 key={stat.label}
                                 className="stat-card glass rounded-2xl p-6 flex flex-col items-center text-center"
                             >
-                                <IconComp className="w-8 h-8 mb-3 opacity-80" style={{ color: "#D5FF40" }} />
+                                <IconComp className="w-8 h-8 mb-3 opacity-80" style={{ color: "var(--primary)" }} />
                                 <div
                                     ref={(el) => (counterRefs.current[i] = el)}
                                     className="counter-num gradient-text"
                                 >
                                     0{stat.suffix}
                                 </div>
-                                <p className="text-sm mt-2" style={{ color: "#A1A1A1" }}>{stat.label}</p>
+                                <p className="text-sm mt-2" style={{ color: "var(--text-secondary)" }}>{stat.label}</p>
                             </div>
                         );
                     })}
@@ -80,3 +80,4 @@ export default function StatsSection() {
         </section>
     );
 }
+
