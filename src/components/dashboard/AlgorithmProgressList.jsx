@@ -56,9 +56,11 @@ export default function AlgorithmProgressList({ algorithms }) {
         display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', marginBottom: 16,
       }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: '#e4e5e6' }}>
+        
+        
+        <h2 className="text-4xl font-bold tracking-tight text-text-primary sm:text-3xl">
           Algorithm progress
-        </span>
+        </h2>
         <button
           onClick={() => navigate('/algorithms')}
           style={{
@@ -113,12 +115,9 @@ export default function AlgorithmProgressList({ algorithms }) {
 
               {/* Text */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{
-                  fontSize: 15, fontWeight: 700, color: '#e4e5e6',
-                  marginBottom: 3, lineHeight: 1.2,
-                }}>
+                <h2 className="text-4xl font-bold tracking-tight text-text-primary sm:text-xl">
                   {algo.name}
-                </p>
+                </h2>
                 <p style={{ fontSize: 11, color: '#4a4b4e', marginBottom: 8 }}>
                   {algo.category} · {algo.difficulty}
                 </p>

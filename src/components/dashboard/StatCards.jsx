@@ -58,7 +58,7 @@ export default function StatCards({ user }) {
           }}
         >
           <div>
-            <p style={{ fontSize: 12, color: '#8a8b8e', marginBottom: 6 }}>{card.label}</p>
+            <h1 className="text-4xl mb-4 font-bold tracking-tight text-text-primary sm:text-xl">{card.label}</h1>
             <p
               style={{
                 fontSize: 26,
@@ -66,12 +66,12 @@ export default function StatCards({ user }) {
                 color: card.valueColor,
                 fontFamily: "'Poppins', sans-serif",
                 lineHeight: 1,
-                marginBottom: 4,
+                marginBottom: 6,
               }}
             >
               {card.getValue(user)}
             </p>
-            <p style={{ fontSize: 11, color: '#4a4b4e' }}>
+            <p className="mt-4 text-base leading-7 text-text-secondary">
               {card.getSub ? card.getSub(user) : card.sub}
             </p>
           </div>

@@ -41,17 +41,10 @@ export default function QuizAttemptHistoryTable({ attempts }) {
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <p style={{
-          fontSize: 11, color: '#4a4b4e',
-          letterSpacing: '1.5px', textTransform: 'uppercase',
-          fontFamily: "'Poppins', sans-serif", marginBottom: 4,
-        }}>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
           History
         </p>
-        <h2 style={{
-          fontSize: 20, fontWeight: 700, color: '#e4e5e6',
-          fontFamily: "'Poppins', sans-serif", letterSpacing: '-0.4px',
-        }}>
+         <h2 className="text-4xl font-bold tracking-tight text-text-primary sm:text-3xl">
           Quiz Attempts
         </h2>
       </div>
