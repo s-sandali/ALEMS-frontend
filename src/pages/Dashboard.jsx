@@ -7,9 +7,10 @@ import DashboardNav from '@/components/dashboard/DashboardNav'
 import ExploreAlgorithmsSection from '@/components/algorithms/ExploreAlgorithmsSection'
 import BadgesGrid from '@/components/dashboard/BadgesGrid'
 import XPProgressBar from '@/components/ui/XPProgressBar'
-import { UserService, StudentQuizService, StudentService } from '@/lib/api'
+import { UserService, StudentQuizService, StudentService, AlgorithmService } from '@/lib/api'
 import StatCards from '@/components/dashboard/StatCards'
 import QuizAttemptHistoryTable from '@/components/dashboard/QuizAttemptHistoryTable'
+import AlgorithmProgressList from '@/components/dashboard/AlgorithmProgressList'
 
 /** Converts a hex color string (#rrggbb) to rgba(r,g,b,0.1) for badge icon backgrounds. */
 function iconBgFromColor(hex = '#c8ff3e') {
@@ -18,6 +19,46 @@ function iconBgFromColor(hex = '#c8ff3e') {
   const g = parseInt(h.slice(2, 4), 16)
   const b = parseInt(h.slice(4, 6), 16)
   return `rgba(${r},${g},${b},0.1)`
+}
+
+// ── Algorithm progress helpers ─────────────────────────────────────────────────
+
+const CATEGORY_COLORS = {
+  'Sorting':             '#c8ff3e',
+  'Searching':           '#4da6ff',
+  'Graph':               '#ff9a3e',
+  'Dynamic Programming': '#b57cf5',
+  'Tree':                '#ff6b9d',
+}
+
+function deriveDifficulty(avgComplexity = '') {
+  const c = avgComplexity.toLowerCase()
+  if (c === 'o(1)' || c === 'o(log n)') return 'Easy'
+  if (c.includes('n²') || c.includes('n^2') || c.includes('2^n')) return 'Hard'
+  return 'Medium'
+}
+
+function mergeAlgorithmCoverage(algorithmList, coverage) {
+  const covMap = new Map(coverage.map(c => [c.algorithmId, c]))
+  return algorithmList.map(algo => {
+    const cov = covMap.get(algo.algorithmId)
+    const accentColor = CATEGORY_COLORS[algo.category] ?? '#c8ff3e'
+    return {
+      id: algo.algorithmId,
+      name: algo.name,
+      category: algo.category,
+      difficulty: deriveDifficulty(algo.timeComplexityAverage),
+      status: algo.quizAvailable ? 'active' : 'locked',
+      progressPercent: Math.round(cov?.bestScorePercent ?? 0),
+      accentColor,
+      accentDim: accentColor + '18',
+      timeComplexity: algo.timeComplexityAverage || '—',
+      spaceComplexity: '—',
+      route: `/algorithms/${algo.algorithmId}`,
+      quizzesDone: cov?.hasPassedQuiz ? 1 : 0,
+      quizzesTotal: algo.quizAvailable ? 1 : 0,
+    }
+  })
 }
 
 function QuizCard({ quiz, onStart }) {
@@ -116,6 +157,8 @@ export default function Dashboard() {
   const [progression, setProgression] = useState(null)
   const [performanceSummary, setPerformanceSummary] = useState(null)
   const [attemptHistory, setAttemptHistory] = useState([])
+  const [algorithmCoverage, setAlgorithmCoverage] = useState([])
+  const [rawAlgorithms, setRawAlgorithms] = useState([])
   const [dashboardLoading, setDashboardLoading] = useState(true)
   const [dashboardError, setDashboardError] = useState('')
   const [quizzes, setQuizzes] = useState([])
@@ -193,6 +236,7 @@ export default function Dashboard() {
                   setPerformanceSummary(dashRes.data.performanceSummary)
                 }
                 setAttemptHistory(dashRes.data.quizAttemptHistory || [])
+                setAlgorithmCoverage(dashRes.data.algorithmCoverage || [])
               } catch (transformErr) {
                 console.error('❌ Data transformation error:', transformErr)
                 throw transformErr
@@ -219,13 +263,23 @@ export default function Dashboard() {
         }
       }
 
-      try {
-        const quizRes = await StudentQuizService.getActiveQuizzes(getToken)
-        if (isMounted) setQuizzes(Array.isArray(quizRes?.data) ? quizRes.data : [])
-      } catch (err) {
-        if (isMounted) setQuizzesError(err instanceof Error ? err.message : 'Failed to load quizzes.')
-      } finally {
-        if (isMounted) setQuizzesLoading(false)
+      // Quizzes and algorithm list are independent of userId — run in parallel
+      const [quizRes, algoRes] = await Promise.allSettled([
+        StudentQuizService.getActiveQuizzes(getToken),
+        AlgorithmService.getAll(getToken),
+      ])
+
+      if (isMounted) {
+        if (quizRes.status === 'fulfilled') {
+          setQuizzes(Array.isArray(quizRes.value?.data) ? quizRes.value.data : [])
+        } else {
+          setQuizzesError(quizRes.reason instanceof Error ? quizRes.reason.message : 'Failed to load quizzes.')
+        }
+        setQuizzesLoading(false)
+
+        if (algoRes.status === 'fulfilled') {
+          setRawAlgorithms(Array.isArray(algoRes.value?.data) ? algoRes.value.data : [])
+        }
       }
     }
 
@@ -263,76 +317,7 @@ export default function Dashboard() {
           passRate: performanceSummary?.passRate ?? null,
         }} />
 
-        {/* Explore algorithms */}
-        <ExploreAlgorithmsSection
-          limit={4}
-          showViewAll
-          description="Explore the algorithm library. Each card highlights the name, average complexity, and difficulty before you open its dedicated route."
-        />
-
-        {/* Active quizzes */}
-        <div style={{ marginTop: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div>
-              <p style={{
-                fontSize: 11, color: '#4a4b4e',
-                letterSpacing: '1.5px', textTransform: 'uppercase',
-                fontFamily: "'Poppins', sans-serif", marginBottom: 4,
-              }}>
-                Active
-              </p>
-              <h2 style={{
-                fontSize: 20, fontWeight: 700, color: '#e4e5e6',
-                fontFamily: "'Poppins', sans-serif", letterSpacing: '-0.4px',
-              }}>
-                Quizzes
-              </h2>
-            </div>
-          </div>
-
-          {quizzesLoading ? (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              color: '#8a8b8e', fontSize: 14, minHeight: 120,
-            }}>
-              <LoaderCircle size={16} color="#c8ff3e" style={{ animation: 'spin 1s linear infinite' }} />
-              Loading quizzes…
-            </div>
-          ) : quizzesError ? (
-            <div style={{
-              background: 'rgba(255,90,90,0.06)', border: '1px solid rgba(255,90,90,0.2)',
-              borderRadius: 12, padding: '14px 18px', color: '#ff9a9a', fontSize: 13,
-            }}>
-              {quizzesError}
-            </div>
-          ) : quizzes.length === 0 ? (
-            <div style={{
-              background: '#131415', border: '1px dashed #2e2f30',
-              borderRadius: 16, padding: '36px 24px',
-              textAlign: 'center', color: '#4a4b4e', fontSize: 14,
-            }}>
-              No quizzes are available yet.
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-              gap: 14,
-            }}>
-              {quizzes.map((quiz, i) => (
-                <motion.div
-                  key={quiz.quizId}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <QuizCard quiz={quiz} onStart={(id) => navigate(`/quiz/${id}`)} />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
-
+        
         {/* XP Progress Bar */}
         {progression && (
           <motion.div
@@ -385,6 +370,15 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Algorithm progress */}
+        {!dashboardLoading && !dashboardError && rawAlgorithms.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <AlgorithmProgressList
+              algorithms={mergeAlgorithmCoverage(rawAlgorithms, algorithmCoverage)}
+            />
+          </div>
+        )}
+
         {/* Quiz attempt history */}
         {!dashboardLoading && !dashboardError && (
           <div style={{ marginTop: 32 }}>
@@ -392,6 +386,9 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      
+
+        
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
