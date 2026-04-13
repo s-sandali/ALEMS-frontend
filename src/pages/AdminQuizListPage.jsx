@@ -126,28 +126,14 @@ export default function AdminQuizListPage() {
                     }}
                 >
                     <div>
-                        <p style={{
-                            fontSize: 11,
-                            color: "#4a4b4e",
-                            letterSpacing: "1.5px",
-                            textTransform: "uppercase",
-                            fontFamily: "'Poppins', sans-serif",
-                            marginBottom: 8,
-                        }}>
+                       <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                             Admin Panel
                         </p>
-                        <h1 style={{
-                            fontSize: 28,
-                            fontWeight: 700,
-                            color: "#e4e5e6",
-                            fontFamily: "'Poppins', sans-serif",
-                            letterSpacing: "-0.5px",
-                            lineHeight: 1.1,
-                            marginBottom: 8,
-                        }}>
+                         <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
                             Quiz <span style={{ color: "#c8ff3e" }}>Management</span>
                         </h1>
-                        <p style={{ fontSize: 14, color: "#8a8b8e" }}>
+                         <p className="mt-4 text-base leading-7 text-text-secondary">
+                        Pick a challenge, and try to solve it.
                             All quizzes, including inactive ones.
                         </p>
                     </div>

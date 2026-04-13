@@ -244,22 +244,14 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           style={{ marginBottom: 32 }}
         >
-          <p style={{
-            fontSize: 11, color: '#4a4b4e',
-            letterSpacing: '1.5px', textTransform: 'uppercase',
-            fontFamily: "'Poppins', sans-serif", marginBottom: 6,
-          }}>
+           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
             Dashboard
           </p>
-          <h1 style={{
-            fontSize: 26, fontWeight: 700,
-            letterSpacing: '-0.8px', lineHeight: 1.1,
-            fontFamily: "'Poppins', sans-serif", color: '#e4e5e6',
-          }}>
+          <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
             Welcome back,{' '}
             <span style={{ color: '#c8ff3e' }}>{displayName}</span>
           </h1>
-          <p style={{ color: '#8a8b8e', fontSize: 13, marginTop: 4 }}>
+          <p className="mt-4 text-base leading-7 text-text-secondary">
             Here's your learning progress at a glance.
           </p>
         </motion.div>

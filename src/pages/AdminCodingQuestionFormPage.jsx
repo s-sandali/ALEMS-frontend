@@ -190,18 +190,10 @@ export default function AdminCodingQuestionFormPage() {
                 </Link>
 
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 28 }}>
-                    <p style={{
-                        fontSize: 11, color: "#4a4b4e",
-                        letterSpacing: "1.5px", textTransform: "uppercase",
-                        fontFamily: "'Poppins', sans-serif", marginBottom: 8,
-                    }}>
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                         Admin Panel
                     </p>
-                    <h1 style={{
-                        fontSize: 24, fontWeight: 700, color: "#e4e5e6",
-                        fontFamily: "'Poppins', sans-serif",
-                        letterSpacing: "-0.5px", lineHeight: 1.1,
-                    }}>
+                     <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
                         {isEdit ? "Edit" : "New"} <span style={{ color: "#c8ff3e" }}>Coding Question</span>
                     </h1>
                 </motion.div>

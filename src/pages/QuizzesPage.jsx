@@ -59,15 +59,14 @@ function QuizCard({ quiz, onStart }) {
 
             {/* Title + description */}
             <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-                <h3 style={{
-                    fontSize: 18, fontWeight: 700, color: "#e4e5e6",
-                    fontFamily: "'Poppins', sans-serif",
-                    letterSpacing: "-0.3px", lineHeight: 1.2,
-                }}>
+                <h3
+                        className="text-2xl font-bold tracking-tight transition-colors duration-300 group-hover:text-accent"
+                        style={{ color: "var(--db-text)" }}
+                    >
                     {quiz.title}
                 </h3>
                 {quiz.description && (
-                    <p style={{ fontSize: 13, color: "#8a8b8e", lineHeight: 1.6 }}>
+                     <p className="text-sm leading-6 text-text-secondary">
                         {quiz.description}
                     </p>
                 )}
@@ -144,21 +143,13 @@ export default function QuizzesPage() {
             <main style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 24px 60px" }}>
                 {/* Page title */}
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
-                    <p style={{
-                        fontSize: 11, color: "#4a4b4e",
-                        letterSpacing: "1.5px", textTransform: "uppercase",
-                        fontFamily: "'Poppins', sans-serif", marginBottom: 8,
-                    }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                         Student Portal
                     </p>
-                    <h1 style={{
-                        fontSize: 28, fontWeight: 700, color: "#e4e5e6",
-                        fontFamily: "'Poppins', sans-serif",
-                        letterSpacing: "-0.5px", lineHeight: 1.1, marginBottom: 8,
-                    }}>
+                    <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
                         Available <span style={{ color: "#c8ff3e" }}>Quizzes</span>
                     </h1>
-                    <p style={{ fontSize: 14, color: "#8a8b8e" }}>
+                    <p className="mt-4 text-base leading-7 text-text-secondary">
                         Test your knowledge on algorithms. Pass score and time limit are shown on each card.
                     </p>
                 </motion.div>

@@ -12,7 +12,7 @@ export default function AlgorithmsPage() {
                         Explore
                     </p>
                     <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
-                        Related algorithms to keep learning momentum
+                       Algorithm <span className="text-accent">Collection</span>
                     </h1>
                     <p className="mt-4 text-base leading-7 text-text-secondary">
                         Review the library, compare time complexity, and open a dedicated route for each algorithm to inspect backend-powered simulation traces.
