@@ -493,6 +493,8 @@ export type QuizAttemptResult = {
     passed: boolean;
     totalQuestions: number;
     correctCount: number;
+    xpEarned: number;
+    isFirstAttempt: boolean;
     results: QuizAttemptQuestionResult[];
 };
 
