@@ -53,6 +53,7 @@ export default function BadgesGrid({ badges }) {
             Badges
           </span>
           <span
+            data-testid="dashboard-badges-earned-count"
             style={{
               background: 'rgba(var(--primary-rgb),0.1)',
               color: 'var(--primary)',
