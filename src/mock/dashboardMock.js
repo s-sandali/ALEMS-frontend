@@ -27,7 +27,7 @@ export const MOCK_ALGORITHMS = [
     progressPercent: 100,
     quizzesDone: 4,
     quizzesTotal: 4,
-    timeComplexity: 'O(n²)',
+    timeComplexity: 'O(n^2)',
     spaceComplexity: 'O(1)',
     route: '/algorithms/bubble-sort',
     accentColor: '#3ddc84',
@@ -199,7 +199,7 @@ export const MOCK_ACTIVITY = [
     highlight: 'Bug Hunter',
     xpEarned: 25,
     timeAgo: '1d ago',
-    dotColor: '#c8ff3e',
+    dotColor: 'var(--primary)',
   },
   {
     id: '4',
@@ -256,7 +256,7 @@ export const MOCK_NEXT_UNLOCKS = [
   },
 ]
 
-// 56 values (8 weeks × 7 days), 0=none 1=low 2=mid 3=high 4=max
+// 56 values (8 weeks x 7 days), 0=none 1=low 2=mid 3=high 4=max
 export const MOCK_HEATMAP = [
   0,0,1,0,2,1,0,
   0,1,3,2,1,0,0,
@@ -267,3 +267,4 @@ export const MOCK_HEATMAP = [
   4,3,2,4,3,0,0,
   1,2,3,4,4,3,2,
 ]
+

@@ -8,7 +8,7 @@ import { CodingQuestionService } from "../lib/api";
 import { useRole } from "../context/RoleContext";
 
 const DIFFICULTY_STYLES = {
-    easy:   { color: "#c8ff3e", bg: "rgba(200,255,62,0.08)",  border: "rgba(200,255,62,0.2)"  },
+    easy:   { color: "var(--primary)", bg: "rgba(var(--primary-rgb),0.08)",  border: "rgba(var(--primary-rgb),0.2)"  },
     medium: { color: "#ffb830", bg: "rgba(255,184,48,0.08)",  border: "rgba(255,184,48,0.2)"  },
     hard:   { color: "#ff5a5a", bg: "rgba(255,90,90,0.08)",   border: "rgba(255,90,90,0.2)"   },
 };
@@ -63,24 +63,24 @@ export default function AdminCodingQuestionListPage() {
     if (role !== "Admin") {
         return (
             <div style={{
-                minHeight: "100vh", background: "#0d0e0f",
+                minHeight: "100vh", background: "var(--bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexDirection: "column", gap: 12,
             }}>
                 <ShieldAlert size={40} color="#ff5a5a" />
                 <p style={{ color: "#ff9a9a", fontSize: 15 }}>Admin access required.</p>
-                <Link to="/dashboard" style={{ color: "#c8ff3e", fontSize: 13, textDecoration: "none" }}>
-                    ← Back to Dashboard
+                <Link to="/dashboard" style={{ color: "var(--primary)", fontSize: 13, textDecoration: "none" }}>
+                    {"<- Back to Dashboard"}
                 </Link>
             </div>
         );
     }
 
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
             <DashboardNav />
 
-            <main style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 24px 60px" }}>
+            <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 60px" }}>
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -91,21 +91,13 @@ export default function AdminCodingQuestionListPage() {
                     }}
                 >
                     <div>
-                        <p style={{
-                            fontSize: 11, color: "#4a4b4e",
-                            letterSpacing: "1.5px", textTransform: "uppercase",
-                            fontFamily: "'Poppins', sans-serif", marginBottom: 8,
-                        }}>
+                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                             Admin Panel
                         </p>
-                        <h1 style={{
-                            fontSize: 28, fontWeight: 700, color: "#e4e5e6",
-                            fontFamily: "'Poppins', sans-serif",
-                            letterSpacing: "-0.5px", lineHeight: 1.1, marginBottom: 8,
-                        }}>
-                            Coding <span style={{ color: "#c8ff3e" }}>Questions</span>
+                       <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
+                            Coding <span style={{ color: "var(--primary)" }}>Questions</span>
                         </h1>
-                        <p style={{ fontSize: 14, color: "#8a8b8e" }}>
+                        <p className="mt-4 text-base leading-7 text-text-secondary">
                             All coding challenges available to students.
                         </p>
                     </div>
@@ -114,10 +106,10 @@ export default function AdminCodingQuestionListPage() {
                         onClick={() => navigate("/admin/coding-questions/new")}
                         style={{
                             display: "inline-flex", alignItems: "center", gap: 7,
-                            background: "rgba(200,255,62,0.1)",
-                            border: "1px solid rgba(200,255,62,0.3)",
+                            background: "rgba(var(--primary-rgb),0.1)",
+                            border: "1px solid rgba(var(--primary-rgb),0.3)",
                             borderRadius: 10, padding: "10px 18px",
-                            color: "#c8ff3e", fontSize: 13, fontWeight: 600,
+                            color: "var(--primary)", fontSize: 13, fontWeight: 600,
                             cursor: "pointer", flexShrink: 0,
                         }}
                     >
@@ -129,10 +121,10 @@ export default function AdminCodingQuestionListPage() {
                 {loading ? (
                     <div style={{
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        gap: 10, color: "#8a8b8e", fontSize: 14, minHeight: 200,
+                        gap: 10, color: "var(--text-secondary)", fontSize: 14, minHeight: 200,
                     }}>
-                        <LoaderCircle size={16} color="#c8ff3e" style={{ animation: "spin 1s linear infinite" }} />
-                        Loading questions…
+                        <LoaderCircle size={16} color="var(--primary)" style={{ animation: "spin 1s linear infinite" }} />
+                        Loading questions...
                     </div>
                 ) : error ? (
                     <div style={{
@@ -143,9 +135,9 @@ export default function AdminCodingQuestionListPage() {
                     </div>
                 ) : questions.length === 0 ? (
                     <div style={{
-                        background: "#131415", border: "1px dashed #2e2f30",
+                        background: "var(--surface)", border: "1px dashed var(--db-border2)",
                         borderRadius: 16, padding: "48px 24px",
-                        textAlign: "center", color: "#4a4b4e", fontSize: 14,
+                        textAlign: "center", color: "var(--text-tertiary)", fontSize: 14,
                     }}>
                         No coding questions found.
                     </div>
@@ -154,8 +146,8 @@ export default function AdminCodingQuestionListPage() {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         style={{
-                            background: "#131415",
-                            border: "1px solid #252627",
+                            background: "var(--surface)",
+                            border: "1px solid var(--db-border)",
                             borderRadius: 16,
                             overflow: "hidden",
                         }}
@@ -165,12 +157,12 @@ export default function AdminCodingQuestionListPage() {
                             display: "grid",
                             gridTemplateColumns: "1fr 120px 96px",
                             padding: "12px 20px",
-                            borderBottom: "1px solid #252627",
-                            background: "#0f1011",
+                            borderBottom: "1px solid var(--db-border)",
+                            background: "var(--db-bg3)",
                         }}>
                             {["Title", "Difficulty", "Actions"].map((col) => (
                                 <span key={col} style={{
-                                    fontSize: 11, fontWeight: 600, color: "#4a4b4e",
+                                    fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
                                     textTransform: "uppercase", letterSpacing: "1.2px",
                                     fontFamily: "'Poppins', sans-serif",
                                 }}>
@@ -183,7 +175,7 @@ export default function AdminCodingQuestionListPage() {
                         {questions.map((q, i) => {
                             const isDeleting = deletingId === q.id;
                             const diffStyle = DIFFICULTY_STYLES[q.difficulty] ?? {
-                                color: "#8a8b8e", bg: "rgba(255,255,255,0.04)", border: "#2e2f30",
+                                color: "var(--text-secondary)", bg: "rgba(255,255,255,0.04)", border: "var(--db-border2)",
                             };
                             return (
                                 <motion.div
@@ -197,23 +189,23 @@ export default function AdminCodingQuestionListPage() {
                                         gridTemplateColumns: "1fr 120px 96px",
                                         padding: "14px 20px",
                                         alignItems: "center",
-                                        borderBottom: i < questions.length - 1 ? "1px solid #1e1f20" : "none",
+                                        borderBottom: i < questions.length - 1 ? "1px solid var(--db-border2)" : "none",
                                         transition: "background 0.15s",
                                     }}
-                                    whileHover={{ background: "#1a1b1c" }}
+                                    whileHover={{ background: "var(--db-bg3)" }}
                                 >
                                     {/* Title */}
                                     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                                         <div style={{
                                             width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                                            background: "rgba(200,255,62,0.08)",
-                                            border: "1px solid rgba(200,255,62,0.15)",
+                                            background: "rgba(var(--primary-rgb),0.08)",
+                                            border: "1px solid rgba(var(--primary-rgb),0.15)",
                                             display: "flex", alignItems: "center", justifyContent: "center",
                                         }}>
-                                            <Code2 size={14} color="#c8ff3e" />
+                                            <Code2 size={14} color="var(--primary)" />
                                         </div>
                                         <span style={{
-                                            fontSize: 14, fontWeight: 600, color: "#e4e5e6",
+                                            fontSize: 14, fontWeight: 600, color: "var(--text-primary)",
                                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                                         }}>
                                             {q.title}
@@ -243,7 +235,7 @@ export default function AdminCodingQuestionListPage() {
                                                 background: "transparent",
                                                 border: "1px solid #2e2f30",
                                                 borderRadius: 6, padding: "5px 9px",
-                                                color: "#8a8b8e", cursor: "pointer",
+                                                color: "var(--text-secondary)", cursor: "pointer",
                                                 display: "inline-flex", alignItems: "center",
                                             }}
                                         >
@@ -276,7 +268,7 @@ export default function AdminCodingQuestionListPage() {
                 )}
 
                 {!loading && !error && questions.length > 0 && (
-                    <p style={{ marginTop: 12, fontSize: 12, color: "#4a4b4e", textAlign: "right" }}>
+                    <p style={{ marginTop: 12, fontSize: 12, color: "var(--text-tertiary)", textAlign: "right" }}>
                         {questions.length} question{questions.length !== 1 ? "s" : ""}
                     </p>
                 )}
@@ -288,3 +280,4 @@ export default function AdminCodingQuestionListPage() {
         </div>
     );
 }
+

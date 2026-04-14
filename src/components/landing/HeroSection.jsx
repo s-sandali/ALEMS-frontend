@@ -64,7 +64,7 @@ export default function HeroSection() {
         <section
             ref={sectionRef}
             className="relative min-h-screen flex items-center pt-24 pb-16 overflow-hidden"
-            style={{ background: "#0C0C0C" }}
+            style={{ background: "var(--bg)" }}
         >
             {/* Animated hole background */}
             <HoleBackground
@@ -80,16 +80,16 @@ export default function HeroSection() {
 
 
                         <h1 ref={headlineRef} className="text-5xl lg:text-7xl font-bold leading-[1.1] mb-6 tracking-tight">
-                            <span className="text-white">Learn Algorithms.</span>
+                            <span className="text-text-primary">Learn Algorithms.</span>
                             <br />
                             <span className="gradient-text">Visually.</span>{" "}
-                            <span className="text-white">Playfully.</span>
+                            <span className="text-text-primary">Playfully.</span>
                         </h1>
 
                         <p
                             ref={subRef}
                             className="text-lg leading-relaxed mb-10 max-w-xl"
-                            style={{ color: "#f8f5f5ff" }}
+                            style={{ color: "var(--text-secondary)" }}
                         >
                             Step-by-step visualisations, gamified quizzes, and real-time
                             feedback built for CS students who want to truly understand algorithms.
@@ -114,3 +114,4 @@ export default function HeroSection() {
         </section>
     );
 }
+
