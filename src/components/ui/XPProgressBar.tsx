@@ -45,12 +45,15 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
   const sizes = sizeVariants[size];
 
   return (
-    <div className={`flex flex-col ${variant === 'default' ? 'space-y-2' : 'space-y-1'} ${className}`}>
+    <div
+      data-testid="dashboard-xp-progress-bar"
+      className={`flex flex-col ${variant === 'default' ? 'space-y-2' : 'space-y-1'} ${className}`}
+    >
       {/* Header with labels */}
       {variant === 'default' && (
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-1">
-            <span className="font-bold" style={{ color: 'var(--primary)' }}>
+            <span data-testid="dashboard-xp-total-value" className="font-bold" style={{ color: 'var(--primary)' }}>
               {xpTotal}
             </span>
             <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
@@ -58,7 +61,7 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
             </span>
           </div>
           {showPercentage && (
-            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <span data-testid="dashboard-xp-progress-percentage" className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
               {Math.round(clampedPercentage)}%
             </span>
           )}
@@ -75,6 +78,7 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
 
       {/* Progress bar container */}
       <div
+        data-testid="dashboard-xp-progress-track"
         className={`relative w-full overflow-hidden rounded-full border ${sizes.container}`}
         style={{
           background: 'rgba(255, 255, 255, 0.05)',
@@ -84,6 +88,7 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
       >
         {/* Animated fill */}
         <motion.div
+          data-testid="dashboard-xp-progress-fill"
           className="h-full rounded-full shadow-lg"
           style={{
             background: 'linear-gradient(to right, var(--primary), var(--accent), #0088ff)',
