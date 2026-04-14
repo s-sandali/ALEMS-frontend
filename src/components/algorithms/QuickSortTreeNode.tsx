@@ -36,7 +36,7 @@ type TileRole = "left" | "pivot" | "right" | "neutral" | "complete" | "pivot_can
 function getTileClass(role: TileRole, isSwapping: boolean, isComparing: boolean): string {
     if (isSwapping) return "border-red-300/70 bg-red-400/20 text-red-50";
     if (isComparing) return "border-yellow-300/65 bg-yellow-300/15 text-yellow-50";
-    if (role === "pivot") return "border-accent/65 bg-accent/22 text-accent shadow-[0_0_10px_rgba(213,255,64,0.25)]";
+    if (role === "pivot") return "border-accent/65 bg-accent/22 text-accent shadow-[0_0_10px_rgba(var(--primary-rgb),0.25)]";
     if (role === "pivot_candidate") return "border-yellow-300/65 bg-yellow-300/16 text-yellow-50";
     if (role === "left") return "border-emerald-400/55 bg-emerald-500/16 text-emerald-100";
     if (role === "right") return "border-sky-400/55 bg-sky-500/16 text-sky-100";
@@ -82,7 +82,7 @@ export default function QuickSortTreeNode({
                         : { duration: 0.2, ease: "easeOut" }}
                     className="pointer-events-none absolute -top-8 z-10 flex flex-col items-center"
                 >
-                    <div className="rounded-full border border-white/12 bg-white/8 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/80">
+                    <div className="rounded-full border border-white/12 bg-white/8 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-text-primary/80">
                         {pointerLabel}
                     </div>
                     <div className="h-2 w-px bg-white/30" />
@@ -114,7 +114,7 @@ export default function QuickSortTreeNode({
 
     if (isComplete) {
         return (
-            <div className={cn("rounded-xl border bg-[#0f1113] px-3 py-2.5", cardBorder)}>
+            <div className={cn("rounded-xl border bg-surface px-3 py-2.5", cardBorder)}>
                 <div className="flex items-center justify-center gap-1">
                     {node.elements.map((value, offset) =>
                         renderTile(value, node.low + offset, "complete"),
@@ -132,7 +132,7 @@ export default function QuickSortTreeNode({
         const rightElements = node.elements.slice(pivotLocalIndex + 1);
 
         return (
-            <div className={cn("rounded-xl border bg-[#0f1113] px-3 py-2.5", cardBorder)}>
+            <div className={cn("rounded-xl border bg-surface px-3 py-2.5", cardBorder)}>
                 <div className="flex items-center justify-center gap-1">
                     {leftElements.map((value, index) =>
                         renderTile(value, node.low + index, "left"),
@@ -153,7 +153,7 @@ export default function QuickSortTreeNode({
     }
 
     return (
-        <div className={cn("rounded-xl border bg-[#0f1113] px-3 py-2.5", cardBorder)}>
+        <div className={cn("rounded-xl border bg-surface px-3 py-2.5", cardBorder)}>
             <div className="flex items-center justify-center gap-1">
                 {node.elements.map((value, offset) =>
                     renderTile(value, node.low + offset, "neutral"),
@@ -162,3 +162,4 @@ export default function QuickSortTreeNode({
         </div>
     );
 }
+

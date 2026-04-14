@@ -700,7 +700,7 @@ export default function QuickSortTreeVisualizer({
             </div>
 
             {/* Main container */}
-            <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#111214] h-[30rem]">
+            <div className="relative overflow-hidden rounded-xl border h-[30rem]" style={{ borderColor: "var(--db-border2)", background: "var(--db-bg3)" }}>
                 {nodesToRender.length > 0 ? (
                     <>
                         {/* SVG edges */}
@@ -814,7 +814,7 @@ export default function QuickSortTreeVisualizer({
 
                         {/* Bottom panel */}
                         {isPracticeMode ? (
-                            <div className="absolute inset-x-0 bottom-0 border-t border-white/8 bg-[#0f1113]/95 px-3 pb-3 pt-2 backdrop-blur-sm">
+                            <div className="absolute inset-x-0 bottom-0 border-t px-3 pb-3 pt-2 backdrop-blur-sm" style={{ borderTopColor: "var(--db-border2)", background: "color-mix(in srgb, var(--db-bg3) 92%, transparent)" }}>
                                 <div className="mb-1.5 flex items-center justify-between text-xs text-text-secondary">
                                     <span>Array view</span>
                                     <span>Click to compare / swap</span>
@@ -857,7 +857,7 @@ export default function QuickSortTreeVisualizer({
                                                             !isFeedbackTarget && !isSelected && isSuggested && "border-accent/60 bg-accent/14 text-accent",
                                                             !isFeedbackTarget && !isSelected && !isSuggested && isPivot && "border-accent/60 bg-accent/25 text-accent",
                                                             !isFeedbackTarget && !isSelected && !isSuggested && !isPivot && isWithinRange && "border-amber-500/50 bg-amber-500/15 text-amber-100",
-                                                            !isFeedbackTarget && !isSelected && !isSuggested && !isPivot && !isWithinRange && "border-white/10 bg-white/[0.04] text-white/70",
+                                                            !isFeedbackTarget && !isSelected && !isSuggested && !isPivot && !isWithinRange && "border-white/10 bg-white/[0.04] text-text-primary/70",
                                                         )}
                                                         aria-label={`Array index ${index}, value ${cell.value}`}
                                                         aria-pressed={isInteractive ? isSelected : undefined}
@@ -879,7 +879,7 @@ export default function QuickSortTreeVisualizer({
                             </div>
                         ) : (
                             // Auto mode — status text bar
-                            <div className="absolute inset-x-0 bottom-0 flex min-h-[3.25rem] items-center justify-center border-t border-white/8 bg-[#0f1113]/95 px-5 backdrop-blur-sm">
+                            <div className="absolute inset-x-0 bottom-0 flex min-h-[3.25rem] items-center justify-center border-t px-5 backdrop-blur-sm" style={{ borderTopColor: "var(--db-border2)", background: "color-mix(in srgb, var(--db-bg3) 92%, transparent)" }}>
                                 <AnimatePresence mode="wait">
                                     <motion.p
                                         key={visualStepIndex}

@@ -8,9 +8,9 @@ import { StudentCodingQuestionService } from "@/lib/api";
 
 const DIFFICULTY_STYLES = {
     easy: {
-        color: "#c8ff3e",
-        bg: "rgba(200,255,62,0.08)",
-        border: "rgba(200,255,62,0.2)",
+        color: "var(--primary)",
+        bg: "rgba(var(--primary-rgb),0.08)",
+        border: "rgba(var(--primary-rgb),0.2)",
     },
     medium: {
         color: "#ffb830",
@@ -26,45 +26,46 @@ const DIFFICULTY_STYLES = {
 
 function CodingChallengeCard({ challenge, onOpen }) {
     const difficultyStyle = DIFFICULTY_STYLES[challenge.difficulty] ?? {
-        color: "#8a8b8e",
+        color: "var(--text-secondary)",
         bg: "rgba(138,139,142,0.08)",
         border: "rgba(138,139,142,0.2)",
     };
 
     return (
-        <motion.div
+        <motion.button
+            type="button"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ borderColor: "rgba(200,255,62,0.28)" }}
             onClick={() => onOpen(challenge.id)}
             data-testid="coding-challenge-card"
+            className="group algo-card relative overflow-hidden rounded-3xl border p-6 text-left"
             style={{
-                background: "#131415",
-                border: "1px solid #252627",
-                borderRadius: 16,
-                padding: "24px",
+                background: "var(--surface)",
+                border: "1px solid var(--db-border)",
                 display: "flex",
                 flexDirection: "column",
-                gap: 16,
+                gap: 18,
                 cursor: "pointer",
-                transition: "border-color 0.2s",
             }}
         >
+            <div className="absolute inset-0 bg-accent/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+            <div className="relative flex h-full flex-col gap-4">
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                 <div
                     style={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: 11,
-                        background: "rgba(200,255,62,0.1)",
-                        border: "1px solid rgba(200,255,62,0.2)",
+                        width: 48,
+                        height: 48,
+                        borderRadius: 14,
+                        background: "rgba(var(--accent-rgb),0.1)",
+                        border: "1px solid rgba(var(--accent-rgb),0.15)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         flexShrink: 0,
                     }}
                 >
-                    <Code2 size={18} color="#c8ff3e" />
+                    <Code2 size={20} color="var(--accent)" />
                 </div>
 
                 <div
@@ -83,29 +84,15 @@ function CodingChallengeCard({ challenge, onOpen }) {
                 </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <h3
-                    style={{
-                        fontSize: 18,
-                        fontWeight: 700,
-                        color: "#e4e5e6",
-                        fontFamily: "'Poppins', sans-serif",
-                        letterSpacing: "-0.3px",
-                        lineHeight: 1.2,
-                        margin: 0,
-                    }}
-                >
+                        className="text-2xl font-bold tracking-tight transition-colors duration-300 group-hover:text-accent"
+                        style={{ color: "var(--db-text)" }}
+                    >
                     {challenge.title}
                 </h3>
 
-                <p
-                    style={{
-                        fontSize: 13,
-                        color: "#8a8b8e",
-                        lineHeight: 1.65,
-                        margin: 0,
-                    }}
-                >
+                <p className="text-sm leading-6 text-text-secondary">
                     {challenge.description}
                 </p>
             </div>
@@ -118,10 +105,10 @@ function CodingChallengeCard({ challenge, onOpen }) {
                             alignItems: "center",
                             gap: 6,
                             fontSize: 11,
-                            color: "#8a8b8e",
-                            background: "#1a1b1c",
-                            border: "1px solid #252627",
-                            borderRadius: 20,
+                            color: "var(--db-text2)",
+                            background: "var(--db-bg3)",
+                            border: "1px solid var(--db-border)",
+                            borderRadius: 999,
                             padding: "4px 10px",
                         }}
                     >
@@ -134,10 +121,10 @@ function CodingChallengeCard({ challenge, onOpen }) {
                     <div
                         style={{
                             fontSize: 11,
-                            color: "#c8ff3e",
-                            background: "rgba(200,255,62,0.08)",
-                            border: "1px solid rgba(200,255,62,0.2)",
-                            borderRadius: 20,
+                            color: "var(--accent)",
+                            background: "rgba(var(--accent-rgb),0.1)",
+                            border: "1px solid rgba(var(--accent-rgb),0.2)",
+                            borderRadius: 999,
                             padding: "4px 10px",
                         }}
                     >
@@ -151,7 +138,7 @@ function CodingChallengeCard({ challenge, onOpen }) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    borderTop: "1px solid #252627",
+                    borderTop: "1px solid var(--db-border)",
                     paddingTop: 14,
                     marginTop: 2,
                 }}
@@ -159,7 +146,7 @@ function CodingChallengeCard({ challenge, onOpen }) {
                 <span
                     style={{
                         fontSize: 11,
-                        color: "#4a4b4e",
+                        color: "var(--db-text3)",
                         textTransform: "uppercase",
                         letterSpacing: "1.5px",
                     }}
@@ -168,20 +155,15 @@ function CodingChallengeCard({ challenge, onOpen }) {
                 </span>
 
                 <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        color: "#c8ff3e",
-                        fontSize: 13,
-                        fontWeight: 600,
-                    }}
+                    className="flex items-center gap-1.5 text-sm font-medium transition-transform duration-300 group-hover:translate-x-1 group-hover:text-accent"
+                    style={{ color: "var(--db-text)" }}
                 >
                     <PlayCircle size={16} />
                     Solve
                 </div>
             </div>
-        </motion.div>
+            </div>
+        </motion.button>
     );
 }
 
@@ -216,40 +198,21 @@ export default function CodingChallengesPage() {
     }, [getToken]);
 
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
             <DashboardNav />
 
-            <main style={{ maxWidth: 1080, margin: "0 auto", padding: "36px 24px 60px" }}>
+            <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 60px" }}>
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
-                    <p
-                        style={{
-                            fontSize: 11,
-                            color: "#4a4b4e",
-                            letterSpacing: "1.5px",
-                            textTransform: "uppercase",
-                            fontFamily: "'Poppins', sans-serif",
-                            marginBottom: 8,
-                        }}
-                    >
-                        Practice Lab
+                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
+                        Practise Lab
                     </p>
 
-                    <h1
-                        style={{
-                            fontSize: 28,
-                            fontWeight: 700,
-                            color: "#e4e5e6",
-                            fontFamily: "'Poppins', sans-serif",
-                            letterSpacing: "-0.5px",
-                            lineHeight: 1.1,
-                            marginBottom: 8,
-                        }}
-                    >
-                        Coding <span style={{ color: "#c8ff3e" }}>Challenges</span>
+                    <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
+                        Coding <span style={{ color: "var(--primary)" }}>Challenges</span>
                     </h1>
 
-                    <p style={{ fontSize: 14, color: "#8a8b8e", lineHeight: 1.7, maxWidth: 720 }}>
-                        Pick a challenge, review the prompt, and run your solution against the live Judge0-backed execution flow.
+                     <p className="mt-4 text-base leading-7 text-text-secondary">
+                        Pick a challenge, and try to solve it.
                     </p>
                 </motion.div>
 
@@ -260,12 +223,12 @@ export default function CodingChallengesPage() {
                             alignItems: "center",
                             justifyContent: "center",
                             gap: 10,
-                            color: "#8a8b8e",
+                            color: "var(--text-secondary)",
                             fontSize: 14,
                             minHeight: 200,
                         }}
                     >
-                        <LoaderCircle size={16} color="#c8ff3e" style={{ animation: "spin 1s linear infinite" }} />
+                        <LoaderCircle size={16} color="var(--primary)" style={{ animation: "spin 1s linear infinite" }} />
                         Loading coding challenges...
                     </div>
                 ) : error ? (
@@ -284,12 +247,12 @@ export default function CodingChallengesPage() {
                 ) : challenges.length === 0 ? (
                     <div
                         style={{
-                            background: "#131415",
-                            border: "1px dashed #2e2f30",
+                            background: "var(--surface)",
+                            border: "1px dashed var(--db-border2)",
                             borderRadius: 16,
                             padding: "48px 24px",
                             textAlign: "center",
-                            color: "#4a4b4e",
+                            color: "var(--text-tertiary)",
                             fontSize: 14,
                         }}
                     >
@@ -299,8 +262,9 @@ export default function CodingChallengesPage() {
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                            gap: 16,
+                            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                            gap: 18,
+                            alignItems: "start",
                         }}
                     >
                         {challenges.map((challenge, index) => (
@@ -326,3 +290,4 @@ export default function CodingChallengesPage() {
         </div>
     );
 }
+

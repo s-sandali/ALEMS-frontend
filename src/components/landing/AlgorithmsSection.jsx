@@ -48,18 +48,18 @@ export default function AlgorithmsSection() {
             id="algorithms"
             ref={sectionRef}
             className="py-24 relative"
-            style={{ background: "#0C0C0C" }}
+            style={{ background: "var(--bg)" }}
         >
             <div className="max-w-[1200px] mx-auto px-6">
                 <div ref={titleRef} className="text-center mb-16">
-                    <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "#D5FF40" }}>
+                    <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--primary)" }}>
                         Core Curriculum
                     </p>
-                    <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
+                    <h2 className="text-4xl lg:text-5xl font-bold text-text-primary tracking-tight">
                         Master Algorithms.{" "}
                         <span className="gradient-text">Gain Infinite Insight.</span>
                     </h2>
-                    <p className="mt-4 max-w-xl mx-auto" style={{ color: "#A1A1A1" }}>
+                    <p className="mt-4 max-w-xl mx-auto" style={{ color: "var(--text-secondary)" }}>
                         Master the fundamentals through interactive exploration and guided challenges.
                     </p>
                 </div>
@@ -71,7 +71,7 @@ export default function AlgorithmsSection() {
                             ref={(el) => (cardsRef.current[i] = el)}
                         >
                             <ElectricBorder
-                                color="#D5FF40"
+                                color="var(--primary)"
                                 speed={1}
                                 chaos={0.12}
                                 borderRadius={16}
@@ -79,28 +79,28 @@ export default function AlgorithmsSection() {
                             >
                                 <div
                                     className="p-6 h-full"
-                                    style={{ background: "#151515", borderRadius: "inherit" }}
+                                    style={{ background: "var(--surface)", borderRadius: "inherit" }}
                                 >
                                     <div
                                         className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                                        style={{ background: "rgba(213,255,64,0.08)", border: "1px solid rgba(213,255,64,0.15)" }}
+                                        style={{ background: "rgba(var(--primary-rgb),0.08)", border: "1px solid rgba(var(--primary-rgb),0.15)" }}
                                     >
-                                        <algo.icon className="w-6 h-6" style={{ color: "#D5FF40" }} />
+                                        <algo.icon className="w-6 h-6" style={{ color: "var(--primary)" }} />
                                     </div>
 
-                                    <h3 className="text-xl font-bold text-white mb-2">{algo.name}</h3>
-                                    <p className="text-sm mb-4 leading-relaxed" style={{ color: "#A1A1A1" }}>{algo.desc}</p>
+                                    <h3 className="text-xl font-bold text-text-primary mb-2">{algo.name}</h3>
+                                    <p className="text-sm mb-4 leading-relaxed" style={{ color: "var(--text-secondary)" }}>{algo.desc}</p>
 
                                     <div className="flex items-center justify-between">
                                         <span
                                             className="font-mono text-sm font-bold"
-                                            style={{ color: "#D5FF40" }}
+                                            style={{ color: "var(--primary)" }}
                                         >
                                             {algo.complexity}
                                         </span>
                                         <span
                                             className="text-xs font-semibold px-3 py-1 rounded-full text-black"
-                                            style={{ background: "#D5FF40" }}
+                                            style={{ background: "var(--primary)" }}
                                         >
                                             {algo.tag}
                                         </span>
@@ -109,9 +109,9 @@ export default function AlgorithmsSection() {
                                     <button
                                         className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
                                         style={{
-                                            background: "rgba(213,255,64,0.08)",
-                                            color: "#D5FF40",
-                                            border: "1px solid rgba(213,255,64,0.2)",
+                                            background: "rgba(var(--primary-rgb),0.08)",
+                                            color: "var(--primary)",
+                                            border: "1px solid rgba(var(--primary-rgb),0.2)",
                                         }}
                                     >
                                         Explore <ChevronRight className="w-4 h-4" />
