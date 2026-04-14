@@ -4,6 +4,7 @@ import { Zap, BookOpen, TrendingUp } from 'lucide-react'
 const cards = [
   {
     label: 'Total XP',
+    testId: 'dashboard-stat-total-xp',
     getValue: u => u.xpTotal ?? 0,
     sub: 'Experience points earned',
     iconColor: 'var(--primary)',
@@ -13,6 +14,7 @@ const cards = [
   },
   {
     label: 'Quizzes Passed',
+    testId: 'dashboard-stat-quizzes-passed',
     getValue: u => u.totalPassed ?? 0,
     sub: 'Quizzes passed',
     iconColor: '#4da6ff',
@@ -22,6 +24,7 @@ const cards = [
   },
   {
     label: 'Pass Rate',
+    testId: 'dashboard-stat-pass-rate',
     getValue: u => u.passRate != null ? `${u.passRate}%` : '-',
     sub: 'Overall pass rate',
     iconColor: '#ffb830',
@@ -44,6 +47,7 @@ export default function StatCards({ user }) {
       {cards.map((card, i) => (
         <motion.div
           key={card.label}
+          data-testid={card.testId}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.08 }}
@@ -60,6 +64,7 @@ export default function StatCards({ user }) {
           <div>
             <h1 className="text-4xl mb-4 font-bold tracking-tight text-text-primary sm:text-xl">{card.label}</h1>
             <p
+              data-testid={`${card.testId}-value`}
               style={{
                 fontSize: 26,
                 fontWeight: 700,

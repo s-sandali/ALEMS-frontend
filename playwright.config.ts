@@ -1,9 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
+import fs from "node:fs";
 
 // Load local env files for Playwright's Node process. Vite does this for the app,
 // but Playwright needs the variables available before config and setup code run.
-process.loadEnvFile?.(".env");
-process.loadEnvFile?.(".env.local");
+if (fs.existsSync(".env")) {
+    process.loadEnvFile?.(".env");
+}
+
+if (fs.existsSync(".env.local")) {
+    process.loadEnvFile?.(".env.local");
+}
 
 const baseURL = process.env.PLAYWRIGHT_FRONTEND_URL ?? "http://localhost:5173";
 const backendUrl = process.env.PLAYWRIGHT_API_BASE_URL ?? process.env.VITE_API_BASE_URL ?? "http://localhost:5181/api";
@@ -39,7 +45,7 @@ export default defineConfig({
         ? undefined
         : [
             {
-                command: "dotnet run --project ..\\backend\\backend.csproj --launch-profile http",
+                command: "dotnet run --project ..\\..\\backend\\ALEMS-backend\\backend.csproj --launch-profile http",
                 url: "http://127.0.0.1:5181/api/health",
                 reuseExistingServer: true,
                 timeout: 120_000,
