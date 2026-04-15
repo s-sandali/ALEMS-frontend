@@ -20,6 +20,7 @@ async function fulfillJson(route: Route, payload: unknown): Promise<void> {
 
 test("dashboard consumes mocked XP and attempt data from API @smoke", async ({ page }) => {
     const studentId = 987;
+    const pageSize = 3;
 
     const progressionResponse = {
         status: "success",
@@ -72,7 +73,7 @@ test("dashboard consumes mocked XP and attempt data from API @smoke", async ({ p
                 },
             ],
             performanceSummary: {
-                totalAttempts: 3,
+                totalAttempts: 5,
                 totalPassed: 2,
                 passRate: 66.7,
                 averageScore: 78.3,
@@ -80,7 +81,19 @@ test("dashboard consumes mocked XP and attempt data from API @smoke", async ({ p
             },
             quizAttemptHistory: [
                 {
-                    attemptId: 5001,
+                    attemptId: 5003,
+                    quizId: 33,
+                    quizTitle: "Mock Merge Sort Quiz (Newest)",
+                    algorithmName: "Merge Sort",
+                    score: 9,
+                    totalQuestions: 10,
+                    scorePercent: 90,
+                    xpEarned: 50,
+                    passed: true,
+                    completedAt: "2026-04-12T09:00:00Z",
+                },
+                {
+                    attemptId: 5002,
                     quizId: 33,
                     quizTitle: "Mock Quick Sort Quiz",
                     algorithmName: "Quick Sort",
@@ -91,7 +104,26 @@ test("dashboard consumes mocked XP and attempt data from API @smoke", async ({ p
                     passed: true,
                     completedAt: "2026-04-11T09:00:00Z",
                 },
+                {
+                    attemptId: 5001,
+                    quizId: 33,
+                    quizTitle: "Mock Bubble Sort Quiz",
+                    algorithmName: "Bubble Sort",
+                    score: 7,
+                    totalQuestions: 10,
+                    scorePercent: 70,
+                    xpEarned: 30,
+                    passed: true,
+                    completedAt: "2026-04-10T09:00:00Z",
+                },
             ],
+            // Frontend renders only the history payload returned for the current page.
+            quizAttemptHistoryPagination: {
+                page: 1,
+                pageSize,
+                totalItems: 5,
+                totalPages: 2,
+            },
             algorithmCoverage: [
                 {
                     algorithmId: 3,
@@ -147,10 +179,25 @@ test("dashboard consumes mocked XP and attempt data from API @smoke", async ({ p
     await expect(page.getByTestId("dashboard-xp-total-value")).toHaveText("420");
 
     await expect(page.getByTestId("dashboard-attempt-history-table")).toBeVisible();
-    const attemptRow = page.getByTestId("dashboard-attempt-row-5001");
-    await expect(attemptRow).toContainText("Mock Quick Sort Quiz");
-    await expect(attemptRow).toContainText("Quick Sort");
-    await expect(page.getByTestId("dashboard-attempt-row-5001-xp")).toContainText("+40");
+    const attemptRows = page.locator('[data-testid^="dashboard-attempt-row-"]');
+    await expect(attemptRows).toHaveCount(pageSize);
+
+    await expect(attemptRows.nth(0)).toContainText("Mock Merge Sort Quiz (Newest)");
+    await expect(attemptRows.nth(1)).toContainText("Mock Quick Sort Quiz");
+    await expect(attemptRows.nth(2)).toContainText("Mock Bubble Sort Quiz");
+    await expect(page.getByTestId("dashboard-attempt-row-5003-xp")).toContainText("+50");
+
+    // Page-2 data is intentionally excluded from the page-1 payload and must not render.
+    await expect(page.getByText("Mock Heap Sort Quiz (Page 2)")).toHaveCount(0);
+
+    const rowDates = await attemptRows.evaluateAll((rows) =>
+        rows.map((row) => row.querySelector("td:last-child")?.textContent?.trim() ?? ""),
+    );
+    const firstDate = Date.parse(rowDates[0]);
+    const secondDate = Date.parse(rowDates[1]);
+    const thirdDate = Date.parse(rowDates[2]);
+    expect(firstDate).toBeGreaterThanOrEqual(secondDate);
+    expect(secondDate).toBeGreaterThanOrEqual(thirdDate);
 
     const earnedBadges = page.locator('[data-testid="dashboard-badge-card"][data-badge-status="earned"]');
     const lockedBadges = page.locator('[data-testid="dashboard-badge-card"][data-badge-status="locked"]');

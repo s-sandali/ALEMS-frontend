@@ -405,6 +405,21 @@ async function run() {
             );
         }
 
+        const attemptRows = await driver.findElements(By.css("[data-testid^='dashboard-attempt-row-']"));
+        if (attemptRows.length > 1) {
+            const firstRowDateText = await attemptRows[0].findElement(By.css("td:last-child")).getText();
+            const secondRowDateText = await attemptRows[1].findElement(By.css("td:last-child")).getText();
+
+            const firstRowDate = Date.parse(firstRowDateText);
+            const secondRowDate = Date.parse(secondRowDateText);
+
+            if (!Number.isNaN(firstRowDate) && !Number.isNaN(secondRowDate) && firstRowDate < secondRowDate) {
+                throw new Error(
+                    `Attempt history is not sorted most-recent-first. First row date=${firstRowDateText}, second row date=${secondRowDateText}`,
+                );
+            }
+        }
+
         console.log("Selenium E2E passed:");
         console.log(`- Quiz title: ${quizTitle}`);
         console.log(`- Score: ${scorePercent}%`);

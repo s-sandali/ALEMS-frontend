@@ -12,6 +12,11 @@ function parseEarnedBadgesCount(value: string): number {
     return match ? Number.parseInt(match[1], 10) : 0;
 }
 
+function parseDateTextToEpoch(value: string): number {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+}
+
 async function answerVisibleQuestion(page: Page, option: "A" | "B" | "C" | "D" = "A") {
     await expect(page.getByTestId("quiz-question-card")).toBeVisible();
     await page.getByTestId(`quiz-option-${option}`).click();
@@ -78,6 +83,17 @@ test("student can complete a quiz and retry it without duplicate XP @smoke", asy
 
     expect(afterFirstEarnedBadges).toBeGreaterThanOrEqual(beforeEarnedBadges);
 
+    const historyRowsAfterFirstAttempt = page.locator('[data-testid^="dashboard-attempt-row-"]');
+    const firstAttemptHistoryCount = await historyRowsAfterFirstAttempt.count();
+    expect(firstAttemptHistoryCount).toBeGreaterThan(0);
+
+    if (firstAttemptHistoryCount > 1) {
+        const newestDateText = await historyRowsAfterFirstAttempt.nth(0).locator("td").last().innerText();
+        const nextDateText = await historyRowsAfterFirstAttempt.nth(1).locator("td").last().innerText();
+
+        expect(parseDateTextToEpoch(newestDateText)).toBeGreaterThanOrEqual(parseDateTextToEpoch(nextDateText));
+    }
+
     await page.getByText("Start Quiz").first().click();
     await completeQuizAttempt(page);
 
@@ -91,4 +107,14 @@ test("student can complete a quiz and retry it without duplicate XP @smoke", asy
 
     expect(afterRetryXp).toBe(afterFirstXp);
     expect(afterRetryEarnedBadges).toBe(afterFirstEarnedBadges);
+
+    const historyRowsAfterRetry = page.locator('[data-testid^="dashboard-attempt-row-"]');
+    const retryHistoryCount = await historyRowsAfterRetry.count();
+
+    if (retryHistoryCount > 1) {
+        const newestDateText = await historyRowsAfterRetry.nth(0).locator("td").last().innerText();
+        const secondDateText = await historyRowsAfterRetry.nth(1).locator("td").last().innerText();
+
+        expect(parseDateTextToEpoch(newestDateText)).toBeGreaterThanOrEqual(parseDateTextToEpoch(secondDateText));
+    }
 });
