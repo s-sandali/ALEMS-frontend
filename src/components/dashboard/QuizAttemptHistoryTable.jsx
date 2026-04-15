@@ -56,7 +56,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
         overflow: 'hidden',
       }}>
         {attempts.length === 0 ? (
-          <div style={{
+          <div data-testid="dashboard-attempt-history-empty" style={{
             padding: '36px 24px',
             textAlign: 'center',
             color: 'var(--text-tertiary)',
@@ -66,7 +66,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table data-testid="dashboard-attempt-history-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#0f1011' }}>
                   <th style={TH_STYLE}>Quiz</th>
@@ -81,6 +81,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
                 {attempts.map((attempt, i) => (
                   <motion.tr
                     key={attempt.attemptId}
+                    data-testid={`dashboard-attempt-row-${attempt.attemptId}`}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
@@ -133,7 +134,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
                     </td>
 
                     {/* XP */}
-                    <td style={{ ...TD_STYLE, textAlign: 'center' }}>
+                    <td data-testid={`dashboard-attempt-row-${attempt.attemptId}-xp`} style={{ ...TD_STYLE, textAlign: 'center' }}>
                       {attempt.xpEarned > 0 ? (
                         <span style={{
                           display: 'inline-flex',
