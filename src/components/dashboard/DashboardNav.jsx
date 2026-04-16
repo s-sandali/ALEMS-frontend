@@ -16,6 +16,7 @@ const navItems = [
 const adminNavItems = [
   { label: "Manage Quizzes", icon: BookOpen, path: "/admin/quizzes" },
   { label: "Manage Challenges", icon: Code2, path: "/admin/coding-questions" },
+  { label: "Reports", icon: List, path: "/admin/reports" },
 ];
 
 function isActivePath(pathname, path) {
@@ -37,6 +38,10 @@ function isActivePath(pathname, path) {
     return pathname === path
       || pathname.startsWith("/coding-challenges/")
       || pathname.startsWith("/admin/coding-questions");
+  }
+
+  if (path === "/admin/reports") {
+    return pathname === path;
   }
 
   return pathname === path;

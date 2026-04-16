@@ -9,6 +9,7 @@ import QuizPage from "./pages/QuizPage";
 import QuizzesPage from "./pages/QuizzesPage";
 import AdminQuizListPage from "./pages/AdminQuizListPage";
 import AdminQuizFormPage from "./pages/AdminQuizFormPage";
+import AdminReportsPage from "./pages/AdminReportsPage";
 import CodingChallengesPage from "./pages/CodingChallengesPage";
 import CodingChallengePage from "./pages/CodingChallengePage";
 import AdminCodingQuestionListPage from "./pages/AdminCodingQuestionListPage";
@@ -139,6 +140,15 @@ export default function App() {
                     element={
                         <ProtectedRoute>
                             <AdminCodingQuestionFormPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/reports"
+                    element={
+                        <ProtectedRoute>
+                            <AdminReportsPage />
                         </ProtectedRoute>
                     }
                 />
