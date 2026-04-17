@@ -406,6 +406,15 @@ export const QuizService = {
     delete: (id: number, getToken: GetTokenFn) =>
         apiFetch(`/quizzes/${id}`, { method: "DELETE", getToken }) as
             Promise<null>,
+
+    /**
+     * GET /quizzes/{id}/stats
+     * Admin only. Retrieves statistics for a specific quiz including attempt count,
+     * average score, and pass rate.
+     */
+    getStats: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${id}/stats`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizStats }>,
 };
 
 // ── Quiz question service ──────────────────────────────────────────────────────
@@ -723,6 +732,12 @@ export type LeaderboardEntry = {
     attemptCount: number;
     averageScore: number;
     rank: number;
+};
+
+export type QuizStats = {
+    attemptCount: number;
+    averageScore: number;
+    passRate: number;
 };
 
 // ── Admin service ──────────────────────────────────────────────────────────────

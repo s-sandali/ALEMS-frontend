@@ -13,6 +13,7 @@ import CodingChallengePage from "./pages/CodingChallengePage";
 import AdminCodingQuestionListPage from "./pages/AdminCodingQuestionListPage";
 import AdminCodingQuestionFormPage from "./pages/AdminCodingQuestionFormPage";
 import AdminLeaderboardPage from "./pages/AdminLeaderboardPage";
+import QuizStatsPage from "./pages/QuizStatsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -116,6 +117,15 @@ export default function App() {
                     element={
                         <ProtectedRoute>
                             <AdminLeaderboardPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/quizzes/:quizId/stats"
+                    element={
+                        <ProtectedRoute>
+                            <QuizStatsPage />
                         </ProtectedRoute>
                     }
                 />
