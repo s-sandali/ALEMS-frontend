@@ -713,6 +713,31 @@ export const StudentService = {
             Promise<{ status: string; data: StudentDashboard }>,
 };
 
+// ── Admin types ────────────────────────────────────────────────────────────────
+
+export type LeaderboardEntry = {
+    userId: number;
+    username: string;
+    email: string;
+    xpTotal: number;
+    attemptCount: number;
+    averageScore: number;
+    rank: number;
+};
+
+// ── Admin service ──────────────────────────────────────────────────────────────
+
+export const AdminService = {
+    /**
+     * GET /admin/leaderboard
+     * Admin only. Retrieves all users ranked by total XP in descending order.
+     * Each entry includes the user's attempt count and average quiz score.
+     */
+    getLeaderboard: (getToken: GetTokenFn) =>
+        apiFetch("/admin/leaderboard", { method: "GET", getToken }) as
+            Promise<{ data: LeaderboardEntry[] } | LeaderboardEntry[]>,
+};
+
 export const SimulationService = {
     /**
      * POST /simulation/run
