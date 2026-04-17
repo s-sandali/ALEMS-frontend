@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { UserButton } from "@clerk/clerk-react";
-import { BookOpen, Code2, LayoutDashboard, List, Menu, ShieldCheck, X, Zap } from "lucide-react";
+import { BookOpen, Code2, LayoutDashboard, List, Menu, ShieldCheck, TrendingUp, X, Zap } from "lucide-react";
 import { useRole } from "../../context/RoleContext";
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
 const adminNavItems = [
   { label: "Manage Quizzes", icon: BookOpen, path: "/admin/quizzes" },
   { label: "Manage Challenges", icon: Code2, path: "/admin/coding-questions" },
+  { label: "Leaderboard", icon: TrendingUp, path: "/admin/leaderboard" },
 ];
 
 function isActivePath(pathname, path) {
