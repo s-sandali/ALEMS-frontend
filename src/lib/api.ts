@@ -709,6 +709,28 @@ export type StudentDashboard = {
     allBadges: BadgeDashboard[];
 };
 
+export type UserAttemptHistory = {
+    attemptId: number;
+    quizId: number;
+    quizTitle: string;
+    algorithmName: string;
+    score: number;
+    xpEarned: number;
+    passed: boolean;
+    completedAt: string | null;
+    startedAt: string;
+};
+
+export type StudentAttemptHistoryResponse = {
+    attempts: UserAttemptHistory[];
+    page: number;
+    pageSize: number;
+    totalAttempts: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+};
+
 // ── Student service ────────────────────────────────────────────────────────────
 
 export const StudentService = {
@@ -720,6 +742,15 @@ export const StudentService = {
     getDashboard: (studentId: number, getToken: GetTokenFn) =>
         apiFetch(`/students/${studentId}/dashboard`, { method: "GET", getToken }) as
             Promise<{ status: string; data: StudentDashboard }>,
+
+    /**
+     * GET /students/{id}/attempts
+     * Returns paginated quiz attempt history for a student, including quiz title, algorithm,
+     * score, XP earned, and attempt dates.
+     */
+    getAttemptHistory: (studentId: number, page: number = 1, pageSize: number = 10, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/attempts?page=${page}&pageSize=${pageSize}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentAttemptHistoryResponse }>,
 };
 
 // ── Admin types ────────────────────────────────────────────────────────────────

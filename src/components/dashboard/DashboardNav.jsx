@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { UserButton } from "@clerk/clerk-react";
-import { BookOpen, Code2, LayoutDashboard, List, Menu, ShieldCheck, TrendingUp, X, Zap } from "lucide-react";
+import { BookOpen, Code2, LayoutDashboard, List, Menu, ShieldCheck, TrendingUp, X, Zap, History } from "lucide-react";
 import { useRole } from "../../context/RoleContext";
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { label: "Algorithms", icon: List, path: "/algorithms" },
   { label: "Quizzes", icon: BookOpen, path: "/quizzes" },
   { label: "Challenges", icon: Code2, path: "/coding-challenges" },
+  { label: "My Attempts", icon: History, path: "/my-attempts" },
 ];
 
 const adminNavItems = [
@@ -36,6 +37,10 @@ function isActivePath(pathname, path) {
     return pathname === path
       || pathname.startsWith("/coding-challenges/")
       || pathname.startsWith("/admin/coding-questions");
+  }
+
+  if (path === "/my-attempts") {
+    return pathname === path;
   }
 
   return pathname === path;
