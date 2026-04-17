@@ -16,6 +16,7 @@ import AdminLeaderboardPage from "./pages/AdminLeaderboardPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
+import AdminStudentProfilePage from "./pages/AdminStudentProfilePage";
 import QuizStatsPage from "./pages/QuizStatsPage";
 import StudentAttemptHistoryPage from "./pages/StudentAttemptHistoryPage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -109,6 +110,7 @@ export default function App() {
                                     <Route path="/" element={<AdminDashboard />} />
                                     <Route path="/analytics" element={<AdminAnalyticsPage />} />
                                     <Route path="/users" element={<AdminUsersPage />} />
+                                    <Route path="/students/:id" element={<AdminStudentProfilePage />} />
                                     <Route path="/quizzes" element={<AdminQuizListPage />} />
                                     <Route path="/quizzes/new" element={<AdminQuizFormPage />} />
                                     <Route path="/quizzes/:id/edit" element={<AdminQuizFormPage />} />
