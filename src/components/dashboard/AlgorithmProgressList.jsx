@@ -1,61 +1,41 @@
-import { motion } from 'motion/react'
+﻿import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 
-const CIRCUMFERENCE = 2 * Math.PI * 19 // ≈ 119.4
+const CIRCUMFERENCE = 2 * Math.PI * 20 // r=20 -> ~125.7
 
 function ProgressRing({ percent, accentColor, locked, index }) {
-  const targetOffset = CIRCUMFERENCE * (1 - percent / 100)
+  const offset = CIRCUMFERENCE * (1 - percent / 100)
 
   return (
-    <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
-      <svg
-        width={48}
-        height={48}
-        style={{ transform: 'rotate(-90deg)' }}
-        viewBox="0 0 48 48"
-      >
+    <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
+      <svg width={56} height={56} style={{ transform: 'rotate(-90deg)' }} viewBox="0 0 56 56">
         {/* Track */}
-        <circle
-          cx={24}
-          cy={24}
-          r={19}
-          stroke="#252627"
-          strokeWidth={3}
-          fill="none"
-        />
-        {/* Progress */}
+        <circle cx={28} cy={28} r={20} stroke="#252627" strokeWidth={3.5} fill="none" />
+        {/* Progress arc */}
         {!locked && percent > 0 && (
           <motion.circle
-            cx={24}
-            cy={24}
-            r={19}
+            cx={28} cy={28} r={20}
             stroke={accentColor}
-            strokeWidth={3}
+            strokeWidth={3.5}
             fill="none"
             strokeLinecap="round"
             strokeDasharray={CIRCUMFERENCE}
             initial={{ strokeDashoffset: CIRCUMFERENCE }}
-            animate={{ strokeDashoffset: targetOffset }}
-            transition={{ duration: 1, ease: 'easeOut', delay: index * 0.1 }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1.1, ease: 'easeOut', delay: index * 0.08 }}
           />
         )}
       </svg>
-      {/* Percent label */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 10,
-          fontFamily: "'Poppins', sans-serif",
-          color: locked ? '#4a4b4e' : accentColor,
-          fontWeight: 600,
-        }}
-      >
-        {locked ? '—' : `${percent}%`}
+      {/* Centre label */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 11, fontWeight: 700,
+        fontFamily: "'Poppins', sans-serif",
+        color: locked ? '#3a3b3e' : accentColor,
+      }}>
+        {locked ? '0%' : `${percent}%`}
       </div>
     </div>
   )
@@ -65,67 +45,65 @@ export default function AlgorithmProgressList({ algorithms }) {
   const navigate = useNavigate()
 
   return (
-    <div
-      style={{
-        background: '#131415',
-        border: '1px solid #252627',
-        borderRadius: 12,
-        padding: 20,
-      }}
-    >
+    <div style={{
+      background: 'var(--surface)',
+      border: '1px solid #252627',
+      borderRadius: 14,
+      padding: '20px',
+    }}>
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-        }}
-      >
-        <span style={{ fontSize: 15, fontWeight: 600, color: '#e4e5e6' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', marginBottom: 16,
+      }}>
+        
+        
+        <h2 className="text-4xl font-bold tracking-tight text-text-primary sm:text-3xl">
           Algorithm progress
-        </span>
+        </h2>
         <button
           onClick={() => navigate('/algorithms')}
           style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 12,
-            color: '#4a4b4e',
-            transition: 'color 0.15s',
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 12, color: 'var(--text-tertiary)', transition: 'color 0.15s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#c8ff3e')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#4a4b4e')}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--primary)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
         >
-          View all →
+          {"View all ->"}
         </button>
       </div>
 
-      {/* List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {/* Algorithm cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {algorithms.map((algo, i) => {
           const isLocked = algo.status === 'locked'
+
           return (
             <motion.div
               key={algo.id}
-              whileHover={!isLocked ? { x: 2 } : {}}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06 }}
+              whileHover={!isLocked ? { y: -1 } : {}}
               onClick={() => !isLocked && navigate(algo.route)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 14,
-                padding: 12,
-                borderRadius: 10,
+                gap: 18,
+                padding: '16px 20px',
+                background: '#0f1011',
+                border: `1px solid ${isLocked ? '#1e1f20' : '#252627'}`,
+                borderRadius: 12,
                 cursor: isLocked ? 'default' : 'pointer',
-                opacity: isLocked ? 0.4 : 1,
-                transition: 'background 0.15s',
+                opacity: isLocked ? 0.45 : 1,
+                transition: 'border-color 0.15s, background 0.15s',
               }}
               onMouseEnter={e => {
-                if (!isLocked) e.currentTarget.style.background = '#181919'
+                if (!isLocked) e.currentTarget.style.borderColor = algo.accentColor + '44'
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.background = 'transparent'
+                if (!isLocked) e.currentTarget.style.borderColor = '#252627'
               }}
             >
               <ProgressRing
@@ -135,34 +113,27 @@ export default function AlgorithmProgressList({ algorithms }) {
                 index={i}
               />
 
-              {/* Text block */}
+              {/* Text */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: '#e4e5e6',
-                    marginBottom: 2,
-                  }}
-                >
+                <h2 className="text-4xl font-bold tracking-tight text-text-primary sm:text-xl">
                   {algo.name}
+                </h2>
+                <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 8 }}>
+                  {algo.category} - {algo.difficulty}
                 </p>
-                <p style={{ fontSize: 11, color: '#4a4b4e', marginBottom: 6 }}>
-                  {algo.category} · {algo.difficulty}
-                </p>
-                {/* Complexity pills */}
-                <div style={{ display: 'flex', gap: 5 }}>
-                  {[algo.timeComplexity, algo.spaceComplexity].map(c => (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[algo.timeComplexity, algo.spaceComplexity].filter(c => c && c !== '-').map(c => (
                     <span
                       key={c}
                       style={{
                         fontSize: 10,
                         fontFamily: "'Poppins', sans-serif",
-                        padding: '2px 7px',
-                        borderRadius: 4,
-                        background: algo.accentDim,
-                        border: `1px solid ${algo.accentColor}33`,
-                        color: isLocked ? '#4a4b4e' : algo.accentColor,
+                        padding: '3px 9px',
+                        borderRadius: 5,
+                        background: isLocked ? 'var(--surface-2)' : algo.accentDim,
+                        border: `1px solid ${isLocked ? '#252627' : algo.accentColor + '33'}`,
+                        color: isLocked ? '#3a3b3e' : algo.accentColor,
+                        letterSpacing: '0.2px',
                       }}
                     >
                       {c}
@@ -171,35 +142,28 @@ export default function AlgorithmProgressList({ algorithms }) {
                 </div>
               </div>
 
-              {/* Quiz score or lock */}
+              {/* Right side: quizzes count or lock */}
               {isLocked ? (
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 6,
-                    background: '#1f2020',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Lock size={12} color="#4a4b4e" />
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8,
+                  background: 'var(--surface-2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Lock size={13} color="#3a3b3e" />
                 </div>
               ) : (
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <p
-                    style={{
-                      fontSize: 13,
-                      fontFamily: "'Poppins', sans-serif",
-                      fontWeight: 600,
-                      color: algo.accentColor,
-                    }}
-                  >
+                  <p style={{
+                    fontSize: 20, fontWeight: 700,
+                    fontFamily: "'Poppins', sans-serif",
+                    color: algo.accentColor, lineHeight: 1.1,
+                  }}>
                     {algo.quizzesDone}/{algo.quizzesTotal}
                   </p>
-                  <p style={{ fontSize: 10, color: '#4a4b4e' }}>Quizzes done</p>
+                  <p style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                    Quizzes done
+                  </p>
                 </div>
               )}
             </motion.div>
@@ -209,3 +173,4 @@ export default function AlgorithmProgressList({ algorithms }) {
     </div>
   )
 }
+

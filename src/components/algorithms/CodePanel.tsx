@@ -183,10 +183,10 @@ export default function CodePanel({
     return (
         <section
             className={cn(
-                "overflow-hidden rounded-[2rem] bg-surface",
+                "overflow-hidden rounded-[2rem]",
                 className,
             )}
-            style={{ border: "1px solid var(--db-border)" }}
+            style={{ border: "1px solid var(--db-border)", background: "var(--surface)" }}
         >
             <div className="flex items-center justify-between gap-4 px-5 py-4" style={{ borderBottom: "1px solid var(--db-border)" }}>
                 <div className="flex items-center gap-3">
@@ -274,7 +274,7 @@ export default function CodePanel({
                 </div>
 
                 {activeSnippet ? (
-                    <div className="pointer-events-none absolute bottom-4 right-4 rounded-lg border border-white/10 bg-bg/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+                    <div className="pointer-events-none absolute bottom-4 right-4 rounded-lg border border-border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary" style={{ background: "color-mix(in srgb, var(--surface) 80%, transparent)" }}>
                         {activeSnippet.language}
                     </div>
                 ) : null}

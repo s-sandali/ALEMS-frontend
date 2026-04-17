@@ -60,14 +60,14 @@ export default function HowItWorksSection() {
             id="how-it-works"
             ref={sectionRef}
             className="py-24"
-            style={{ background: "#0C0C0C" }}
+            style={{ background: "var(--bg)" }}
         >
             <div className="max-w-[1200px] mx-auto px-6">
                 <div ref={titleRef} className="text-center mb-16">
-                    <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "#D5FF40" }}>
+                    <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--primary)" }}>
                         How It Works
                     </p>
-                    <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
+                    <h2 className="text-4xl lg:text-5xl font-bold text-text-primary tracking-tight">
                         From confused to{" "}
                         <span className="gradient-text">confident in 3 steps</span>
                     </h2>
@@ -80,7 +80,7 @@ export default function HowItWorksSection() {
                             ref={lineRef}
                             style={{
                                 height: "2px",
-                                background: "linear-gradient(90deg, #D5FF40, #a8e600, #D5FF40)",
+                                background: "linear-gradient(90deg, var(--primary), #a8e600, var(--primary))",
                                 transformOrigin: "left",
                                 scaleX: 0,
                             }}
@@ -97,18 +97,18 @@ export default function HowItWorksSection() {
                             <div
                                 className="w-20 h-20 rounded-full flex items-center justify-center mb-6 font-bold text-2xl text-black relative"
                                 style={{
-                                    background: "rgba(213,255,64,0.15)",
-                                    border: "2px solid rgba(213,255,64,0.4)",
-                                    boxShadow: "0 0 24px rgba(213,255,64,0.2)",
-                                    color: "#D5FF40",
+                                    background: "rgba(var(--primary-rgb),0.15)",
+                                    border: "2px solid rgba(var(--primary-rgb),0.4)",
+                                    boxShadow: "0 0 24px rgba(var(--primary-rgb),0.2)",
+                                    color: "var(--primary)",
                                 }}
                             >
                                 {step.num}
                             </div>
 
                             <div className="glass rounded-2xl p-6 w-full">
-                                <h3 className="text-xl font-semibold text-white mb-3">{step.title}</h3>
-                                <p className="text-sm leading-relaxed" style={{ color: "#A1A1A1" }}>{step.desc}</p>
+                                <h3 className="text-xl font-semibold text-text-primary mb-3">{step.title}</h3>
+                                <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{step.desc}</p>
                             </div>
                         </div>
                     ))}
@@ -117,3 +117,4 @@ export default function HowItWorksSection() {
         </section>
     );
 }
+

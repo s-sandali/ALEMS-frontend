@@ -80,13 +80,14 @@ export default function AlgorithmIntroductionSection({
     return (
         <section
             ref={sectionRef}
-            className="rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-8 lg:p-10"
+            className="rounded-[2rem] border p-6 sm:p-8 lg:p-10"
+            style={{ borderColor: "var(--db-border)", background: "var(--surface)" }}
         >
             <div ref={titleRef} className="max-w-4xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
                     {introduction.eyebrow}
                 </p>
-                <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                <h2 className="mt-4 text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
                     {introduction.title}
                 </h2>
 
@@ -113,9 +114,10 @@ export default function AlgorithmIntroductionSection({
                                 "rounded-[1.5rem] border p-5 text-left transition-all duration-300",
                                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
                                 isActive
-                                    ? "border-accent bg-accent/8 shadow-[0_0_0_1px_rgba(213,255,64,0.1)]"
-                                    : "border-white/[0.08] bg-bg/40 hover:border-accent/30 hover:bg-white/[0.02]",
+                                    ? "border-accent bg-accent/8 shadow-[0_0_0_1px_rgba(var(--primary-rgb),0.1)]"
+                                    : "hover:border-accent/30",
                             )}
+                            style={!isActive ? { borderColor: "var(--db-border2)", background: "var(--surface)" } : undefined}
                         >
                             <div className={cn(
                                 "text-4xl font-bold tracking-tight",
@@ -124,7 +126,7 @@ export default function AlgorithmIntroductionSection({
                                 {item.num}
                             </div>
 
-                            <h3 className="mt-4 text-xl font-semibold text-white">
+                            <h3 className="mt-4 text-xl font-semibold text-text-primary">
                                 {item.title}
                             </h3>
                             <p className="mt-3 text-sm leading-7 text-text-secondary">
@@ -137,3 +139,4 @@ export default function AlgorithmIntroductionSection({
         </section>
     );
 }
+

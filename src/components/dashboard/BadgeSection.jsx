@@ -8,7 +8,7 @@ export default function BadgeSection({ badges }) {
     if (!badges || badges.length === 0) {
         return (
             <div className="rounded-xl border border-white/[0.06] bg-surface p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Badges</h3>
+                 <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">Badges</h1>
                 <p className="text-sm text-text-secondary">
                     Complete modules to earn your first badge!
                 </p>
@@ -32,7 +32,7 @@ export default function BadgeSection({ badges }) {
 
     return (
         <div className="rounded-xl border border-white/[0.06] bg-surface p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Badges</h3>
+            <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">Badges</h1>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                 {badges.map((badge) => {
                     const awardedDate = formatDate(badge.awardDate);
@@ -44,7 +44,7 @@ export default function BadgeSection({ badges }) {
                                 "flex flex-col items-center gap-2 p-4 rounded-lg border transition-all duration-300",
                                 badge.earned
                                     ? "border-accent/20 bg-accent/5 hover:border-accent/40 hover:shadow-md hover:shadow-accent/10"
-                                    : "border-white/[0.04] bg-white/[0.02] opacity-40 grayscale"
+                                    : "border-white/[0.06] bg-white/[0.01] grayscale"
                             )}
                             title={badge.earned && awardedDate ? `Earned on ${awardedDate}` : undefined}
                         >

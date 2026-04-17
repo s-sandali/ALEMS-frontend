@@ -14,7 +14,7 @@ import {
     type CodeExecutionResult,
 } from "@/lib/api";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// -- Constants -----------------------------------------------------------------
 
 const LANGUAGE_MAP: Record<number, string> = {
     71: "python",
@@ -40,7 +40,7 @@ const DIFFICULTY_COLOR: Record<string, string> = {
 
 type ViewState = "idle" | "running" | "done" | "error";
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// -- Component -----------------------------------------------------------------
 
 export default function CodingChallengePage() {
     const { id } = useParams<{ id: string }>();
@@ -70,7 +70,7 @@ export default function CodingChallengePage() {
         return () => { isMounted.current = false; };
     }, []);
 
-    // ── Load question + languages on mount ───────────────────────────────────
+    // -- Load question + languages on mount -----------------------------------
 
     const load = useCallback(async () => {
         setPageView("loading");
@@ -99,7 +99,7 @@ export default function CodingChallengePage() {
 
     useEffect(() => { load(); }, [load]);
 
-    // ── Language change: reset editor to starter template ────────────────────
+    // -- Language change: reset editor to starter template --------------------
 
     function handleLanguageChange(langId: number) {
         setSelectedLang(langId);
@@ -108,7 +108,7 @@ export default function CodingChallengePage() {
         setExecResult(null);
     }
 
-    // ── Run code ─────────────────────────────────────────────────────────────
+    // -- Run code -------------------------------------------------------------
 
     async function handleRun() {
         if (execView === "running") return;
@@ -145,12 +145,12 @@ export default function CodingChallengePage() {
         setExecError("");
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
+    // -- Render ----------------------------------------------------------------
 
     const isRunning = execView === "running";
 
     return (
-        <div className="min-h-screen bg-bg">
+        <div className="min-h-screen" style={{ background: "var(--bg)" }}>
             <DashboardNav />
 
             <main className="mx-auto max-w-7xl px-6 py-8">
@@ -159,7 +159,7 @@ export default function CodingChallengePage() {
                 {pageView === "loading" && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--db-text2)", fontSize: 14, minHeight: 240 }}>
                         <LoaderCircle size={16} className="animate-spin" style={{ color: "var(--accent)" }} />
-                        Loading challenge…
+                        Loading challenge...
                     </div>
                 )}
 
@@ -172,7 +172,7 @@ export default function CodingChallengePage() {
                 {pageView === "ready" && question && (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
 
-                        {/* ── Left: Question panel ─────────────────────────── */}
+                        {/* -- Left: Question panel --------------------------- */}
                         <div style={{
                             background: "var(--db-bg2)",
                             border: "1px solid var(--db-border2)",
@@ -257,7 +257,7 @@ export default function CodingChallengePage() {
                             )}
                         </div>
 
-                        {/* ── Right: Editor + execution ────────────────────── */}
+                        {/* -- Right: Editor + execution ---------------------- */}
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
                             {/* Toolbar */}
@@ -296,13 +296,13 @@ export default function CodingChallengePage() {
                                             background: isRunning ? "rgba(var(--lime-rgb),0.15)" : "var(--accent)",
                                             border: "none",
                                             borderRadius: 8, padding: "6px 16px",
-                                            color: isRunning ? "var(--accent)" : "#0C0C0C",
+                                            color: isRunning ? "var(--accent)" : "var(--bg)",
                                             fontSize: 13, fontWeight: 600,
                                             cursor: isRunning ? "not-allowed" : "pointer",
                                         }}
                                     >
                                         {isRunning
-                                            ? <><LoaderCircle size={13} className="animate-spin" /> Running…</>
+                                            ? <><LoaderCircle size={13} className="animate-spin" /> Running...</>
                                             : <><Play size={13} /> Run</>
                                         }
                                     </button>
@@ -360,7 +360,7 @@ export default function CodingChallengePage() {
                                         value={stdin}
                                         onChange={e => setStdin(e.target.value)}
                                         disabled={isRunning}
-                                        placeholder="Enter stdin here…"
+                                        placeholder="Enter stdin here..."
                                         rows={4}
                                         style={{
                                             width: "100%", boxSizing: "border-box",
@@ -393,3 +393,4 @@ export default function CodingChallengePage() {
         </div>
     );
 }
+

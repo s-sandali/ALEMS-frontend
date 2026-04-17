@@ -52,7 +52,7 @@ const ARRAY_ROW_Y_PX = 410;
 const COMPARE_COLOR  = "bg-yellow-400 text-yellow-950 border-yellow-300 shadow-[0_0_18px_rgba(250,204,21,0.5)]";
 const PLACE_COLOR    = "bg-emerald-400 text-emerald-950 border-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.5)]";
 const SORTED_COLOR   = "bg-emerald-500 text-emerald-950 border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.22)]";
-const DEFAULT_COLOR  = "bg-white/[0.08] text-white/80 border-white/10";
+const DEFAULT_COLOR  = "bg-white/[0.08] text-text-primary/80 border-white/10";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -845,7 +845,7 @@ function MergeSortVisualizer({
 
                                     let finalBoxStyle = boxStyle;
                                     if (isLifted) {
-                                        finalBoxStyle = "border-dashed border-white/25 bg-white/[0.04] text-white/70";
+                                        finalBoxStyle = "border-dashed border-white/25 bg-white/[0.04] text-text-primary/70";
                                     }
 
                                     const itemCenter = startX + (index * slotWidth) + (slotWidth / 2);

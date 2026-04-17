@@ -195,7 +195,7 @@ export function getNodeClassName(state: HeapNodeState) {
         return "border-accent/70 bg-accent/20 text-accent";
     }
 
-    return "border-white/15 bg-white/[0.04] text-white";
+    return "border-white/15 bg-white/[0.04] text-text-primary";
 }
 
 export function getNodeAnimate(state: HeapNodeState, shouldReduceMotion: boolean) {

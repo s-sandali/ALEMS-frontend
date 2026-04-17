@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { SignIn, SignUp } from "@clerk/clerk-react";
 import LandingPage from "./pages/LandingPage";
@@ -21,8 +22,13 @@ import QuizStatsPage from "./pages/QuizStatsPage";
 import StudentAttemptHistoryPage from "./pages/StudentAttemptHistoryPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/AdminLayout";
+import { initializeTheme } from "./hooks/useTheme";
 
 export default function App() {
+    useEffect(() => {
+        initializeTheme();
+    }, []);
+
     return (
         <div className="min-h-screen" style={{ fontFamily: "'Poppins', sans-serif" }}>
             <Routes>
@@ -31,7 +37,7 @@ export default function App() {
                 <Route
                     path="/login/*"
                     element={
-                        <div className="min-h-screen flex items-center justify-center" style={{ background: "#0C0C0C" }}>
+                        <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg)" }}>
                             <SignIn routing="path" path="/login" fallbackRedirectUrl="/dashboard" />
                         </div>
                     }
@@ -40,7 +46,7 @@ export default function App() {
                 <Route
                     path="/register/*"
                     element={
-                        <div className="min-h-screen flex items-center justify-center" style={{ background: "#0C0C0C" }}>
+                        <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg)" }}>
                             <SignUp routing="path" path="/register" fallbackRedirectUrl="/dashboard" />
                         </div>
                     }

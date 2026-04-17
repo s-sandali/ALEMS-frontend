@@ -634,9 +634,10 @@ function AlgorithmVisualizer({
     return (
         <section
             className={cn(
-                "glass overflow-hidden rounded-3xl border border-white/10 p-4 sm:p-6",
+                "overflow-hidden rounded-3xl border p-4 sm:p-6",
                 className,
             )}
+            style={{ borderColor: "var(--db-border)", background: "var(--surface)" }}
             data-feedback-version={feedbackVersion}
             aria-label="Algorithm step visualizer"
         >
@@ -667,7 +668,7 @@ function AlgorithmVisualizer({
                                 Step {steps.length === 0 ? 0 : safeIndex + 1} of {steps.length}
                             </span>
                             {isPracticeMode ? (
-                                <span className="text-sm text-sky-100/80">
+                                <span className="text-sm text-text-secondary">
                                     {(() => {
                                         if (algorithmType === "search") {
                                             return "Use Go Left, Go Right, or Found to decide the next move";
@@ -715,106 +716,106 @@ function AlgorithmVisualizer({
                     <div className="flex flex-wrap gap-2 text-xs text-text-secondary">
                         {algorithmType === "search" ? (
                             <>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
                                     Comparing
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-slate-400 to-slate-500" />
                                     Discarded
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Found
                                 </span>
                             </>
                         ) : isInsertionSortStep ? (
                             <>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-sm border border-yellow-300/60 bg-yellow-400" />
                                     Key / Compare
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-sm border border-sky-300/60 bg-sky-400" />
                                     Insert Position
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-sm border border-emerald-300/40 bg-emerald-400/40" />
                                     Sorted Prefix
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-sm border border-emerald-300/70 bg-emerald-400" />
                                     Sorted
                                 </span>
                             </>
                         ) : isHeapStep ? (
                             <>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-blue-400 to-blue-500" />
                                     Heap Node
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
                                     Comparing
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
                                     Swapping
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Extracted / Falling
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Sorted Array
                                 </span>
                             </>
                         ) : isSelectionSortStep ? (
                             <>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-slate-300 to-slate-500" />
                                     Unsorted
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-300 to-sky-500" />
                                     Current Min
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-300 to-red-500" />
                                     Candidate
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" />
                                     Sorted Zone
                                 </span>
                             </>
                         ) : isMergeSortStep ? (
                             <>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-blue-400 to-blue-500" />
                                     Merge Group
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-sky-300 to-sky-400" />
                                     Active Group
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
                                     Comparing
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Placed / Sorted
                                 </span>
                                 {isPracticeMode ? (
-                                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                         <span className="h-2.5 w-2.5 rounded-sm border border-sky-200/80 bg-sky-400/20 ring-2 ring-cyan-300/80" />
                                         Suggested Step
                                     </span>
                                 ) : null}
                                 {isPracticeMode ? (
-                                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                         <span className="h-2.5 w-2.5 rounded-sm border border-sky-200/80 bg-sky-400/20 ring-2 ring-fuchsia-300/85" />
                                         Selected
                                     </span>
@@ -822,15 +823,15 @@ function AlgorithmVisualizer({
                             </>
                         ) : (
                             <>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400" />
                                     Comparing
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-red-400 to-red-500" />
                                     Swapped
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-500" />
                                     Sorted
                                 </span>
@@ -839,16 +840,16 @@ function AlgorithmVisualizer({
                     </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-bg/60 p-3 sm:p-4">
-                    <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm">
+                <div className="rounded-2xl border border-border bg-surface p-3 sm:p-4">
+                    <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-sm">
                         <span className="text-text-secondary">Current transition</span>
-                        <span className={cn("font-medium", values.length > 0 ? "text-white" : "text-text-secondary")}>
+                        <span className={cn("font-medium", values.length > 0 ? "text-text-primary" : "text-text-secondary")}>
                             {values.length > 0 ? tone.emphasisLabel : "No active step"}
                         </span>
                     </div>
 
                     {heapStepMeta ? (
-                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
                             <span>
                                 Phase: <span className="text-text-primary">{formatActionLabel(heapStepMeta.phase || "--")}</span>
                             </span>
@@ -863,7 +864,7 @@ function AlgorithmVisualizer({
                             </span>
                         </div>
                     ) : hasQuickSortMetadata ? (
-                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
                             <span>
                                 Partition Range: <span className="text-text-primary">{quickSortRange ? `${quickSortRange.low}..${quickSortRange.high}` : "--"}</span>
                             </span>
@@ -878,7 +879,7 @@ function AlgorithmVisualizer({
                             </span>
                         </div>
                     ) : selectionSortMeta ? (
-                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
                             <span>
                                 Phase: <span className="text-text-primary">{formatActionLabel(selectionSortMeta.type ?? currentStep?.actionLabel ?? "--")}</span>
                             </span>
@@ -893,7 +894,7 @@ function AlgorithmVisualizer({
                             </span>
                         </div>
                     ) : hasInsertionSortMetadata ? (
-                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
                             <span>
                                 Key: <span className="text-text-primary">{insertionSortMeta?.key ?? "--"}</span>
                             </span>
@@ -917,7 +918,7 @@ function AlgorithmVisualizer({
                             </span>
                         </div>
                     ) : mergeSortMeta ? (
-                        <div className="mb-4 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-4">
                             <span>Phase: <span className="text-text-primary">{formatActionLabel(mergeSortMeta.type ?? "--")}</span></span>
                             <span>Depth: <span className="text-text-primary">{mergeSortMeta.recursionDepth}</span></span>
                             <span>Range: <span className="text-text-primary">[{mergeSortMeta.left}..{mergeSortMeta.right}]</span></span>
@@ -971,7 +972,7 @@ function AlgorithmVisualizer({
 
                             {showSearchDecisionControls && isTargetAtMidpoint && !practiceCompleted ? (
                                 <p className="text-xs text-emerald-200">
-                                    Midpoint matches the target — click Found.
+                                    Midpoint matches the target - click Found.
                                 </p>
                             ) : null}
 
@@ -998,9 +999,9 @@ function AlgorithmVisualizer({
                                                     animate={shouldReduceMotion ? {} : { scale: isMidpoint ? 1.12 : 1 }}
                                                     transition={{ duration: 0.25 }}
                                                     className={cn(
-                                                        "flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] font-semibold text-white",
+                                                        "flex items-center justify-center rounded-2xl border border-border bg-surface font-semibold text-text-primary",
                                                         isInRange && "border-accent/40 bg-accent/10",
-                                                        isMidpoint && "border-accent/60 bg-accent/25 shadow-[0_0_20px_rgba(213,255,64,0.3)]",
+                                                        isMidpoint && "border-accent/60 bg-accent/25 shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]",
                                                         isActive && "ring-2 ring-accent/40",
                                                         isFound && "border-emerald-400/60 bg-emerald-400/20 text-emerald-100 shadow-[0_0_22px_rgba(52,211,153,0.35)]",
                                                     )}
@@ -1019,7 +1020,7 @@ function AlgorithmVisualizer({
                                         );
                                     })
                                 ) : (
-                                    <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-white/10 px-4 py-12 text-sm text-text-secondary">
+                                    <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-border px-4 py-12 text-sm text-text-secondary">
                                         No backend simulation steps available yet.
                                     </div>
                                 )}
@@ -1061,7 +1062,7 @@ function AlgorithmVisualizer({
                                         ? { scale: [1, 1.015, 1] }
                                         : { x: 0, scale: 1 }))}
                             transition={{ duration: 0.36, ease: "easeOut" }}
-                            className="flex min-h-56 items-center overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                            className="flex min-h-56 items-center overflow-x-auto rounded-xl border border-border bg-surface p-4"
                             style={{ gap: `${selectionGapPx}px` }}
                         >
                             {visualBars.length > 0 ? (
@@ -1096,12 +1097,12 @@ function AlgorithmVisualizer({
 
                                     const tileClassName = cn(
                                         "flex items-center justify-center rounded-xl border font-semibold transition-[transform,background-color,border-color,box-shadow] duration-300",
-                                        "border-white/20 bg-slate-900/60 text-slate-100",
+                                        "border-border bg-surface text-text-primary",
                                         isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
                                         !isSorted && (isMin || isCurrent || isSwapFrom) && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.3)]",
                                         !isSorted && !isMin && showCandidateHighlight && "border-red-200/80 bg-red-500 text-red-50 shadow-[0_0_24px_rgba(239,68,68,0.34)]",
                                         isPracticeMode && isPracticeConfirmedMin && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_22px_rgba(56,189,248,0.34)]",
-                                        isSuggested && isPracticeMode && !isSelectionSortStep && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
+                                        isSuggested && isPracticeMode && !isSelectionSortStep && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(var(--primary-rgb),0.28)]",
                                         isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
                                         isFeedbackTarget && feedbackTone === "correct" && !isSelectionSortStep && "border-emerald-300/80 bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.32)]",
                                         isFeedbackTarget && feedbackTone === "incorrect" && !isSelectionSortStep && "border-red-300/80 bg-red-500 text-red-50 shadow-[0_0_20px_rgba(248,113,113,0.35)]",
@@ -1171,7 +1172,7 @@ function AlgorithmVisualizer({
                                     );
                                 })
                             ) : (
-                                <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-white/10 px-4 py-12 text-sm text-text-secondary">
+                                <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-border px-4 py-12 text-sm text-text-secondary">
                                     No backend simulation steps available yet.
                                 </div>
                             )}
@@ -1193,7 +1194,7 @@ function AlgorithmVisualizer({
                                         ? { scale: [1, 1.015, 1] }
                                         : { x: 0, scale: 1 }))}
                             transition={{ duration: 0.36, ease: "easeOut" }}
-                            className="flex min-h-56 flex-wrap items-center overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                            className="flex min-h-56 flex-wrap items-center overflow-x-auto rounded-xl border border-border bg-surface p-4"
                             style={{ gap: `${selectionGapPx}px` }}
                         >
                             {visualBars.length > 0 ? (
@@ -1219,12 +1220,12 @@ function AlgorithmVisualizer({
 
                                     const tileCls = cn(
                                         "flex items-center justify-center rounded-xl border font-semibold transition-[background-color,border-color,box-shadow] duration-300",
-                                        "border-white/20 bg-slate-900/60 text-slate-100",
+                                        "border-border bg-surface text-text-primary",
                                         isSorted && "border-emerald-300/70 bg-emerald-400 text-emerald-950 shadow-[0_0_22px_rgba(52,211,153,0.3)]",
                                         isSortedPrefix && !isInsertPos && !(isKey || isCompare) && "border-emerald-300/40 bg-emerald-400/40 text-emerald-50 shadow-[0_0_14px_rgba(52,211,153,0.18)]",
                                         (isKey || isCompare) && !isSorted && "border-yellow-300/60 bg-yellow-400 text-yellow-950 shadow-[0_0_18px_rgba(250,204,21,0.3)]",
                                         isInsertPos && !isSorted && !(isKey || isCompare) && "border-sky-300/60 bg-sky-400 text-sky-950 shadow-[0_0_18px_rgba(56,189,248,0.28)]",
-                                        isSuggested && isPracticeMode && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(213,255,64,0.28)]",
+                                        isSuggested && isPracticeMode && "border-accent/60 bg-accent/70 text-slate-900 shadow-[0_0_20px_rgba(var(--primary-rgb),0.28)]",
                                         isSelected && isPracticeMode && "border-sky-200/80 bg-sky-400 text-sky-950 shadow-[0_0_20px_rgba(56,189,248,0.3)]",
                                         isFeedbackTarget && feedbackTone === "correct" && "border-emerald-300/80 bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.32)]",
                                         isFeedbackTarget && feedbackTone === "incorrect" && "border-red-300/80 bg-red-500 text-red-50 shadow-[0_0_20px_rgba(248,113,113,0.35)]",
@@ -1294,7 +1295,7 @@ function AlgorithmVisualizer({
                                     );
                                 })
                             ) : (
-                                <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-white/10 px-4 py-12 text-sm text-text-secondary">
+                                <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-border px-4 py-12 text-sm text-text-secondary">
                                     No backend simulation steps available yet.
                                 </div>
                             )}
@@ -1322,7 +1323,7 @@ function AlgorithmVisualizer({
                                 </span>
                             </div>
 
-                            <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+                            <div className="relative overflow-hidden rounded-xl border border-border bg-surface">
                                 <div ref={heapStageRef} className="relative h-[30rem] w-full">
                                     {!isHeapComplete ? (
                                         <>
@@ -1469,7 +1470,7 @@ function AlgorithmVisualizer({
                                                             "rounded-xl border px-2 py-3 text-center",
                                                             isSortedCell
                                                                 ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-100"
-                                                                : "border-white/10 bg-white/[0.03] text-white/30",
+                                                                : "border-border bg-surface text-text-primary/30",
                                                         )}
                                                     >
                                                         <div className="text-sm font-semibold">{value ?? ""}</div>
@@ -1661,7 +1662,7 @@ function AlgorithmVisualizer({
                                                             boxShadow: { duration: 0.4, ease: "easeOut" },
                                                         }}
                                                     className={cn(
-                                                        "w-full rounded-t-xl border border-white/10 bg-gradient-to-b from-white/20 to-white/5 transition-[background-color,box-shadow,border-color] duration-300",
+                                                        "w-full rounded-t-xl border border-border bg-gradient-to-b from-accent/30 to-accent/10 transition-[background-color,box-shadow,border-color] duration-300",
                                                         isSorted && "border-emerald-400/40 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
                                                         isInsertionSortedPrefix && !isInsertionShift && !isInsertionInsertPosition && !(isInsertionKey || isInsertionCompare) && "border-emerald-300/45 from-emerald-300/85 to-emerald-500/90 shadow-[0_0_16px_rgba(52,211,153,0.2)]",
                                                         (isInsertionKey || isInsertionCompare) && "border-yellow-300/60 from-yellow-300/90 to-yellow-500 shadow-[0_0_18px_rgba(250,204,21,0.3)]",
@@ -1671,7 +1672,7 @@ function AlgorithmVisualizer({
                                                         isQuickSortPivotPlacementIndex && "border-emerald-300/70 from-emerald-300 to-emerald-500 shadow-[0_0_24px_rgba(52,211,153,0.35)]",
                                                         !isPracticeMode && isActive && tone.activeBarClassName,
                                                         !isPracticeMode && isActive && "border-transparent",
-                                                        isSuggested && isPracticeMode && "border-accent/50 from-accent/80 to-accent/50 shadow-[0_0_18px_rgba(213,255,64,0.25)]",
+                                                        isSuggested && isPracticeMode && "border-accent/50 from-accent/80 to-accent/50 shadow-[0_0_18px_rgba(var(--primary-rgb),0.25)]",
                                                         isSelected && isPracticeMode && "border-sky-300/50 from-sky-400/90 to-sky-500 shadow-[0_0_18px_rgba(56,189,248,0.26)]",
                                                         isFeedbackTarget && feedbackTone === "correct" && "border-emerald-400/50 from-emerald-400/90 to-emerald-500 shadow-[0_0_18px_rgba(52,211,153,0.26)]",
                                                         isFeedbackTarget && feedbackTone === "incorrect" && "border-red-400/50 from-red-400/90 to-red-500 shadow-[0_0_18px_rgba(248,113,113,0.3)]",
@@ -1704,7 +1705,7 @@ function AlgorithmVisualizer({
                                     );
                                 })
                             ) : (
-                                <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-white/10 px-4 py-12 text-sm text-text-secondary">
+                                <div className="flex w-full items-center justify-center rounded-xl border border-dashed border-border px-4 py-12 text-sm text-text-secondary">
                                     No backend simulation steps available yet.
                                 </div>
                             )}
@@ -1717,3 +1718,4 @@ function AlgorithmVisualizer({
 }
 
 export default memo(AlgorithmVisualizer);
+
