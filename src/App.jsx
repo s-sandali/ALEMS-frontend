@@ -14,6 +14,7 @@ import AdminCodingQuestionListPage from "./pages/AdminCodingQuestionListPage";
 import AdminCodingQuestionFormPage from "./pages/AdminCodingQuestionFormPage";
 import AdminLeaderboardPage from "./pages/AdminLeaderboardPage";
 import QuizStatsPage from "./pages/QuizStatsPage";
+import StudentAttemptHistoryPage from "./pages/StudentAttemptHistoryPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -81,6 +82,15 @@ export default function App() {
                     element={
                         <ProtectedRoute>
                             <QuizPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/my-attempts"
+                    element={
+                        <ProtectedRoute>
+                            <StudentAttemptHistoryPage />
                         </ProtectedRoute>
                     }
                 />
