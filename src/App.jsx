@@ -13,9 +13,13 @@ import CodingChallengePage from "./pages/CodingChallengePage";
 import AdminCodingQuestionListPage from "./pages/AdminCodingQuestionListPage";
 import AdminCodingQuestionFormPage from "./pages/AdminCodingQuestionFormPage";
 import AdminLeaderboardPage from "./pages/AdminLeaderboardPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import QuizStatsPage from "./pages/QuizStatsPage";
 import StudentAttemptHistoryPage from "./pages/StudentAttemptHistoryPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminLayout from "./components/AdminLayout";
 
 export default function App() {
     return (
@@ -95,74 +99,26 @@ export default function App() {
                     }
                 />
 
+                {/* Admin Routes with Shared Layout */}
                 <Route
-                    path="/admin/quizzes"
+                    path="/admin/*"
                     element={
                         <ProtectedRoute>
-                            <AdminQuizListPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/admin/quizzes/new"
-                    element={
-                        <ProtectedRoute>
-                            <AdminQuizFormPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/admin/quizzes/:id/edit"
-                    element={
-                        <ProtectedRoute>
-                            <AdminQuizFormPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/admin/leaderboard"
-                    element={
-                        <ProtectedRoute>
-                            <AdminLeaderboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/admin/quizzes/:quizId/stats"
-                    element={
-                        <ProtectedRoute>
-                            <QuizStatsPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/admin/coding-questions"
-                    element={
-                        <ProtectedRoute>
-                            <AdminCodingQuestionListPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/admin/coding-questions/new"
-                    element={
-                        <ProtectedRoute>
-                            <AdminCodingQuestionFormPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/admin/coding-questions/:id/edit"
-                    element={
-                        <ProtectedRoute>
-                            <AdminCodingQuestionFormPage />
+                            <AdminLayout>
+                                <Routes>
+                                    <Route path="/" element={<AdminDashboard />} />
+                                    <Route path="/analytics" element={<AdminAnalyticsPage />} />
+                                    <Route path="/users" element={<AdminUsersPage />} />
+                                    <Route path="/quizzes" element={<AdminQuizListPage />} />
+                                    <Route path="/quizzes/new" element={<AdminQuizFormPage />} />
+                                    <Route path="/quizzes/:id/edit" element={<AdminQuizFormPage />} />
+                                    <Route path="/quizzes/:quizId/stats" element={<QuizStatsPage />} />
+                                    <Route path="/leaderboard" element={<AdminLeaderboardPage />} />
+                                    <Route path="/coding-questions" element={<AdminCodingQuestionListPage />} />
+                                    <Route path="/coding-questions/new" element={<AdminCodingQuestionFormPage />} />
+                                    <Route path="/coding-questions/:id/edit" element={<AdminCodingQuestionFormPage />} />
+                                </Routes>
+                            </AdminLayout>
                         </ProtectedRoute>
                     }
                 />

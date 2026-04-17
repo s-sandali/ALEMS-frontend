@@ -771,13 +771,29 @@ export type QuizStats = {
     passRate: number;
 };
 
-// ── Admin service ──────────────────────────────────────────────────────────────
+// ── Admin service ──────────────────────────────────────────────────────
+
+export type AdminStats = {
+    totalUsers: number;
+    totalQuizzes: number;
+    totalAttempts: number;
+    averagePassRate: number;
+};
 
 export const AdminService = {
     /**
+     * GET /admin/stats
+     * Admin only. Retrieves platform-wide statistics including total users,
+     * quizzes, attempts, and average pass rate.
+     */
+    getStats: (getToken: GetTokenFn) =>
+        apiFetch("/admin/stats", { method: "GET", getToken }) as
+            Promise<{ status: string; data: AdminStats }>,
+
+    /**
      * GET /admin/leaderboard
-     * Admin only. Retrieves all users ranked by total XP in descending order.
-     * Each entry includes the user's attempt count and average quiz score.
+     * Admin only. Retrieves user leaderboard ranked by XP with attempt counts
+     * and average quiz scores.
      */
     getLeaderboard: (getToken: GetTokenFn) =>
         apiFetch("/admin/leaderboard", { method: "GET", getToken }) as
