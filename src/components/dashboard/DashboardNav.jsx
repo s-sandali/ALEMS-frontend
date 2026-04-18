@@ -11,7 +11,7 @@ const navItems = [
   { label: "Algorithms", icon: List, path: "/algorithms" },
   { label: "Quizzes", icon: BookOpen, path: "/quizzes" },
   { label: "Challenges", icon: Code2, path: "/coding-challenges" },
-  { label: "My Attempts", icon: History, path: "/my-attempts" },
+ 
 ];
 
 const adminNavItems = [
@@ -41,11 +41,7 @@ function isActivePath(pathname, path) {
       || pathname.startsWith("/admin/coding-questions");
   }
 
-  if (path === "/my-attempts") {
-    return pathname === path;
-  }
-
-  return pathname === path;
+  
 }
 
 function getPrimaryLinkClasses(isActive) {
