@@ -20,6 +20,7 @@ import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminStudentProfilePage from "./pages/AdminStudentProfilePage";
 import QuizStatsPage from "./pages/QuizStatsPage";
 import StudentAttemptHistoryPage from "./pages/StudentAttemptHistoryPage";
+import Reports from "./pages/Reports";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/AdminLayout";
 import { initializeTheme } from "./hooks/useTheme";
@@ -122,6 +123,7 @@ export default function App() {
                                     <Route path="/quizzes/:id/edit" element={<AdminQuizFormPage />} />
                                     <Route path="/quizzes/:quizId/stats" element={<QuizStatsPage />} />
                                     <Route path="/leaderboard" element={<AdminLeaderboardPage />} />
+                                    <Route path="/reports" element={<Reports />} />
                                     <Route path="/coding-questions" element={<AdminCodingQuestionListPage />} />
                                     <Route path="/coding-questions/new" element={<AdminCodingQuestionFormPage />} />
                                     <Route path="/coding-questions/:id/edit" element={<AdminCodingQuestionFormPage />} />
