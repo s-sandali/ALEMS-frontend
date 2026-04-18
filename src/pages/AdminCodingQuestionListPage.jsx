@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { motion } from "motion/react";
 import { Code2, LoaderCircle, ShieldAlert, Plus, Edit2, Trash2 } from "lucide-react";
-import DashboardNav from "@/components/dashboard/DashboardNav";
 import { CodingQuestionService } from "../lib/api";
 import { useRole } from "../context/RoleContext";
 
@@ -78,8 +77,6 @@ export default function AdminCodingQuestionListPage() {
 
     return (
         <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-            <DashboardNav />
-
             <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 60px" }}>
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}

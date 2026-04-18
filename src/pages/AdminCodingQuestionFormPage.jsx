@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { motion } from "motion/react";
 import { ChevronLeft, LoaderCircle, ShieldAlert } from "lucide-react";
-import DashboardNav from "@/components/dashboard/DashboardNav";
 import { CodingQuestionService } from "../lib/api";
 import { useRole } from "../context/RoleContext";
 
@@ -174,8 +173,6 @@ export default function AdminCodingQuestionFormPage() {
 
     return (
         <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-            <DashboardNav />
-
             <main style={{ maxWidth: 960, margin: "0 auto", padding: "36px 24px 60px" }}>
                 {/* Back link */}
                 <Link

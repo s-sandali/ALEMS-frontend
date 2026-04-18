@@ -11,7 +11,7 @@ function ProgressRing({ percent, accentColor, locked, index }) {
     <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
       <svg width={56} height={56} style={{ transform: 'rotate(-90deg)' }} viewBox="0 0 56 56">
         {/* Track */}
-        <circle cx={28} cy={28} r={20} stroke="#252627" strokeWidth={3.5} fill="none" />
+        <circle cx={28} cy={28} r={20} stroke="var(--border)" strokeWidth={3.5} fill="none" />
         {/* Progress arc */}
         {!locked && percent > 0 && (
           <motion.circle
@@ -33,7 +33,7 @@ function ProgressRing({ percent, accentColor, locked, index }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 11, fontWeight: 700,
         fontFamily: "'Poppins', sans-serif",
-        color: locked ? '#3a3b3e' : accentColor,
+        color: locked ? 'var(--text-tertiary)' : accentColor,
       }}>
         {locked ? '0%' : `${percent}%`}
       </div>
@@ -47,7 +47,7 @@ export default function AlgorithmProgressList({ algorithms }) {
   return (
     <div style={{
       background: 'var(--surface)',
-      border: '1px solid #252627',
+      border: '1px solid var(--border)',
       borderRadius: 14,
       padding: '20px',
     }}>
@@ -92,8 +92,8 @@ export default function AlgorithmProgressList({ algorithms }) {
                 alignItems: 'center',
                 gap: 18,
                 padding: '16px 20px',
-                background: '#0f1011',
-                border: `1px solid ${isLocked ? '#1e1f20' : '#252627'}`,
+                background: 'var(--surface-2, var(--surface))',
+                border: `1px solid ${isLocked ? 'var(--border)' : 'var(--border)'}`,
                 borderRadius: 12,
                 cursor: isLocked ? 'default' : 'pointer',
                 opacity: isLocked ? 0.45 : 1,
@@ -103,7 +103,7 @@ export default function AlgorithmProgressList({ algorithms }) {
                 if (!isLocked) e.currentTarget.style.borderColor = algo.accentColor + '44'
               }}
               onMouseLeave={e => {
-                if (!isLocked) e.currentTarget.style.borderColor = '#252627'
+                if (!isLocked) e.currentTarget.style.borderColor = 'var(--border)'
               }}
             >
               <ProgressRing
@@ -131,8 +131,8 @@ export default function AlgorithmProgressList({ algorithms }) {
                         padding: '3px 9px',
                         borderRadius: 5,
                         background: isLocked ? 'var(--surface-2)' : algo.accentDim,
-                        border: `1px solid ${isLocked ? '#252627' : algo.accentColor + '33'}`,
-                        color: isLocked ? '#3a3b3e' : algo.accentColor,
+                        border: `1px solid ${isLocked ? 'var(--border)' : algo.accentColor + '33'}`,
+                        color: isLocked ? 'var(--text-tertiary)' : algo.accentColor,
                         letterSpacing: '0.2px',
                       }}
                     >
@@ -150,7 +150,7 @@ export default function AlgorithmProgressList({ algorithms }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
                 }}>
-                  <Lock size={13} color="#3a3b3e" />
+                  <Lock size={13} color="var(--text-tertiary)" />
                 </div>
               ) : (
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
