@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { UserButton } from "@clerk/clerk-react";
-import { BookOpen, Code2, LayoutDashboard, List, Menu, ShieldCheck, TrendingUp, X, Zap, History } from "lucide-react";
+import { BookOpen, Code2, LayoutDashboard, List, Menu, ShieldCheck, TrendingUp, X, Zap } from "lucide-react";
 import { useRole } from "../../context/RoleContext";
 import { useTheme } from "../../hooks/useTheme";
 import ThemeToggle from "../ui/ThemeToggle";
@@ -77,7 +77,7 @@ export default function DashboardNav({ user }) {
   const { isDark, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const showXpBadge = typeof user?.xpTotal === "number";
-  const isAdminRoute = location.pathname.startsWith("/admin/");
+  const isAdminRoute = location.pathname === "/admin" || location.pathname.startsWith("/admin/");
   const isAdmin = role === "Admin";
 
   return (
@@ -123,32 +123,6 @@ export default function DashboardNav({ user }) {
             })}
           </div>
 
-          {isAdmin ? (
-            <div
-              className="flex items-center gap-1 rounded-2xl p-1"
-              style={{
-                border: "1px solid color-mix(in srgb, var(--accent) 30%, var(--border))",
-                background: "linear-gradient(180deg, color-mix(in srgb, var(--accent) 15%, transparent), color-mix(in srgb, var(--accent) 7%, transparent))",
-              }}
-            >
-              
-
-              {adminNavItems.map(({ label, icon: Icon, path }) => {
-                const isActive = location.pathname.startsWith(path);
-
-                return (
-                  <Link
-                    key={path}
-                    to={path}
-                    className={getAdminLinkClasses(isActive)}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                  </Link>
-                );
-              })}
-            </div>
-          ) : null}
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -242,40 +216,6 @@ export default function DashboardNav({ user }) {
             </div>
           </div>
 
-          {isAdmin ? (
-            <div
-              className="mt-4 rounded-2xl p-3"
-              style={{
-                border: "1px solid color-mix(in srgb, var(--accent) 30%, var(--border))",
-                background: "linear-gradient(180deg, color-mix(in srgb, var(--accent) 15%, transparent), color-mix(in srgb, var(--accent) 7%, transparent))",
-              }}
-            >
-              <div className="mb-3 flex items-center gap-2 px-1">
-                <ShieldCheck className="h-4 w-4 text-accent" />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-accent/75">
-                  Admin Tools
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                {adminNavItems.map(({ label, icon: Icon, path }) => {
-                  const isActive = location.pathname.startsWith(path);
-
-                  return (
-                    <Link
-                      key={path}
-                      to={path}
-                      className={getMobileLinkClasses(isActive)}
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
 
           <div className="mt-4 flex items-center justify-between pt-4" style={{ borderTop: "1px solid var(--db-border2)" }}>
             <div className="flex flex-wrap items-center gap-2">
