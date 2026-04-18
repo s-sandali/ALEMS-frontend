@@ -3,6 +3,7 @@ import { useAuth } from '@clerk/clerk-react';
 import { motion } from 'motion/react';
 import { Users, BookOpen, BarChart3, TrendingUp, LoaderCircle, AlertCircle } from 'lucide-react';
 import { AdminService } from '@/lib/api';
+import Reports from './Reports';
 
 function KPICard({ icon: Icon, label, value, loading, color = 'var(--primary)' }) {
   return (
@@ -207,6 +208,8 @@ export default function AdminDashboard() {
           </div>
         </motion.div>
       )}
+
+      <Reports />
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
