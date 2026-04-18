@@ -95,5 +95,15 @@ export default defineConfig({
                 ...devices["Desktop Chrome"],
             },
         },
+        {
+            // Manual API integration checks that use pre-generated JWT tokens
+            // and avoid Clerk sign-in / OTP setup.
+            name: "api-manual",
+            testMatch: /.*api\.admin-reports\.spec\.ts/,
+            use: {
+                ...devices["Desktop Chrome"],
+                baseURL: backendUrl,
+            },
+        },
     ],
 });
