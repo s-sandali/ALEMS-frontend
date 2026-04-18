@@ -23,15 +23,15 @@ export default function AdminLayout({ children }) {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0C0C0C' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       {/* ── Sidebar ────────────────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         style={{
           width: 240,
-          background: '#131415',
-          borderRight: '1px solid #252627',
+          background: 'var(--surface)',
+          borderRight: '1px solid var(--db-border)',
           display: 'flex',
           flexDirection: 'column',
           height: '100vh',
@@ -40,7 +40,7 @@ export default function AdminLayout({ children }) {
         }}
       >
         {/* Header */}
-        <div style={{ padding: '24px 20px', borderBottom: '1px solid #252627' }}>
+        <div style={{ padding: '24px 20px', borderBottom: '1px solid var(--db-border)' }}>
           <div
             onClick={() => navigate('/admin')}
             style={{
@@ -56,20 +56,20 @@ export default function AdminLayout({ children }) {
                 width: 40,
                 height: 40,
                 borderRadius: 10,
-                background: 'linear-gradient(135deg, #c8ff3e 0%, #a8df1e 100%)',
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 'bold',
-                color: '#0C0C0C',
+                color: 'var(--bg)',
                 fontSize: 18,
               }}
             >
               ⚙️
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff' }}>Admin</div>
-              <div style={{ fontSize: 11, color: '#8a8b8e', marginTop: 2 }}>Panel</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Admin</div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>Panel</div>
             </div>
           </div>
         </div>
