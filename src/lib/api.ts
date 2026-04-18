@@ -816,7 +816,7 @@ export const StudentService = {
 
 // ── Admin types ────────────────────────────────────────────────────────────────
 
-export type LeaderboardEntry = {
+export type AdminLeaderboardEntry = {
     userId: number;
     username: string;
     email: string;
@@ -858,7 +858,7 @@ export const AdminService = {
      */
     getLeaderboard: (getToken: GetTokenFn) =>
         apiFetch("/admin/leaderboard", { method: "GET", getToken }) as
-            Promise<{ data: LeaderboardEntry[] } | LeaderboardEntry[]>,
+            Promise<{ data: AdminLeaderboardEntry[] } | AdminLeaderboardEntry[]>,
 };
 
 // ── Leaderboard service ───────────────────────────────────────────────────────
