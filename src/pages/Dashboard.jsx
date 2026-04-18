@@ -242,7 +242,7 @@ export default function Dashboard() {
                     earnedDate: badge.earned ? earnedBadgeMap.get(badge.id) ?? null : null,
                     description: badge.description || 'Unlock this badge to show your progress',
                     iconType: badge.iconType || 'star',
-                    unlockHint: 'Keep learning to unlock',
+                    unlockHint: badge.unlockHint || 'Keep learning to unlock',
                     iconColor: color,
                     iconBg: iconBgFromColor(color),
                   }
