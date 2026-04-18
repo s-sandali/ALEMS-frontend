@@ -92,14 +92,14 @@ export default function AdminLayout({ children }) {
                   padding: '12px 12px',
                   borderRadius: 10,
                   border: 'none',
-                  background: isActive ? 'rgba(200, 255, 62, 0.1)' : 'transparent',
-                  color: isActive ? '#c8ff3e' : '#8a8b8e',
+                  background: isActive ? 'rgba(var(--primary-rgb), 0.1)' : 'transparent',
+                  color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   fontSize: 13,
                   fontWeight: isActive ? 600 : 500,
                   transition: 'all 0.2s',
                   justifyContent: 'space-between',
-                  borderLeft: isActive ? '2px solid #c8ff3e' : '2px solid transparent',
+                  borderLeft: isActive ? '2px solid var(--primary)' : '2px solid transparent',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -116,9 +116,9 @@ export default function AdminLayout({ children }) {
         <div
           style={{
             padding: '16px 12px',
-            borderTop: '1px solid #252627',
+            borderTop: '1px solid var(--db-border)',
             fontSize: 11,
-            color: '#5a5b5e',
+            color: 'var(--text-tertiary)',
             textAlign: 'center',
           }}
         >
