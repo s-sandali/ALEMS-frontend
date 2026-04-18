@@ -5,7 +5,6 @@ import { motion } from "motion/react";
 import {
     Plus, Trash2, Edit2, Check, LoaderCircle, ShieldAlert, ChevronLeft,
 } from "lucide-react";
-import DashboardNav from "@/components/dashboard/DashboardNav";
 import { QuizService, QuizQuestionService, AlgorithmService } from "../lib/api";
 import { useRole } from "../context/RoleContext";
 
@@ -486,8 +485,6 @@ export default function AdminQuizFormPage() {
     // -- Render ----------------------------------------------------------------
     return (
         <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-            <DashboardNav />
-
             {/* Main */}
             <main style={{ maxWidth: 760, margin: "0 auto", padding: "36px 24px 80px" }}>
 

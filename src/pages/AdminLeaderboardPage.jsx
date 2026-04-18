@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { motion } from 'motion/react'
 import { ArrowUpDown, LoaderCircle } from 'lucide-react'
-import DashboardNav from '@/components/dashboard/DashboardNav'
 import { AdminService } from '@/lib/api'
 import { useRole } from '@/context/RoleContext'
 
@@ -68,8 +67,6 @@ export default function AdminLeaderboardPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0C0C0C' }}>
-      <DashboardNav />
-      
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
         {/* Header */}
         <motion.div
