@@ -53,6 +53,7 @@ export default function BadgesGrid({ badges }) {
             Badges
           </span>
           <span
+            data-testid="dashboard-badges-earned-count"
             style={{
               background: 'rgba(var(--primary-rgb),0.1)',
               color: 'var(--primary)',
@@ -69,6 +70,7 @@ export default function BadgesGrid({ badges }) {
 
         {/* Grid */}
         <div
+          data-testid="dashboard-badge-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
@@ -89,6 +91,8 @@ export default function BadgesGrid({ badges }) {
             return (
               <Tooltip key={badge.id} content={tooltipContent} side="top">
                 <motion.div
+                  data-testid="dashboard-badge-card"
+                  data-badge-status={isEarned ? 'earned' : 'locked'}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.05 }}
