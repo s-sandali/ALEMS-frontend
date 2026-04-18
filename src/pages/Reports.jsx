@@ -23,7 +23,7 @@ export default function Reports() {
   }
 
   return (
-    <div style={{ padding: 32 }}>
+    <div style={{ padding: "24px 32px 0" }}>
       <h1 style={{ fontSize: 32, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>
         Admin Reports
       </h1>
