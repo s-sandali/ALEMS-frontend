@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { motion } from "motion/react";
-import { BookOpen, Edit2, LoaderCircle, Plus, ShieldAlert, Trash2 } from "lucide-react";
-import DashboardNav from "@/components/dashboard/DashboardNav";
+import { BookOpen, Edit2, LoaderCircle, Plus, ShieldAlert, Trash2, BarChart3 } from "lucide-react";
 import { AlgorithmService, QuizService } from "../lib/api";
 import { useRole } from "../context/RoleContext";
 
@@ -110,8 +109,6 @@ export default function AdminQuizListPage() {
 
     return (
         <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-            <DashboardNav />
-
             <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 60px" }}>
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
@@ -228,7 +225,7 @@ export default function AdminQuizListPage() {
                     >
                         <div style={{
                             display: "grid",
-                            gridTemplateColumns: "1fr 180px 100px 96px",
+                            gridTemplateColumns: "1fr 180px 100px 140px",
                             padding: "12px 20px",
                             borderBottom: "1px solid var(--db-border)",
                             background: "var(--db-bg3)",
@@ -260,7 +257,7 @@ export default function AdminQuizListPage() {
                                     transition={{ delay: index * 0.04 }}
                                     style={{
                                         display: "grid",
-                                        gridTemplateColumns: "1fr 180px 100px 96px",
+                                        gridTemplateColumns: "1fr 180px 100px 140px",
                                         padding: "14px 20px",
                                         alignItems: "center",
                                         borderBottom: index < quizzes.length - 1 ? "1px solid var(--db-border2)" : "none",
@@ -336,6 +333,24 @@ export default function AdminQuizListPage() {
                                     </span>
 
                                     <div style={{ display: "flex", gap: 6 }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate(`/admin/quizzes/${quiz.quizId}/stats`)}
+                                            title="View quiz statistics"
+                                            style={{
+                                                background: "transparent",
+                                                border: "1px solid rgba(200,255,62,0.25)",
+                                                borderRadius: 6,
+                                                padding: "5px 9px",
+                                                color: "#c8ff3e",
+                                                cursor: "pointer",
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                            }}
+                                        >
+                                            <BarChart3 size={13} />
+                                        </button>
+
                                         <button
                                             type="button"
                                             onClick={() => navigate(`/admin/quizzes/${quiz.quizId}/edit`)}

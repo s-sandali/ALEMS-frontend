@@ -34,7 +34,7 @@ export default function ProtectedRoute({ children }) {
 
     // Show nothing while Clerk is still loading auth state
     if (!isLoaded || isSyncing) {
-        return <div className="min-h-screen flex items-center justify-center text-white" style={{ background: "var(--bg)" }}>Loading Auth...</div>;
+        return <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg)", color: "var(--text-primary)" }}>Loading Auth...</div>;
     }
 
     if (!isSignedIn) {

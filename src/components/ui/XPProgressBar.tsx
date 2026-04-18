@@ -81,8 +81,8 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
         data-testid="dashboard-xp-progress-track"
         className={`relative w-full overflow-hidden rounded-full border ${sizes.container}`}
         style={{
-          background: 'rgba(255, 255, 255, 0.05)',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+          background: 'var(--surface-2, var(--surface))',
+          borderColor: 'var(--border)',
           backdropFilter: 'blur(10px)',
         }}
       >
@@ -92,7 +92,7 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
           className="h-full rounded-full shadow-lg"
           style={{
             background: 'linear-gradient(to right, var(--primary), var(--accent), #0088ff)',
-            boxShadow: '0 0 20px rgba(200, 255, 62, 0.6)',
+            boxShadow: '0 0 20px rgba(var(--primary-rgb), 0.45)',
           }}
           initial={{ width: '0%' }}
           animate={{ width: `${clampedPercentage}%` }}
@@ -122,11 +122,11 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
         {/* Compact variant - inline labels */}
         {variant === 'compact' && (
           <div className="absolute inset-0 flex items-center justify-between px-2">
-            <span className={`font-semibold ${sizes.label}`} style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+            <span className={`font-semibold ${sizes.label}`} style={{ color: 'var(--text-primary)' }}>
               {xpTotal}XP
             </span>
             {showPercentage && (
-              <span className={`${sizes.label}`} style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+              <span className={`${sizes.label}`} style={{ color: 'var(--text-secondary)' }}>
                 {Math.round(clampedPercentage)}%
               </span>
             )}

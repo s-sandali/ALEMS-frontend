@@ -98,8 +98,8 @@ export default function BadgesGrid({ badges }) {
                   transition={{ delay: i * 0.05 }}
                   whileHover={isEarned ? { y: -2 } : {}}
                   style={{
-                    background: isEarned ? cardTint : '#0f1011',
-                    border: `1px solid ${isEarned ? glowRing : '#1f2022'}`,
+                    background: isEarned ? cardTint : 'var(--surface-2, var(--surface))',
+                    border: `1px solid ${isEarned ? glowRing : 'var(--border)'}`,
                     borderRadius: 10,
                     padding: '14px 10px',
                     textAlign: 'center',
@@ -126,7 +126,7 @@ export default function BadgesGrid({ badges }) {
                       width: 36,
                       height: 36,
                       borderRadius: 8,
-                      background: isEarned ? badge.iconBg : '#1a1b1d',
+                      background: isEarned ? badge.iconBg : 'var(--surface-2, var(--border))',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',

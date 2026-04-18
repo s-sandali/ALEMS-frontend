@@ -45,7 +45,6 @@ export function Tooltip({ children, content, side = 'top' }) {
             padding: '6px 10px',
             fontSize: 11,
             color: '#e8e9ea',
-            whiteSpace: 'nowrap',
             maxWidth: 200,
             whiteSpace: 'normal',
             lineHeight: 1.4,
