@@ -406,6 +406,15 @@ export const QuizService = {
     delete: (id: number, getToken: GetTokenFn) =>
         apiFetch(`/quizzes/${id}`, { method: "DELETE", getToken }) as
             Promise<null>,
+
+    /**
+     * GET /quizzes/{id}/stats
+     * Admin only. Retrieves statistics for a specific quiz including attempt count,
+     * average score, and pass rate.
+     */
+    getStats: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${id}/stats`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizStats }>,
 };
 
 // ── Quiz question service ──────────────────────────────────────────────────────
@@ -743,6 +752,28 @@ export type LeaderboardEntry = {
     isCurrentUser: boolean;
 };
 
+export type UserAttemptHistory = {
+    attemptId: number;
+    quizId: number;
+    quizTitle: string;
+    algorithmName: string;
+    score: number;
+    xpEarned: number;
+    passed: boolean;
+    completedAt: string | null;
+    startedAt: string;
+};
+
+export type StudentAttemptHistoryResponse = {
+    attempts: UserAttemptHistory[];
+    page: number;
+    pageSize: number;
+    totalAttempts: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+};
+
 // ── Student service ────────────────────────────────────────────────────────────
 
 export const StudentService = {
@@ -754,6 +785,15 @@ export const StudentService = {
     getDashboard: (studentId: number, getToken: GetTokenFn) =>
         apiFetch(`/students/${studentId}/dashboard`, { method: "GET", getToken }) as
             Promise<{ status: string; data: StudentDashboard }>,
+
+    /**
+     * GET /students/{id}/attempts
+     * Returns paginated quiz attempt history for a student, including quiz title, algorithm,
+     * score, XP earned, and attempt dates.
+     */
+    getAttemptHistory: (studentId: number, page: number = 1, pageSize: number = 10, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/attempts?page=${page}&pageSize=${pageSize}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentAttemptHistoryResponse }>,
 
     /**
      * GET /students/{id}/activity?limit={limit}
@@ -772,6 +812,53 @@ export const StudentService = {
     getActivityHeatmap: (studentId: number, getToken: GetTokenFn) =>
         apiFetch(`/students/${studentId}/activity-heatmap`, { method: "GET", getToken }) as
             Promise<{ status: string; data: { date: string; count: number }[] }>,
+};
+
+// ── Admin types ────────────────────────────────────────────────────────────────
+
+export type AdminLeaderboardEntry = {
+    userId: number;
+    username: string;
+    email: string;
+    xpTotal: number;
+    attemptCount: number;
+    averageScore: number;
+    rank: number;
+};
+
+export type QuizStats = {
+    attemptCount: number;
+    averageScore: number;
+    passRate: number;
+};
+
+// ── Admin service ──────────────────────────────────────────────────────
+
+export type AdminStats = {
+    totalUsers: number;
+    totalQuizzes: number;
+    totalAttempts: number;
+    averagePassRate: number;
+};
+
+export const AdminService = {
+    /**
+     * GET /admin/stats
+     * Admin only. Retrieves platform-wide statistics including total users,
+     * quizzes, attempts, and average pass rate.
+     */
+    getStats: (getToken: GetTokenFn) =>
+        apiFetch("/admin/stats", { method: "GET", getToken }) as
+            Promise<{ status: string; data: AdminStats }>,
+
+    /**
+     * GET /admin/leaderboard
+     * Admin only. Retrieves user leaderboard ranked by XP with attempt counts
+     * and average quiz scores.
+     */
+    getLeaderboard: (getToken: GetTokenFn) =>
+        apiFetch("/admin/leaderboard", { method: "GET", getToken }) as
+            Promise<{ data: AdminLeaderboardEntry[] } | AdminLeaderboardEntry[]>,
 };
 
 // ── Leaderboard service ───────────────────────────────────────────────────────
