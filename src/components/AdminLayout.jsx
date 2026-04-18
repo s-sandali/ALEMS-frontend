@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { LayoutDashboard, BarChart3, Users, BookOpen, Code2, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Users, BookOpen, Code2, FileDown, ChevronRight } from 'lucide-react';
 import DashboardNav from '@/components/dashboard/DashboardNav';
 
 const adminMenuItems = [
@@ -8,6 +8,7 @@ const adminMenuItems = [
   { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
   { label: 'Users', path: '/admin/users', icon: Users },
   { label: 'Quizzes', path: '/admin/quizzes', icon: BookOpen },
+  { label: 'Reports', path: '/admin/reports', icon: FileDown },
   { label: 'Coding Questions', path: '/admin/coding-questions', icon: Code2 },
 ];
 
