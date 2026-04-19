@@ -21,18 +21,18 @@ import {
     Code,
 } from "lucide-react";
 
-// ─── Color tokens ─────────────────────────────────────────────────────────────
-const ACCENT = "#D5FF40";
+// --- Color tokens -------------------------------------------------------------
+const ACCENT = "var(--primary)";
 
-// ─── Navigation ───────────────────────────────────────────────────────────────
+// --- Navigation ---------------------------------------------------------------
 export const NAV_LINKS = ["Features", "Algorithms", "How It Works", "Dashboard"];
 
-// ─── Algorithms ───────────────────────────────────────────────────────────────
+// --- Algorithms ---------------------------------------------------------------
 export const ALGORITHMS = [
     {
         name: "Bubble Sort",
         desc: "Repeatedly swaps adjacent elements until sorted",
-        complexity: "O(n²)",
+        complexity: "O(n^2)",
         tag: "Beginner",
         accentColor: ACCENT,
         icon: Bubbles,
@@ -49,7 +49,7 @@ export const ALGORITHMS = [
         name: "Quick Sort",
         desc: "Partition-based divide-and-conquer sorting",
         complexity: "O(n log n)",
-        tag: "Intermediate",
+        tag: "Advanced",
         accentColor: ACCENT,
         icon: Zap,
     },
@@ -57,13 +57,37 @@ export const ALGORITHMS = [
         name: "Merge Sort",
         desc: "Stable sort by recursive merging of halves",
         complexity: "O(n log n)",
-        tag: "Advanced",
+        tag: "Intermediate",
         accentColor: ACCENT,
         icon: GitMerge,
     },
+    {
+        name: "Insertion Sort",
+        desc: "Builds a sorted prefix by inserting one item at a time",
+        complexity: "O(n^2)",
+        tag: "Beginner",
+        accentColor: ACCENT,
+        icon: Rewind,
+    },
+    {
+        name: "Selection Sort",
+        desc: "Selects the minimum remaining value for each position",
+        complexity: "O(n^2)",
+        tag: "Beginner",
+        accentColor: ACCENT,
+        icon: Activity,
+    },
+    {
+        name: "Heap Sort",
+        desc: "Uses a max heap to repeatedly extract the largest value",
+        complexity: "O(n log n)",
+        tag: "Advanced",
+        accentColor: ACCENT,
+        icon: Cpu,
+    },
 ];
 
-// ─── Features ─────────────────────────────────────────────────────────────────
+// --- Features -----------------------------------------------------------------
 export const FEATURES = [
     {
         Icon: Play,
@@ -103,7 +127,7 @@ export const FEATURES = [
     },
 ];
 
-// ─── How It Works Steps ───────────────────────────────────────────────────────
+// --- How It Works Steps -------------------------------------------------------
 export const STEPS = [
     {
         num: "01",
@@ -125,15 +149,15 @@ export const STEPS = [
     },
 ];
 
-// ─── Stats ────────────────────────────────────────────────────────────────────
+// --- Stats --------------------------------------------------------------------
 export const STATS = [
-    { label: "Algorithms. More to come!", value: 5, suffix: "+", icon: Code },
+    { label: "Algorithms. More to come!", value: 7, suffix: "+", icon: Code },
     { label: "Autograded quizzes", value: 10, suffix: "+", icon: FileQuestionMark },
     { label: "XP badge system", value: 12, suffix: " level", icon: Shield },
     { label: "Concurrent Users Supported", value: 100, suffix: "+", icon: Users },
 ];
 
-// ─── Dashboard Preview ───────────────────────────────────────────────────────
+// --- Dashboard Preview -------------------------------------------------------
 export const BADGES = [
     { icon: Star, label: "First Sort", awarded: true, color: ACCENT },
     { icon: Zap, label: "Speed Run", awarded: true, color: ACCENT },
@@ -150,13 +174,14 @@ export const QUIZ_SCORES = [
     { algo: "Merge Sort", score: 40, color: "#a8e600" },
 ];
 
-// ─── Sort Bar Colors for Hero Animation ───────────────────────────────────────
+// --- Sort Bar Colors for Hero Animation ---------------------------------------
 export const BAR_COLORS = [
-    "#D5FF40",
+    "var(--primary)",
     "#b8e030",
     "#a8e600",
     "#c4f020",
-    "#D5FF40",
+    "var(--primary)",
     "#deff66",
     "#e8ff80",
 ];
+

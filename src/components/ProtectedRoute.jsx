@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { useAuth, RedirectToSignIn } from "@clerk/clerk-react";
+import { useAuth, useUser, RedirectToSignIn } from "@clerk/clerk-react";
 import { UserService } from "../lib/api";
+import { RoleProvider } from "../context/RoleContext";
 
 export default function ProtectedRoute({ children }) {
     const { isLoaded, isSignedIn, getToken } = useAuth();
+    const { user } = useUser();
     const [isSyncing, setIsSyncing] = useState(true);
 
     useEffect(() => {
@@ -11,6 +13,8 @@ export default function ProtectedRoute({ children }) {
             const syncAccount = async () => {
                 try {
                     await UserService.syncUser(getToken);
+                    // Reload Clerk user so publicMetadata reflects the latest role from Clerk
+                    await user?.reload();
                 } catch (error) {
                     if (error.message === "UNAUTHORIZED") {
                         window.location.href = "/login";
@@ -30,12 +34,14 @@ export default function ProtectedRoute({ children }) {
 
     // Show nothing while Clerk is still loading auth state
     if (!isLoaded || isSyncing) {
-        return <div className="min-h-screen flex items-center justify-center text-white" style={{ background: "#0C0C0C" }}>Loading Auth...</div>;
+        return <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg)", color: "var(--text-primary)" }}>Loading Auth...</div>;
     }
 
     if (!isSignedIn) {
         return <RedirectToSignIn />;
     }
 
-    return children;
+    const role = (user?.publicMetadata?.role) ?? "User";
+    return <RoleProvider role={role}>{children}</RoleProvider>;
 }
+

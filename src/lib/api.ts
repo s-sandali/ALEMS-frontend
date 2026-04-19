@@ -1,10 +1,169 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5181/api";
+const CLERK_JWT_TEMPLATE = import.meta.env.VITE_CLERK_JWT_TEMPLATE as string | undefined;
+
+// Matches Clerk's actual getToken signature so the template option can be passed through.
+type GetTokenFn = (options?: { template?: string }) => Promise<string | null>;
 
 type Initializer = {
     method?: string;
     headers?: HeadersInit;
     body?: any;
-    getToken: () => Promise<string | null>;
+    getToken: GetTokenFn;
+};
+
+export type AlgorithmSimulationStep = {
+    stepNumber: number;
+    arrayState: number[];
+    activeIndices: number[];
+    lineNumber: number;
+    actionLabel: string;
+    search?: SearchStepModel | null;
+    heap?: HeapStepModel | null;
+    quickSort?: QuickSortStepModel | null;
+    insertionSort?: InsertionSortStepModel | null;
+    selectionSort?: SelectionSortStepModel | null;
+    mergeSort?: MergeSortStepModel | null;
+    recursion?: RecursionStepModel | null;
+};
+
+type RecursionPrimitive = string | number | boolean | null;
+
+export type RecursionFrameModel = {
+    id?: string | number | null;
+    functionName?: string | null;
+    label?: string | null;
+    state?: string | null;
+    depth?: number | null;
+    arguments?: Record<string, RecursionPrimitive> | null;
+    params?: Record<string, RecursionPrimitive> | null;
+    leftIndex?: number | null;
+    rightIndex?: number | null;
+    lowIndex?: number | null;
+    highIndex?: number | null;
+    startIndex?: number | null;
+    endIndex?: number | null;
+    midpointIndex?: number | null;
+    pivotIndex?: number | null;
+    returnValue?: RecursionPrimitive | number[] | string[] | null;
+    result?: RecursionPrimitive | number[] | string[] | null;
+};
+
+export type RecursionStepModel = {
+    event?: string | null;
+    state?: string | null;
+    depth?: number | null;
+    currentFrameId?: string | number | null;
+    frames?: RecursionFrameModel[] | null;
+    stack?: RecursionFrameModel[] | null;
+};
+
+export type MergeSortStepModel = {
+    type: string;
+    left: number;
+    right: number;
+    mid?: number | null;
+    recursionDepth: number;
+    mergeBuffer?: number[] | null;
+    placeIndex?: number | null;
+};
+
+export type QuickSortStepModel = {
+    type?: string | null;
+    pivot?: number | null;
+    pivotIndex?: number | null;
+    range?: number[] | null;
+    recursionDepth?: number | null;
+};
+
+export type InsertionSortStepModel = {
+    type?: string | null;
+    currentIndex?: number | null;
+    key?: number | null;
+    compareIndex?: number | null;
+    shiftFrom?: number | null;
+    shiftTo?: number | null;
+    insertPosition?: number | null;
+    sortedBoundary?: number | null;
+};
+
+export type SelectionSortStepModel = {
+    type?: string | null;
+    currentIndex?: number | null;
+    candidateIndex?: number | null;
+    minIndex?: number | null;
+    swapFrom?: number | null;
+    swapTo?: number | null;
+    sortedBoundary?: number | null;
+};
+
+export type HeapStepModel = {
+    phase: string;
+    heapBoundaryEnd: number;
+    heapIndex?: number | null;
+    parentIndex?: number | null;
+    leftChildIndex?: number | null;
+    rightChildIndex?: number | null;
+    comparedParentIndex?: number | null;
+    comparedChildIndex?: number | null;
+    comparedIndices?: number[];
+    parentChildComparison?: string | null;
+    extractedValue?: number | null;
+    extractedFromIndex?: number | null;
+    sortedTargetIndex?: number | null;
+};
+
+export type SearchStepModel = {
+    lowIndex: number;
+    highIndex: number;
+    midpointIndex?: number | null;
+    state: string;
+    discardedSide?: string | null;
+    discardStartIndex?: number | null;
+    discardEndIndex?: number | null;
+    discardedIndices?: number[];
+};
+
+export type AlgorithmSimulationResponse = {
+    algorithmName: string;
+    steps: AlgorithmSimulationStep[];
+    totalSteps: number;
+    targetValue?: number | null;
+};
+
+export type SimulationValidationAction = {
+    type: string;
+    indices: number[];
+};
+
+export type SimulationSession = {
+    sessionId: string;
+    steps: AlgorithmSimulationStep[];
+    currentStepIndex: number;
+    targetValue?: number | null;
+};
+
+export type SimulationValidationResponse = {
+    sessionId: string;
+    correct: boolean;
+    newArrayState: number[];
+    nextState: number[];
+    nextExpectedAction: string;
+    message: string;
+    hint: string;
+    suggestedIndices: number[];
+    currentStepIndex: number;
+};
+
+export type AlgorithmSummary = {
+    algorithmId: number;
+    name: string;
+    category: string;
+    description: string;
+    timeComplexityBest: string;
+    timeComplexityAverage: string;
+    timeComplexityWorst: string;
+    quizAvailable?: boolean;
+    createdAt: string;
 };
 
 /**
@@ -12,7 +171,7 @@ type Initializer = {
  * and globally standardises error handling.
  */
 async function apiFetch(endpoint: string, { method = "GET", headers, body, getToken }: Initializer) {
-    const token = await getToken();
+    const token = await getToken(CLERK_JWT_TEMPLATE ? { template: CLERK_JWT_TEMPLATE } : undefined);
 
     if (!token) {
         throw new Error("No valid session token found. User might be signed out.");
@@ -68,41 +227,690 @@ export const UserService = {
      * POST /users/sync
      * Called immediately after a user signs in to ensure they exist in the DB.
      */
-    syncUser: (getToken: () => Promise<string | null>) =>
+    syncUser: (getToken: GetTokenFn) =>
         apiFetch("/users/sync", { method: "POST", getToken }),
 
     /**
      * GET /users
      * Admin only. Retrieves all users.
      */
-    getAllUsers: (getToken: () => Promise<string | null>) =>
+    getAllUsers: (getToken: GetTokenFn) =>
         apiFetch("/users", { method: "GET", getToken }),
 
     /**
      * GET /users/{id}
      * Admin only. Retrieves a specific user by ID.
      */
-    getUserById: (id: number, getToken: () => Promise<string | null>) =>
+    getUserById: (id: number, getToken: GetTokenFn) =>
         apiFetch(`/users/${id}`, { method: "GET", getToken }),
 
     /**
      * POST /users
      * Admin only. Creates a new user.
      */
-    createUser: (userData: { email: string; username: string; role: string }, getToken: () => Promise<string | null>) =>
+    createUser: (userData: { email: string; username: string; role: string }, getToken: GetTokenFn) =>
         apiFetch("/users", { method: "POST", body: userData, getToken }),
 
     /**
      * PUT /users/{id}
      * Admin only. Updates a user.
      */
-    updateUser: (id: number, userData: { role: string; isActive: boolean }, getToken: () => Promise<string | null>) =>
+    updateUser: (id: number, userData: { role: string; isActive: boolean }, getToken: GetTokenFn) =>
         apiFetch(`/users/${id}`, { method: "PUT", body: userData, getToken }),
 
     /**
      * DELETE /users/{id}
      * Admin only. Soft deletes a user.
      */
-    deleteUser: (id: number, getToken: () => Promise<string | null>) =>
-        apiFetch(`/users/${id}`, { method: "DELETE", getToken })
+    deleteUser: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/users/${id}`, { method: "DELETE", getToken }),
+
+    /**
+     * GET /students/{id}/progression
+     * Retrieves the user's XP progression data including current level and thresholds.
+     */
+    getProgression: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${id}/progression`, { method: "GET", getToken })
+};
+
+export const AlgorithmService = {
+    /**
+     * GET /algorithms
+     * Retrieves the algorithm library available to authenticated learners.
+     */
+    getAll: (getToken: GetTokenFn) =>
+        apiFetch("/algorithms", {
+            method: "GET",
+            getToken,
+        }) as Promise<{ status: string; data: AlgorithmSummary[] }>,
+
+    /**
+     * GET /algorithms/{id}
+     * Retrieves a single algorithm record.
+     */
+    getById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/algorithms/${id}`, {
+            method: "GET",
+            getToken,
+        }) as Promise<{ status: string; data: AlgorithmSummary }>,
+};
+
+// ── Quiz types ────────────────────────────────────────────────────────────────
+
+export type QuizSummary = {
+    quizId: number;
+    algorithmId: number;
+    createdBy: number;
+    title: string;
+    description: string | null;
+    timeLimitMins: number | null;
+    passScore: number;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type CreateQuizPayload = {
+    algorithmId: number;
+    title: string;
+    description?: string | null;
+    timeLimitMins?: number | null;
+    passScore?: number;
+};
+
+export type UpdateQuizPayload = {
+    title: string;
+    description?: string | null;
+    timeLimitMins?: number | null;
+    passScore: number;
+    isActive: boolean;
+};
+
+// ── Quiz question types ────────────────────────────────────────────────────────
+
+export type QuizQuestion = {
+    questionId: number;
+    quizId: number;
+    questionType: "MCQ" | "PREDICT_STEP";
+    questionText: string;
+    optionA: string;
+    optionB: string;
+    optionC: string;
+    optionD: string;
+    correctOption: "A" | "B" | "C" | "D";
+    difficulty: "easy" | "medium" | "hard";
+    explanation: string | null;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: string;
+};
+
+export type CreateQuizQuestionPayload = {
+    questionType: "MCQ" | "PREDICT_STEP";
+    questionText: string;
+    optionA: string;
+    optionB: string;
+    optionC: string;
+    optionD: string;
+    correctOption: "A" | "B" | "C" | "D";
+    difficulty: "easy" | "medium" | "hard";
+    explanation?: string | null;
+    orderIndex?: number;
+};
+
+export type UpdateQuizQuestionPayload = CreateQuizQuestionPayload & {
+    isActive: boolean;
+};
+
+// ── Quiz service ───────────────────────────────────────────────────────────────
+
+export const QuizService = {
+    /**
+     * GET /quizzes
+     * Admin only. Retrieves all quizzes (active and inactive).
+     */
+    getAll: (getToken: GetTokenFn) =>
+        apiFetch("/quizzes", { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizSummary[] }>,
+
+    /**
+     * GET /quizzes/{id}
+     * Admin only. Retrieves a single quiz by ID.
+     */
+    getById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizSummary }>,
+
+    /**
+     * POST /quizzes
+     * Admin only. Creates a new quiz.
+     * `created_by` is resolved server-side from the Clerk JWT.
+     */
+    create: (payload: CreateQuizPayload, getToken: GetTokenFn) =>
+        apiFetch("/quizzes", { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: QuizSummary }>,
+
+    /**
+     * PUT /quizzes/{id}
+     * Admin only. Updates an existing quiz (full replace of mutable fields).
+     */
+    update: (id: number, payload: UpdateQuizPayload, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${id}`, { method: "PUT", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: QuizSummary }>,
+
+    /**
+     * DELETE /quizzes/{id}
+     * Admin only. Soft-deletes a quiz (sets is_active = false).
+     * Returns null on success (204 No Content).
+     */
+    delete: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${id}`, { method: "DELETE", getToken }) as
+            Promise<null>,
+
+    /**
+     * GET /quizzes/{id}/stats
+     * Admin only. Retrieves statistics for a specific quiz including attempt count,
+     * average score, and pass rate.
+     */
+    getStats: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${id}/stats`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizStats }>,
+};
+
+// ── Quiz question service ──────────────────────────────────────────────────────
+
+export const QuizQuestionService = {
+    /**
+     * GET /quizzes/{quizId}/questions
+     * Admin only. Retrieves all active questions for a quiz, ordered by order_index.
+     */
+    getByQuiz: (quizId: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${quizId}/questions`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizQuestion[] }>,
+
+    /**
+     * GET /quizzes/{quizId}/questions/{id}
+     * Admin only. Retrieves a single question by ID.
+     */
+    getById: (quizId: number, id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${quizId}/questions/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizQuestion }>,
+
+    /**
+     * POST /quizzes/{quizId}/questions
+     * Admin only. Adds a new question to a quiz.
+     * Set questionType to "PREDICT_STEP" for algorithm-step prediction questions.
+     */
+    create: (quizId: number, payload: CreateQuizQuestionPayload, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${quizId}/questions`, { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: QuizQuestion }>,
+
+    /**
+     * PUT /quizzes/{quizId}/questions/{id}
+     * Admin only. Updates an existing question (full replace of all fields).
+     */
+    update: (quizId: number, id: number, payload: UpdateQuizQuestionPayload, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${quizId}/questions/${id}`, { method: "PUT", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: QuizQuestion }>,
+
+    /**
+     * DELETE /quizzes/{quizId}/questions/{id}
+     * Admin only. Soft-deletes a question (sets is_active = false).
+     * Returns null on success (204 No Content).
+     */
+    delete: (quizId: number, id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${quizId}/questions/${id}`, { method: "DELETE", getToken }) as
+            Promise<null>,
+};
+
+// ── Student quiz types ─────────────────────────────────────────────────────────
+
+/** Question returned to students — correctOption and explanation are intentionally absent. */
+export type StudentQuestion = {
+    questionId: number;
+    questionType: "MCQ" | "PREDICT_STEP";
+    questionText: string;
+    optionA: string;
+    optionB: string;
+    optionC: string;
+    optionD: string;
+    difficulty: "easy" | "medium" | "hard";
+    orderIndex: number;
+};
+
+export type QuizAttemptAnswer = {
+    questionId: number;
+    selectedOption: "A" | "B" | "C" | "D";
+};
+
+export type QuizAttemptPayload = {
+    answers: QuizAttemptAnswer[];
+};
+
+export type QuizAttemptQuestionResult = {
+    questionId: number;
+    selectedOption: string;
+    correctOption: string;
+    isCorrect: boolean;
+    explanation: string | null;
+};
+
+export type QuizAttemptResult = {
+    attemptId: number;
+    quizId: number;
+    score: number;           // percentage 0–100
+    passed: boolean;
+    totalQuestions: number;
+    correctCount: number;
+    xpEarned: number;
+    isFirstAttempt: boolean;
+    results: QuizAttemptQuestionResult[];
+};
+
+// ── Student quiz service ───────────────────────────────────────────────────────
+
+export const StudentQuizService = {
+    /**
+     * GET /student/quizzes
+     * Returns only active quizzes (is_active = true). Accessible to all authenticated users.
+     */
+    getActiveQuizzes: (getToken: GetTokenFn) =>
+        apiFetch("/student/quizzes", { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizSummary[] }>,
+
+    /**
+     * GET /student/quizzes/{id}
+     * Returns a single active quiz. Returns 404 if inactive or not found.
+     */
+    getActiveQuizById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/student/quizzes/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizSummary }>,
+
+    /**
+     * GET /student/quizzes/{quizId}/questions
+     * Returns active questions for a quiz WITHOUT correctOption or explanation.
+     */
+    getQuizQuestions: (quizId: number, getToken: GetTokenFn) =>
+        apiFetch(`/student/quizzes/${quizId}/questions`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentQuestion[] }>,
+
+    /**
+     * POST /student/quizzes/{quizId}/attempt
+     * Submits all answers and returns the graded result with explanations.
+     */
+    submitAttempt: (quizId: number, payload: QuizAttemptPayload, getToken: GetTokenFn) =>
+        apiFetch(`/student/quizzes/${quizId}/attempt`, { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; data: QuizAttemptResult }>,
+};
+
+// ── Coding question types ──────────────────────────────────────────────────────
+
+export type CodingQuestion = {
+    id: number;
+    title: string;
+    description: string;
+    inputExample: string | null;
+    expectedOutput: string | null;
+    difficulty: "easy" | "medium" | "hard";
+};
+
+export type CreateCodingQuestionPayload = {
+    title: string;
+    description: string;
+    inputExample?: string | null;
+    expectedOutput?: string | null;
+    difficulty: "easy" | "medium" | "hard";
+};
+
+export type UpdateCodingQuestionPayload = CreateCodingQuestionPayload;
+
+// ── Coding question service ────────────────────────────────────────────────────
+
+export const CodingQuestionService = {
+    /**
+     * GET /coding-questions
+     * Admin only. Retrieves all coding questions.
+     */
+    getAll: (getToken: GetTokenFn) =>
+        apiFetch("/coding-questions", { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion[] }>,
+
+    /**
+     * GET /coding-questions/{id}
+     * Admin only. Retrieves a single coding question by ID.
+     */
+    getById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/coding-questions/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion }>,
+
+    /**
+     * POST /coding-questions
+     * Admin only. Creates a new coding question.
+     */
+    create: (payload: CreateCodingQuestionPayload, getToken: GetTokenFn) =>
+        apiFetch("/coding-questions", { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: CodingQuestion }>,
+
+    /**
+     * PUT /coding-questions/{id}
+     * Admin only. Updates an existing coding question.
+     */
+    update: (id: number, payload: UpdateCodingQuestionPayload, getToken: GetTokenFn) =>
+        apiFetch(`/coding-questions/${id}`, { method: "PUT", body: payload, getToken }) as
+            Promise<{ status: string; message: string; data: CodingQuestion }>,
+
+    /**
+     * DELETE /coding-questions/{id}
+     * Admin only. Deletes a coding question.
+     * Returns null on success (204 No Content).
+     */
+    delete: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/coding-questions/${id}`, { method: "DELETE", getToken }) as
+            Promise<null>,
+};
+
+// ── Code execution types ───────────────────────────────────────────────────────
+
+export type SupportedLanguage = {
+    languageId: number;
+    name: string;
+};
+
+export type CodeExecutionRequest = {
+    sourceCode: string;
+    languageId: number;
+    stdin?: string | null;
+    expectedOutput?: string | null;
+};
+
+export type CodeExecutionResult = {
+    stdout: string | null;
+    stderr: string | null;
+    compileOutput: string | null;
+    statusId: number;
+    statusDescription: string;
+    executionTime: string | null;
+    memoryUsed: number | null;
+};
+
+// ── Code execution service ────────────────────────────────────────────────────
+
+export const CodeExecutionApiService = {
+    /**
+     * GET /code/languages
+     * Returns the list of supported Judge0 language IDs and names.
+     */
+    getLanguages: (getToken: GetTokenFn) =>
+        apiFetch("/code/languages", { method: "GET", getToken }) as
+            Promise<{ status: string; data: SupportedLanguage[] }>,
+
+    /**
+     * POST /code/execute
+     * Submits source code to Judge0 (wait=true, synchronous).
+     * Returns the full execution result — check statusId for outcome.
+     */
+    execute: (payload: CodeExecutionRequest, getToken: GetTokenFn) =>
+        apiFetch("/code/execute", { method: "POST", body: payload, getToken }) as
+            Promise<{ status: string; data: CodeExecutionResult }>,
+};
+
+// ── Student coding question service ──────────────────────────────────────────
+
+export const StudentCodingQuestionService = {
+    /**
+     * GET /student/coding-questions
+     * Any authenticated user. Returns all coding questions.
+     */
+    getAll: (getToken: GetTokenFn) =>
+        apiFetch("/student/coding-questions", { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion[] }>,
+
+    /**
+     * GET /student/coding-questions/{id}
+     * Any authenticated user. Returns a single coding question by ID.
+     */
+    getById: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/student/coding-questions/${id}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: CodingQuestion }>,
+};
+
+// ── Activity types ────────────────────────────────────────────────────────────
+
+export type ActivityItem = {
+    type: 'quiz' | 'badge';
+    title: string;
+    xpEarned: number;
+    createdAt: string;  // ISO-8601 datetime string
+    metadata?: string | null;
+};
+
+// ── Student types ─────────────────────────────────────────────────────────────
+
+export type Badge = {
+    id: number;
+    name: string;
+    icon: string;
+    earned: boolean;
+    awardDate?: string | null;
+};
+
+export type EarnedBadge = {
+    id: number;
+    name: string;
+    description: string;
+    xpThreshold: number;
+    iconType: string;
+    iconColor: string;
+    awardDate: string;
+};
+
+export type BadgeDashboard = {
+    id: number;
+    name: string;
+    description: string;
+    xpThreshold: number;
+    iconType: string;
+    iconColor: string;
+    earned: boolean;
+};
+
+export type PerformanceSummary = {
+    totalAttempts: number;
+    totalPassed: number;
+    passRate: number;
+    averageScore: number;
+    totalXpFromQuizzes: number;
+};
+
+export type QuizAttemptHistoryItem = {
+    attemptId: number;
+    quizId: number;
+    quizTitle: string;
+    algorithmName: string;
+    score: number;
+    totalQuestions: number;
+    scorePercent: number;
+    xpEarned: number;
+    passed: boolean;
+    completedAt: string | null;
+};
+
+export type StudentDashboard = {
+    studentId: number;
+    xpTotal: number;
+    earnedBadges: EarnedBadge[];
+    allBadges: BadgeDashboard[];
+    performanceSummary: PerformanceSummary;
+    quizAttemptHistory: QuizAttemptHistoryItem[];
+};
+
+// ── Leaderboard types ─────────────────────────────────────────────────────────
+
+export type LeaderboardEntry = {
+    userId: number;
+    username: string;
+    xpTotal: number;
+    rank: number;
+    isCurrentUser: boolean;
+};
+
+export type UserAttemptHistory = {
+    attemptId: number;
+    quizId: number;
+    quizTitle: string;
+    algorithmName: string;
+    score: number;
+    xpEarned: number;
+    passed: boolean;
+    completedAt: string | null;
+    startedAt: string;
+};
+
+export type StudentAttemptHistoryResponse = {
+    attempts: UserAttemptHistory[];
+    page: number;
+    pageSize: number;
+    totalAttempts: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+};
+
+// ── Student service ────────────────────────────────────────────────────────────
+
+export const StudentService = {
+    /**
+     * GET /students/{id}/dashboard
+     * Returns comprehensive dashboard data including XP total, earned badges with award dates,
+     * and full badge list for rendering locked placeholders.
+     */
+    getDashboard: (studentId: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/dashboard`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentDashboard }>,
+
+    /**
+     * GET /students/{id}/attempts
+     * Returns paginated quiz attempt history for a student, including quiz title, algorithm,
+     * score, XP earned, and attempt dates.
+     */
+    getAttemptHistory: (studentId: number, page: number = 1, pageSize: number = 10, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/attempts?page=${page}&pageSize=${pageSize}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentAttemptHistoryResponse }>,
+
+    /**
+     * GET /students/{id}/activity?limit={limit}
+     * Returns the student's most recent activity events (quiz completions + badge awards),
+     * ordered by date descending. Defaults to the last 10 events.
+     */
+    getActivity: (studentId: number, getToken: GetTokenFn, limit = 10) =>
+        apiFetch(`/students/${studentId}/activity?limit=${limit}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: ActivityItem[] }>,
+
+    /**
+     * GET /students/{id}/activity-heatmap
+     * Returns one entry per calendar day the student completed at least one quiz attempt.
+     * Days with zero activity are omitted; the frontend fills the gaps.
+     */
+    getActivityHeatmap: (studentId: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/activity-heatmap`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: { date: string; count: number }[] }>,
+};
+
+// ── Admin types ────────────────────────────────────────────────────────────────
+
+export type AdminLeaderboardEntry = {
+    userId: number;
+    username: string;
+    email: string;
+    xpTotal: number;
+    attemptCount: number;
+    averageScore: number;
+    rank: number;
+};
+
+export type QuizStats = {
+    attemptCount: number;
+    averageScore: number;
+    passRate: number;
+};
+
+// ── Admin service ──────────────────────────────────────────────────────
+
+export type AdminStats = {
+    totalUsers: number;
+    totalQuizzes: number;
+    totalAttempts: number;
+    averagePassRate: number;
+};
+
+export const AdminService = {
+    /**
+     * GET /admin/stats
+     * Admin only. Retrieves platform-wide statistics including total users,
+     * quizzes, attempts, and average pass rate.
+     */
+    getStats: (getToken: GetTokenFn) =>
+        apiFetch("/admin/stats", { method: "GET", getToken }) as
+            Promise<{ status: string; data: AdminStats }>,
+
+    /**
+     * GET /admin/leaderboard
+     * Admin only. Retrieves user leaderboard ranked by XP with attempt counts
+     * and average quiz scores.
+     */
+    getLeaderboard: (getToken: GetTokenFn) =>
+        apiFetch("/admin/leaderboard", { method: "GET", getToken }) as
+            Promise<{ data: AdminLeaderboardEntry[] } | AdminLeaderboardEntry[]>,
+};
+
+// ── Leaderboard service ───────────────────────────────────────────────────────
+
+export const LeaderboardService = {
+    /**
+     * GET /leaderboard
+     * Returns the top 10 users by XP. The authenticated user is always included;
+     * if they are outside the top 10 they are appended with their actual rank.
+     */
+    getLeaderboard: (getToken: GetTokenFn) =>
+        apiFetch("/leaderboard", { method: "GET", getToken }) as
+            Promise<{ status: string; data: LeaderboardEntry[] }>,
+};
+
+export const SimulationService = {
+    /**
+     * POST /simulation/run
+     * Requests the backend-generated step trace for an algorithm/input pair.
+     */
+    runSimulation: (algorithm: string, array: number[], getToken: GetTokenFn, targetValue?: number | null) =>
+        apiFetch("/simulation/run", {
+            method: "POST",
+            body: { algorithm, array, target: targetValue ?? null },
+            getToken,
+        }) as Promise<AlgorithmSimulationResponse>,
+
+    /**
+     * POST /simulation/start
+     * Starts a stateful practice-mode session backed by the auto-mode trace.
+     */
+    startSession: (algorithm: string, array: number[], getToken: GetTokenFn, targetValue?: number | null) =>
+        apiFetch("/simulation/start", {
+            method: "POST",
+            body: { algorithm, array, target: targetValue ?? null },
+            getToken,
+        }) as Promise<SimulationSession>,
+
+    /**
+     * POST /simulation/validate-step
+     * Validates an interactive learner action against the backend engine.
+     */
+    validateStep: (
+        sessionId: string,
+        action: SimulationValidationAction,
+        getToken: GetTokenFn,
+    ) =>
+        apiFetch("/simulation/validate-step", {
+            method: "POST",
+            body: { sessionId, action },
+            getToken,
+        }) as Promise<SimulationValidationResponse>,
 };
