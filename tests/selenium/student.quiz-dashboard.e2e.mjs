@@ -197,6 +197,57 @@ async function clickWhenReady(driver, locator, timeoutMs = 30_000) {
     }
 }
 
+async function getAnsweredProgress(driver) {
+    const progressNodes = await driver.findElements(
+        By.xpath("//*[contains(translate(normalize-space(.), 'ANSWERED', 'answered'), 'answered') and contains(normalize-space(.), 'of')]"),
+    );
+
+    for (const node of progressNodes) {
+        const text = await node.getText().catch(() => "");
+        const match = text.match(/(\d+)\s+of\s+(\d+)\s+answered/i);
+        if (match) {
+            return {
+                answered: Number.parseInt(match[1], 10),
+                total: Number.parseInt(match[2], 10),
+            };
+        }
+    }
+
+    return null;
+}
+
+async function answerCurrentQuestion(driver) {
+    const beforeProgress = await getAnsweredProgress(driver);
+    const optionLocator = By.css("[data-testid='quiz-option-A']");
+    await clickWhenReady(driver, optionLocator);
+
+    if (!beforeProgress || beforeProgress.answered >= beforeProgress.total) {
+        return;
+    }
+
+    let progressed = await driver.wait(async () => {
+        const afterProgress = await getAnsweredProgress(driver);
+        return !!afterProgress && afterProgress.answered >= beforeProgress.answered + 1;
+    }, 10_000).catch(() => false);
+
+    if (!progressed) {
+        const option = await waitVisible(driver, optionLocator, 5_000);
+        await driver.executeScript("arguments[0].click();", option);
+
+        progressed = await driver.wait(async () => {
+            const afterProgress = await getAnsweredProgress(driver);
+            return !!afterProgress && afterProgress.answered >= beforeProgress.answered + 1;
+        }, 10_000).catch(() => false);
+    }
+
+    if (!progressed) {
+        const afterProgress = await getAnsweredProgress(driver);
+        throw new Error(
+            `Failed to register answer click. Before: ${beforeProgress.answered}/${beforeProgress.total}, After: ${afterProgress?.answered ?? "unknown"}/${afterProgress?.total ?? "unknown"}`,
+        );
+    }
+}
+
 function getCandidateFrontendUrls(frontendUrl) {
     const candidates = [frontendUrl];
 
@@ -285,6 +336,7 @@ async function loginViaClerk(driver, frontendUrl, email, password, manual2FAEnab
 }
 
 async function completeQuiz(driver) {
+    await waitVisible(driver, By.css("[data-testid='quiz-question-card']"), 30_000);
     const quizTitle = (await getText(driver, By.css("h1"))).trim();
 
     while (true) {
@@ -308,11 +360,11 @@ async function completeQuiz(driver) {
             break;
         }
 
-        await clickWhenReady(driver, By.css("[data-testid='quiz-option-A']"));
+        await answerCurrentQuestion(driver);
         await clickWhenReady(driver, By.css("[data-testid='quiz-next']"));
     }
 
-    await clickWhenReady(driver, By.css("[data-testid='quiz-option-A']"));
+    await answerCurrentQuestion(driver);
     await clickWhenReady(driver, By.css("[data-testid='quiz-submit']"));
 
     const scorePercentText = await getText(driver, By.xpath("//div[contains(text(), '%')]"), 30_000);
@@ -326,6 +378,29 @@ async function completeQuiz(driver) {
     }
 
     return { quizTitle, scorePercent, awardedXp };
+}
+
+async function startFirstAvailableQuiz(driver, frontendUrl) {
+    await driver.get(`${frontendUrl}/quizzes`);
+
+    const noQuizzesBanner = await driver.findElements(
+        By.xpath("//*[contains(normalize-space(.), 'No quizzes are available yet.')]"),
+    );
+    if (noQuizzesBanner.length > 0 && await noQuizzesBanner[0].isDisplayed()) {
+        throw new Error("No quizzes are available for this student account.");
+    }
+
+    const firstQuizCard = await waitVisible(
+        driver,
+        By.xpath("(//button[.//span[normalize-space()='Start Quiz']])[1]"),
+        30_000,
+    );
+    await driver.executeScript(
+        "arguments[0].scrollIntoView({ block: 'center', inline: 'center' }); arguments[0].click();",
+        firstQuizCard,
+    );
+
+    await driver.wait(async () => /\/quiz\/\d+/.test(await driver.getCurrentUrl()), 30_000);
 }
 
 async function goToDashboard(driver, frontendUrl) {
@@ -366,8 +441,7 @@ async function run() {
         const beforeXpText = await getText(driver, By.css("[data-testid='dashboard-xp-total-value']"));
         const beforeXp = parseIntFromText(beforeXpText);
 
-        await clickWhenReady(driver, By.xpath("//span[normalize-space()='Start Quiz']"), 30_000);
-        await driver.wait(async () => /\/quiz\/\d+/.test(await driver.getCurrentUrl()), 30_000);
+        await startFirstAvailableQuiz(driver, frontendUrl);
 
         const { quizTitle, scorePercent, awardedXp } = await completeQuiz(driver);
 
