@@ -3,18 +3,17 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { motion } from "motion/react";
 import { ChevronLeft, LoaderCircle, ShieldAlert } from "lucide-react";
-import DashboardNav from "@/components/dashboard/DashboardNav";
 import { CodingQuestionService } from "../lib/api";
 import { useRole } from "../context/RoleContext";
 
-// ─── Shared style tokens (same as AdminQuizFormPage) ────────────────────────
+// --- Shared style tokens (same as AdminQuizFormPage) ------------------------
 const INPUT = {
     width: "100%",
-    background: "#0f1011",
-    border: "1px solid #2e2f30",
+    background: "var(--db-bg3)",
+    border: "1px solid var(--db-border2)",
     borderRadius: 8,
     padding: "10px 12px",
-    color: "#e4e5e6",
+    color: "var(--db-text)",
     fontSize: 14,
     outline: "none",
     boxSizing: "border-box",
@@ -23,7 +22,7 @@ const INPUT = {
 
 const LABEL = {
     fontSize: 12,
-    color: "#8a8b8e",
+    color: "var(--db-text2)",
     marginBottom: 6,
     display: "block",
     fontFamily: "'Poppins', sans-serif",
@@ -38,8 +37,8 @@ function FieldError({ msg }) {
 function SectionCard({ children }) {
     return (
         <div style={{
-            background: "#131415",
-            border: "1px solid #252627",
+            background: "var(--surface)",
+            border: "1px solid var(--db-border)",
             borderRadius: 16,
             padding: 24,
             display: "flex",
@@ -159,30 +158,28 @@ export default function AdminCodingQuestionFormPage() {
     if (role !== "Admin") {
         return (
             <div style={{
-                minHeight: "100vh", background: "#0d0e0f",
+                minHeight: "100vh", background: "var(--bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexDirection: "column", gap: 12,
             }}>
                 <ShieldAlert size={40} color="#ff5a5a" />
                 <p style={{ color: "#ff9a9a", fontSize: 15 }}>Admin access required.</p>
-                <Link to="/dashboard" style={{ color: "#c8ff3e", fontSize: 13, textDecoration: "none" }}>
-                    ← Back to Dashboard
+                <Link to="/dashboard" style={{ color: "var(--primary)", fontSize: 13, textDecoration: "none" }}>
+                    {"<- Back to Dashboard"}
                 </Link>
             </div>
         );
     }
 
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
-            <DashboardNav />
-
-            <main style={{ maxWidth: 720, margin: "0 auto", padding: "36px 24px 60px" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+            <main style={{ maxWidth: 960, margin: "0 auto", padding: "36px 24px 60px" }}>
                 {/* Back link */}
                 <Link
                     to="/admin/coding-questions"
                     style={{
                         display: "inline-flex", alignItems: "center", gap: 6,
-                        color: "#8a8b8e", fontSize: 13, textDecoration: "none", marginBottom: 24,
+                        color: "var(--text-secondary)", fontSize: 13, textDecoration: "none", marginBottom: 24,
                     }}
                 >
                     <ChevronLeft size={14} />
@@ -190,19 +187,11 @@ export default function AdminCodingQuestionFormPage() {
                 </Link>
 
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 28 }}>
-                    <p style={{
-                        fontSize: 11, color: "#4a4b4e",
-                        letterSpacing: "1.5px", textTransform: "uppercase",
-                        fontFamily: "'Poppins', sans-serif", marginBottom: 8,
-                    }}>
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
                         Admin Panel
                     </p>
-                    <h1 style={{
-                        fontSize: 24, fontWeight: 700, color: "#e4e5e6",
-                        fontFamily: "'Poppins', sans-serif",
-                        letterSpacing: "-0.5px", lineHeight: 1.1,
-                    }}>
-                        {isEdit ? "Edit" : "New"} <span style={{ color: "#c8ff3e" }}>Coding Question</span>
+                     <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
+                        {isEdit ? "Edit" : "New"} <span style={{ color: "var(--primary)" }}>Coding Question</span>
                     </h1>
                 </motion.div>
 
@@ -220,10 +209,10 @@ export default function AdminCodingQuestionFormPage() {
                 {loading ? (
                     <div style={{
                         display: "flex", alignItems: "center", gap: 10,
-                        color: "#8a8b8e", fontSize: 14, minHeight: 120,
+                        color: "var(--text-secondary)", fontSize: 14, minHeight: 120,
                     }}>
-                        <LoaderCircle size={16} color="#c8ff3e" style={{ animation: "spin 1s linear infinite" }} />
-                        Loading question…
+                        <LoaderCircle size={16} color="var(--primary)" style={{ animation: "spin 1s linear infinite" }} />
+                        Loading question...
                     </div>
                 ) : (
                     <motion.div
@@ -236,7 +225,7 @@ export default function AdminCodingQuestionFormPage() {
                             <div>
                                 <label style={LABEL}>Title *</label>
                                 <input
-                                    style={{ ...INPUT, borderColor: errors.title ? "rgba(255,90,90,0.5)" : "#2e2f30" }}
+                                    style={{ ...INPUT, borderColor: errors.title ? "rgba(255,90,90,0.5)" : "var(--db-border2)" }}
                                     value={form.title}
                                     onChange={e => set("title", e.target.value)}
                                     placeholder="e.g. Two Sum"
@@ -252,11 +241,11 @@ export default function AdminCodingQuestionFormPage() {
                                     style={{
                                         ...INPUT,
                                         minHeight: 120, resize: "vertical",
-                                        borderColor: errors.description ? "rgba(255,90,90,0.5)" : "#2e2f30",
+                                        borderColor: errors.description ? "rgba(255,90,90,0.5)" : "var(--db-border2)",
                                     }}
                                     value={form.description}
                                     onChange={e => set("description", e.target.value)}
-                                    placeholder="Describe the problem clearly…"
+                                    placeholder="Describe the problem clearly..."
                                 />
                                 <FieldError msg={errors.description} />
                             </div>
@@ -265,7 +254,7 @@ export default function AdminCodingQuestionFormPage() {
                             <div>
                                 <label style={LABEL}>Difficulty *</label>
                                 <select
-                                    style={{ ...INPUT, borderColor: errors.difficulty ? "rgba(255,90,90,0.5)" : "#2e2f30" }}
+                                    style={{ ...INPUT, borderColor: errors.difficulty ? "rgba(255,90,90,0.5)" : "var(--db-border2)" }}
                                     value={form.difficulty}
                                     onChange={e => set("difficulty", e.target.value)}
                                 >
@@ -307,17 +296,17 @@ export default function AdminCodingQuestionFormPage() {
                                 onClick={handleSave}
                                 disabled={saving}
                                 style={{
-                                    background: saving ? "#1a1b1c" : "rgba(200,255,62,0.12)",
-                                    border: "1px solid rgba(200,255,62,0.3)",
+                                    background: saving ? "var(--surface-2)" : "rgba(var(--primary-rgb),0.12)",
+                                    border: "1px solid rgba(var(--primary-rgb),0.3)",
                                     borderRadius: 8, padding: "10px 24px",
-                                    color: saving ? "#8a8b8e" : "#c8ff3e",
+                                    color: saving ? "var(--text-secondary)" : "var(--primary)",
                                     fontSize: 13, fontWeight: 600,
                                     cursor: saving ? "not-allowed" : "pointer",
                                     display: "inline-flex", alignItems: "center", gap: 8,
                                 }}
                             >
                                 {saving
-                                    ? <><LoaderCircle size={14} style={{ animation: "spin 1s linear infinite" }} />Saving…</>
+                                    ? <><LoaderCircle size={14} style={{ animation: "spin 1s linear infinite" }} />Saving...</>
                                     : isEdit ? "Save Changes" : "Create Question"
                                 }
                             </button>
@@ -332,3 +321,4 @@ export default function AdminCodingQuestionFormPage() {
         </div>
     );
 }
+

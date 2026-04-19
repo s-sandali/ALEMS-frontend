@@ -6,6 +6,7 @@ import { useEffect, useRef, useCallback } from 'react';
 
 function hexToRgba(hex, alpha = 1) {
     if (!hex) return `rgba(0,0,0,${alpha})`;
+    if (hex.startsWith('var(')) return `rgba(var(--primary-rgb), ${alpha})`;
     let h = hex.replace('#', '');
     if (h.length === 3) {
         h = h

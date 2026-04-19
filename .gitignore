@@ -25,5 +25,4 @@ tests/e2e/.auth/
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?

@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5181/api";
 const CLERK_JWT_TEMPLATE = import.meta.env.VITE_CLERK_JWT_TEMPLATE as string | undefined;
 
 // Matches Clerk's actual getToken signature so the template option can be passed through.
@@ -263,7 +263,14 @@ export const UserService = {
      * Admin only. Soft deletes a user.
      */
     deleteUser: (id: number, getToken: GetTokenFn) =>
-        apiFetch(`/users/${id}`, { method: "DELETE", getToken })
+        apiFetch(`/users/${id}`, { method: "DELETE", getToken }),
+
+    /**
+     * GET /students/{id}/progression
+     * Retrieves the user's XP progression data including current level and thresholds.
+     */
+    getProgression: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${id}/progression`, { method: "GET", getToken })
 };
 
 export const AlgorithmService = {
@@ -399,6 +406,15 @@ export const QuizService = {
     delete: (id: number, getToken: GetTokenFn) =>
         apiFetch(`/quizzes/${id}`, { method: "DELETE", getToken }) as
             Promise<null>,
+
+    /**
+     * GET /quizzes/{id}/stats
+     * Admin only. Retrieves statistics for a specific quiz including attempt count,
+     * average score, and pass rate.
+     */
+    getStats: (id: number, getToken: GetTokenFn) =>
+        apiFetch(`/quizzes/${id}/stats`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: QuizStats }>,
 };
 
 // ── Quiz question service ──────────────────────────────────────────────────────
@@ -486,6 +502,8 @@ export type QuizAttemptResult = {
     passed: boolean;
     totalQuestions: number;
     correctCount: number;
+    xpEarned: number;
+    isFirstAttempt: boolean;
     results: QuizAttemptQuestionResult[];
 };
 
@@ -654,6 +672,208 @@ export const StudentCodingQuestionService = {
     getById: (id: number, getToken: GetTokenFn) =>
         apiFetch(`/student/coding-questions/${id}`, { method: "GET", getToken }) as
             Promise<{ status: string; data: CodingQuestion }>,
+};
+
+// ── Activity types ────────────────────────────────────────────────────────────
+
+export type ActivityItem = {
+    type: 'quiz' | 'badge';
+    title: string;
+    xpEarned: number;
+    createdAt: string;  // ISO-8601 datetime string
+    metadata?: string | null;
+};
+
+// ── Student types ─────────────────────────────────────────────────────────────
+
+export type Badge = {
+    id: number;
+    name: string;
+    icon: string;
+    earned: boolean;
+    awardDate?: string | null;
+};
+
+export type EarnedBadge = {
+    id: number;
+    name: string;
+    description: string;
+    xpThreshold: number;
+    iconType: string;
+    iconColor: string;
+    awardDate: string;
+};
+
+export type BadgeDashboard = {
+    id: number;
+    name: string;
+    description: string;
+    xpThreshold: number;
+    iconType: string;
+    iconColor: string;
+    earned: boolean;
+};
+
+export type PerformanceSummary = {
+    totalAttempts: number;
+    totalPassed: number;
+    passRate: number;
+    averageScore: number;
+    totalXpFromQuizzes: number;
+};
+
+export type QuizAttemptHistoryItem = {
+    attemptId: number;
+    quizId: number;
+    quizTitle: string;
+    algorithmName: string;
+    score: number;
+    totalQuestions: number;
+    scorePercent: number;
+    xpEarned: number;
+    passed: boolean;
+    completedAt: string | null;
+};
+
+export type StudentDashboard = {
+    studentId: number;
+    xpTotal: number;
+    earnedBadges: EarnedBadge[];
+    allBadges: BadgeDashboard[];
+    performanceSummary: PerformanceSummary;
+    quizAttemptHistory: QuizAttemptHistoryItem[];
+};
+
+// ── Leaderboard types ─────────────────────────────────────────────────────────
+
+export type LeaderboardEntry = {
+    userId: number;
+    username: string;
+    xpTotal: number;
+    rank: number;
+    isCurrentUser: boolean;
+};
+
+export type UserAttemptHistory = {
+    attemptId: number;
+    quizId: number;
+    quizTitle: string;
+    algorithmName: string;
+    score: number;
+    xpEarned: number;
+    passed: boolean;
+    completedAt: string | null;
+    startedAt: string;
+};
+
+export type StudentAttemptHistoryResponse = {
+    attempts: UserAttemptHistory[];
+    page: number;
+    pageSize: number;
+    totalAttempts: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+};
+
+// ── Student service ────────────────────────────────────────────────────────────
+
+export const StudentService = {
+    /**
+     * GET /students/{id}/dashboard
+     * Returns comprehensive dashboard data including XP total, earned badges with award dates,
+     * and full badge list for rendering locked placeholders.
+     */
+    getDashboard: (studentId: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/dashboard`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentDashboard }>,
+
+    /**
+     * GET /students/{id}/attempts
+     * Returns paginated quiz attempt history for a student, including quiz title, algorithm,
+     * score, XP earned, and attempt dates.
+     */
+    getAttemptHistory: (studentId: number, page: number = 1, pageSize: number = 10, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/attempts?page=${page}&pageSize=${pageSize}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: StudentAttemptHistoryResponse }>,
+
+    /**
+     * GET /students/{id}/activity?limit={limit}
+     * Returns the student's most recent activity events (quiz completions + badge awards),
+     * ordered by date descending. Defaults to the last 10 events.
+     */
+    getActivity: (studentId: number, getToken: GetTokenFn, limit = 10) =>
+        apiFetch(`/students/${studentId}/activity?limit=${limit}`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: ActivityItem[] }>,
+
+    /**
+     * GET /students/{id}/activity-heatmap
+     * Returns one entry per calendar day the student completed at least one quiz attempt.
+     * Days with zero activity are omitted; the frontend fills the gaps.
+     */
+    getActivityHeatmap: (studentId: number, getToken: GetTokenFn) =>
+        apiFetch(`/students/${studentId}/activity-heatmap`, { method: "GET", getToken }) as
+            Promise<{ status: string; data: { date: string; count: number }[] }>,
+};
+
+// ── Admin types ────────────────────────────────────────────────────────────────
+
+export type AdminLeaderboardEntry = {
+    userId: number;
+    username: string;
+    email: string;
+    xpTotal: number;
+    attemptCount: number;
+    averageScore: number;
+    rank: number;
+};
+
+export type QuizStats = {
+    attemptCount: number;
+    averageScore: number;
+    passRate: number;
+};
+
+// ── Admin service ──────────────────────────────────────────────────────
+
+export type AdminStats = {
+    totalUsers: number;
+    totalQuizzes: number;
+    totalAttempts: number;
+    averagePassRate: number;
+};
+
+export const AdminService = {
+    /**
+     * GET /admin/stats
+     * Admin only. Retrieves platform-wide statistics including total users,
+     * quizzes, attempts, and average pass rate.
+     */
+    getStats: (getToken: GetTokenFn) =>
+        apiFetch("/admin/stats", { method: "GET", getToken }) as
+            Promise<{ status: string; data: AdminStats }>,
+
+    /**
+     * GET /admin/leaderboard
+     * Admin only. Retrieves user leaderboard ranked by XP with attempt counts
+     * and average quiz scores.
+     */
+    getLeaderboard: (getToken: GetTokenFn) =>
+        apiFetch("/admin/leaderboard", { method: "GET", getToken }) as
+            Promise<{ data: AdminLeaderboardEntry[] } | AdminLeaderboardEntry[]>,
+};
+
+// ── Leaderboard service ───────────────────────────────────────────────────────
+
+export const LeaderboardService = {
+    /**
+     * GET /leaderboard
+     * Returns the top 10 users by XP. The authenticated user is always included;
+     * if they are outside the top 10 they are appended with their actual rank.
+     */
+    getLeaderboard: (getToken: GetTokenFn) =>
+        apiFetch("/leaderboard", { method: "GET", getToken }) as
+            Promise<{ status: string; data: LeaderboardEntry[] }>,
 };
 
 export const SimulationService = {

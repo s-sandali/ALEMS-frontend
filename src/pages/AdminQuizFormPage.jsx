@@ -5,18 +5,17 @@ import { motion } from "motion/react";
 import {
     Plus, Trash2, Edit2, Check, LoaderCircle, ShieldAlert, ChevronLeft,
 } from "lucide-react";
-import DashboardNav from "@/components/dashboard/DashboardNav";
 import { QuizService, QuizQuestionService, AlgorithmService } from "../lib/api";
 import { useRole } from "../context/RoleContext";
 
-// ─── Shared style tokens ────────────────────────────────────────────────────
+// --- Shared style tokens ----------------------------------------------------
 const INPUT = {
     width: "100%",
-    background: "#0f1011",
-    border: "1px solid #2e2f30",
+    background: "var(--db-bg3)",
+    border: "1px solid var(--db-border2)",
     borderRadius: 8,
     padding: "10px 12px",
-    color: "#e4e5e6",
+    color: "var(--db-text)",
     fontSize: 14,
     outline: "none",
     boxSizing: "border-box",
@@ -25,7 +24,7 @@ const INPUT = {
 
 const LABEL = {
     fontSize: 12,
-    color: "#8a8b8e",
+    color: "var(--text-secondary)",
     marginBottom: 6,
     display: "block",
     fontFamily: "'Poppins', sans-serif",
@@ -33,12 +32,12 @@ const LABEL = {
 };
 
 const DIFF_COLORS = {
-    easy:   { color: "#c8ff3e", bg: "rgba(200,255,62,0.08)",  border: "rgba(200,255,62,0.2)"  },
+    easy:   { color: "var(--primary)", bg: "rgba(var(--primary-rgb),0.08)",  border: "rgba(var(--primary-rgb),0.2)"  },
     medium: { color: "#ffb830", bg: "rgba(255,184,48,0.08)",  border: "rgba(255,184,48,0.2)"  },
     hard:   { color: "#ff5a5a", bg: "rgba(255,90,90,0.08)",   border: "rgba(255,90,90,0.2)"   },
 };
 
-// ─── Small components ────────────────────────────────────────────────────────
+// --- Small components --------------------------------------------------------
 function FieldError({ msg }) {
     if (!msg) return null;
     return <p style={{ fontSize: 11, color: "#ff9a9a", marginTop: 4 }}>{msg}</p>;
@@ -47,8 +46,8 @@ function FieldError({ msg }) {
 function SectionCard({ children, style }) {
     return (
         <div style={{
-            background: "#131415",
-            border: "1px solid #252627",
+            background: "var(--surface)",
+            border: "1px solid var(--db-border)",
             borderRadius: 16,
             padding: 24,
             display: "flex",
@@ -64,11 +63,11 @@ function SectionCard({ children, style }) {
 function SaveBtn({ onClick, disabled, saving, label, savingLabel }) {
     return (
         <button onClick={onClick} disabled={disabled || saving} style={{
-            background: (disabled || saving) ? "#1a1b1c" : "rgba(200,255,62,0.12)",
-            border: "1px solid rgba(200,255,62,0.3)",
+            background: (disabled || saving) ? "var(--surface-2)" : "rgba(var(--primary-rgb),0.12)",
+            border: "1px solid rgba(var(--primary-rgb),0.3)",
             borderRadius: 8,
             padding: "10px 20px",
-            color: (disabled || saving) ? "#8a8b8e" : "#c8ff3e",
+            color: (disabled || saving) ? "var(--text-secondary)" : "var(--primary)",
             fontSize: 13,
             fontWeight: 600,
             cursor: (disabled || saving) ? "not-allowed" : "pointer",
@@ -84,7 +83,7 @@ function SaveBtn({ onClick, disabled, saving, label, savingLabel }) {
     );
 }
 
-// ─── Question form ───────────────────────────────────────────────────────────
+// --- Question form -----------------------------------------------------------
 const EMPTY_Q = {
     questionType: "MCQ",
     questionText: "",
@@ -120,7 +119,7 @@ function QuestionForm({ initial, onSave, onCancel, saving }) {
     return (
         <div style={{
             background: "#0f1011",
-            border: "1px solid rgba(200,255,62,0.2)",
+            border: "1px solid rgba(var(--primary-rgb),0.2)",
             borderRadius: 12,
             padding: 20,
             display: "flex",
@@ -128,7 +127,7 @@ function QuestionForm({ initial, onSave, onCancel, saving }) {
             gap: 16,
             marginTop: 12,
         }}>
-            <h3 style={{ fontSize: 13, fontWeight: 600, color: "#c8ff3e", margin: 0, fontFamily: "'Poppins', sans-serif" }}>
+            <h3 style={{ fontSize: 13, fontWeight: 600, color: "var(--primary)", margin: 0, fontFamily: "'Poppins', sans-serif" }}>
                 {initial ? "Edit Question" : "New Question"}
             </h3>
 
@@ -168,13 +167,13 @@ function QuestionForm({ initial, onSave, onCancel, saving }) {
                     onChange={e => set("questionText", e.target.value)}
                     rows={3}
                     maxLength={2000}
-                    placeholder="Enter the question…"
+                    placeholder="Enter the question..."
                     style={{ ...INPUT, resize: "vertical", minHeight: 72 }}
                 />
                 <FieldError msg={errors.questionText} />
             </div>
 
-            {/* Options A–D */}
+            {/* Options A-D */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {["A", "B", "C", "D"].map(opt => (
                     <div key={opt}>
@@ -219,7 +218,7 @@ function QuestionForm({ initial, onSave, onCancel, saving }) {
                 <button onClick={onCancel} style={{
                     background: "transparent", border: "1px solid #2e2f30",
                     borderRadius: 8, padding: "8px 16px",
-                    color: "#8a8b8e", fontSize: 13, cursor: "pointer",
+                    color: "var(--text-secondary)", fontSize: 13, cursor: "pointer",
                 }}>
                     Cancel
                 </button>
@@ -227,14 +226,14 @@ function QuestionForm({ initial, onSave, onCancel, saving }) {
                     onClick={handleSave}
                     saving={saving}
                     label="Save Question"
-                    savingLabel="Saving…"
+                    savingLabel="Saving..."
                 />
             </div>
         </div>
     );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+// --- Page --------------------------------------------------------------------
 export default function AdminQuizFormPage() {
     const { id } = useParams();          // undefined = create mode, string = edit mode
     const isEdit = Boolean(id);
@@ -244,10 +243,10 @@ export default function AdminQuizFormPage() {
     const role = useRole();
     const navigate = useNavigate();
 
-    // ── Algorithms for dropdown
+    // -- Algorithms for dropdown
     const [algorithms, setAlgorithms] = useState([]);
 
-    // ── Quiz form state
+    // -- Quiz form state
     const [qf, setQf] = useState({
         algorithmId: "",
         title: "",
@@ -260,7 +259,7 @@ export default function AdminQuizFormPage() {
     const [qfSaving, setQfSaving] = useState(false);
     const [qfError, setQfError] = useState("");
 
-    // ── Questions state
+    // -- Questions state
     const [questions, setQuestions] = useState([]);
     const [showQForm, setShowQForm] = useState(false);
     const [editingQ, setEditingQ] = useState(null);      // null = add new, obj = editing existing
@@ -268,13 +267,13 @@ export default function AdminQuizFormPage() {
     const [qError, setQError] = useState("");
     const [deletingQId, setDeletingQId] = useState(null);
 
-    // ── Page loading
+    // -- Page loading
     const [pageLoading, setPageLoading] = useState(isEdit);
     const [pageError, setPageError] = useState("");
 
     const setField = (k, v) => setQf(prev => ({ ...prev, [k]: v }));
 
-    // ── Load data on mount
+    // -- Load data on mount
     useEffect(() => {
         if (role !== "Admin") return;
         let alive = true;
@@ -313,7 +312,7 @@ export default function AdminQuizFormPage() {
         return () => { alive = false; };
     }, [getToken, role, quizId, isEdit]);
 
-    // ── Quiz form validation
+    // -- Quiz form validation
     function validateQuiz() {
         const e = {};
         if (!qf.title.trim() || qf.title.trim().length < 3)
@@ -322,11 +321,11 @@ export default function AdminQuizFormPage() {
             e.algorithmId = "Select an algorithm.";
         const ps = parseInt(qf.passScore, 10);
         if (isNaN(ps) || ps < 0 || ps > 100)
-            e.passScore = "Must be 0–100.";
+            e.passScore = "Must be 0-100.";
         if (qf.timeLimitMins) {
             const tl = parseInt(qf.timeLimitMins, 10);
             if (isNaN(tl) || tl < 1 || tl > 300)
-                e.timeLimitMins = "Must be 1–300 minutes.";
+                e.timeLimitMins = "Must be 1-300 minutes.";
         }
         return e;
     }
@@ -365,7 +364,7 @@ export default function AdminQuizFormPage() {
         }
     }
 
-    // ── Question save (add or edit)
+    // -- Question save (add or edit)
     async function handleSaveQuestion(fields) {
         setQSaving(true);
         setQError("");
@@ -404,7 +403,7 @@ export default function AdminQuizFormPage() {
         }
     }
 
-    // ── Question delete
+    // -- Question delete
     async function handleDeleteQuestion(questionId) {
         if (!window.confirm("Delete this question? This cannot be undone.")) return;
         setDeletingQId(questionId);
@@ -436,18 +435,18 @@ export default function AdminQuizFormPage() {
         setQError("");
     }
 
-    // ── Guards ────────────────────────────────────────────────────────────────
+    // -- Guards ----------------------------------------------------------------
     if (role !== "Admin") {
         return (
             <div style={{
-                minHeight: "100vh", background: "#0d0e0f",
+                minHeight: "100vh", background: "var(--bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexDirection: "column", gap: 12,
             }}>
                 <ShieldAlert size={40} color="#ff5a5a" />
                 <p style={{ color: "#ff9a9a", fontSize: 15 }}>Admin access required.</p>
-                <Link to="/dashboard" style={{ color: "#c8ff3e", fontSize: 13, textDecoration: "none" }}>
-                    ← Back to Dashboard
+                <Link to="/dashboard" style={{ color: "var(--primary)", fontSize: 13, textDecoration: "none" }}>
+                    {"<- Back to Dashboard"}
                 </Link>
             </div>
         );
@@ -456,12 +455,12 @@ export default function AdminQuizFormPage() {
     if (pageLoading) {
         return (
             <div style={{
-                minHeight: "100vh", background: "#0d0e0f",
+                minHeight: "100vh", background: "var(--bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                gap: 10, color: "#8a8b8e", fontSize: 14,
+                gap: 10, color: "var(--text-secondary)", fontSize: 14,
             }}>
-                <LoaderCircle size={16} color="#c8ff3e" style={{ animation: "spin 1s linear infinite" }} />
-                Loading…
+                <LoaderCircle size={16} color="var(--primary)" style={{ animation: "spin 1s linear infinite" }} />
+                Loading...
                 <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
             </div>
         );
@@ -470,24 +469,22 @@ export default function AdminQuizFormPage() {
     if (pageError) {
         return (
             <div style={{
-                minHeight: "100vh", background: "#0d0e0f",
+                minHeight: "100vh", background: "var(--bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexDirection: "column", gap: 12,
             }}>
                 <p style={{ color: "#ff9a9a", fontSize: 15 }}>{pageError}</p>
-                <Link to="/admin/quizzes" style={{ color: "#c8ff3e", fontSize: 13, textDecoration: "none" }}>
-                    ← Back to Quizzes
+                <Link to="/admin/quizzes" style={{ color: "var(--primary)", fontSize: 13, textDecoration: "none" }}>
+                    {"<- Back to Quizzes"}
                 </Link>
                 <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
             </div>
         );
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
+    // -- Render ----------------------------------------------------------------
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
-            <DashboardNav />
-
+        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
             {/* Main */}
             <main style={{ maxWidth: 760, margin: "0 auto", padding: "36px 24px 80px" }}>
 
@@ -495,36 +492,36 @@ export default function AdminQuizFormPage() {
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 28 }}>
                     <Link to="/admin/quizzes" style={{
                         display: "inline-flex", alignItems: "center", gap: 5,
-                        fontSize: 13, color: "#8a8b8e", textDecoration: "none", marginBottom: 16,
+                        fontSize: 13, color: "var(--text-secondary)", textDecoration: "none", marginBottom: 16,
                     }}>
                         <ChevronLeft size={14} />
                         Back to Quiz Management
                     </Link>
                     <p style={{
-                        fontSize: 11, color: "#4a4b4e",
+                        fontSize: 11, color: "var(--text-tertiary)",
                         letterSpacing: "1.5px", textTransform: "uppercase",
                         fontFamily: "'Poppins', sans-serif", marginBottom: 8,
                     }}>
                         Admin Panel
                     </p>
                     <h1 style={{
-                        fontSize: 28, fontWeight: 700, color: "#e4e5e6",
+                        fontSize: 28, fontWeight: 700, color: "var(--text-primary)",
                         fontFamily: "'Poppins', sans-serif",
                         letterSpacing: "-0.5px", lineHeight: 1.1,
                     }}>
                         {isEdit ? "Edit" : "New"}{" "}
-                        <span style={{ color: "#c8ff3e" }}>Quiz</span>
+                        <span style={{ color: "var(--primary)" }}>Quiz</span>
                     </h1>
                 </motion.div>
 
-                {/* ── Quiz details card ─────────────────────────────────── */}
+                {/* -- Quiz details card ----------------------------------- */}
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
                     <SectionCard>
-                        <h2 style={{ fontSize: 15, fontWeight: 600, color: "#e4e5e6", margin: 0 }}>
+                        <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
                             Quiz Details
                         </h2>
 
-                        {/* Algorithm selector — create only */}
+                        {/* Algorithm selector - create only */}
                         {!isEdit && (
                             <div>
                                 <label style={LABEL}>Algorithm *</label>
@@ -533,7 +530,7 @@ export default function AdminQuizFormPage() {
                                     onChange={e => setField("algorithmId", e.target.value)}
                                     style={{ ...INPUT, cursor: "pointer" }}
                                 >
-                                    <option value="">Select an algorithm…</option>
+                                    <option value="">Select an algorithm...</option>
                                     {algorithms.map(a => (
                                         <option key={a.algorithmId} value={a.algorithmId}>
                                             {a.name}
@@ -565,7 +562,7 @@ export default function AdminQuizFormPage() {
                                 onChange={e => setField("description", e.target.value)}
                                 rows={3}
                                 maxLength={2000}
-                                placeholder="Briefly describe what this quiz covers…"
+                                placeholder="Briefly describe what this quiz covers..."
                                 style={{ ...INPUT, resize: "vertical", minHeight: 72 }}
                             />
                         </div>
@@ -595,15 +592,15 @@ export default function AdminQuizFormPage() {
                             </div>
                         </div>
 
-                        {/* Is Active toggle — edit only */}
+                        {/* Is Active toggle - edit only */}
                         {isEdit && (
                             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                 <button
                                     onClick={() => setField("isActive", !qf.isActive)}
                                     style={{
                                         width: 40, height: 22, borderRadius: 11, padding: 0,
-                                        background: qf.isActive ? "rgba(200,255,62,0.2)" : "#1e1f20",
-                                        border: `1px solid ${qf.isActive ? "rgba(200,255,62,0.4)" : "#2e2f30"}`,
+                                        background: qf.isActive ? "rgba(var(--primary-rgb),0.2)" : "#1e1f20",
+                                        border: `1px solid ${qf.isActive ? "rgba(var(--primary-rgb),0.4)" : "var(--db-border2)"}`,
                                         cursor: "pointer", position: "relative",
                                         transition: "background 0.2s, border-color 0.2s",
                                     }}
@@ -612,11 +609,11 @@ export default function AdminQuizFormPage() {
                                         position: "absolute",
                                         top: 3, left: qf.isActive ? 20 : 3,
                                         width: 14, height: 14, borderRadius: "50%",
-                                        background: qf.isActive ? "#c8ff3e" : "#4a4b4e",
+                                        background: qf.isActive ? "var(--primary)" : "var(--text-tertiary)",
                                         transition: "left 0.2s, background 0.2s",
                                     }} />
                                 </button>
-                                <span style={{ fontSize: 13, color: qf.isActive ? "#c8ff3e" : "#8a8b8e" }}>
+                                <span style={{ fontSize: 13, color: qf.isActive ? "var(--primary)" : "var(--text-secondary)" }}>
                                     {qf.isActive ? "Active" : "Inactive"}
                                 </span>
                             </div>
@@ -637,14 +634,14 @@ export default function AdminQuizFormPage() {
                             <SaveBtn
                                 onClick={handleSaveQuiz}
                                 saving={qfSaving}
-                                label={isEdit ? "Save Changes" : "Create Quiz & Add Questions →"}
-                                savingLabel="Saving…"
+                                label={isEdit ? "Save Changes" : "Create Quiz & Add Questions ->"}
+                                savingLabel="Saving..."
                             />
                         </div>
                     </SectionCard>
                 </motion.div>
 
-                {/* ── Questions section (edit mode only) ───────────────── */}
+                {/* -- Questions section (edit mode only) ----------------- */}
                 {isEdit && (
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
@@ -657,19 +654,19 @@ export default function AdminQuizFormPage() {
                             display: "flex", alignItems: "center",
                             justifyContent: "space-between", marginBottom: 16,
                         }}>
-                            <h2 style={{ fontSize: 15, fontWeight: 600, color: "#e4e5e6", margin: 0 }}>
+                            <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
                                 Questions{" "}
-                                <span style={{ color: "#4a4b4e", fontWeight: 400, fontSize: 13 }}>
+                                <span style={{ color: "var(--text-tertiary)", fontWeight: 400, fontSize: 13 }}>
                                     ({questions.length})
                                 </span>
                             </h2>
                             {!showQForm && (
                                 <button onClick={openAddQuestion} style={{
                                     display: "inline-flex", alignItems: "center", gap: 6,
-                                    background: "rgba(200,255,62,0.1)",
-                                    border: "1px solid rgba(200,255,62,0.25)",
+                                    background: "rgba(var(--primary-rgb),0.1)",
+                                    border: "1px solid rgba(var(--primary-rgb),0.25)",
                                     borderRadius: 8, padding: "7px 14px",
-                                    color: "#c8ff3e", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                    color: "var(--primary)", fontSize: 13, fontWeight: 600, cursor: "pointer",
                                 }}>
                                     <Plus size={14} />
                                     Add Question
@@ -702,7 +699,7 @@ export default function AdminQuizFormPage() {
                                 }}>
                                     {["Question", "Type", "Difficulty", "Ans", "Actions"].map(col => (
                                         <span key={col} style={{
-                                            fontSize: 11, fontWeight: 600, color: "#4a4b4e",
+                                            fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
                                             textTransform: "uppercase", letterSpacing: "1.2px",
                                             fontFamily: "'Poppins', sans-serif",
                                         }}>
@@ -731,7 +728,7 @@ export default function AdminQuizFormPage() {
                                         >
                                             {/* Question text (truncated) */}
                                             <span style={{
-                                                fontSize: 13, color: "#e4e5e6",
+                                                fontSize: 13, color: "var(--text-primary)",
                                                 overflow: "hidden", textOverflow: "ellipsis",
                                                 whiteSpace: "nowrap", paddingRight: 12,
                                             }}>
@@ -739,7 +736,7 @@ export default function AdminQuizFormPage() {
                                             </span>
 
                                             {/* Type */}
-                                            <span style={{ fontSize: 11, color: "#8a8b8e" }}>
+                                            <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
                                                 {q.questionType === "PREDICT_STEP" ? "Predict" : "MCQ"}
                                             </span>
 
@@ -755,7 +752,7 @@ export default function AdminQuizFormPage() {
 
                                             {/* Correct option */}
                                             <span style={{
-                                                fontSize: 12, fontWeight: 700, color: "#c8ff3e",
+                                                fontSize: 12, fontWeight: 700, color: "var(--primary)",
                                                 fontFamily: "'Poppins', sans-serif",
                                             }}>
                                                 {q.correctOption}
@@ -770,7 +767,7 @@ export default function AdminQuizFormPage() {
                                                         background: "transparent",
                                                         border: "1px solid #2e2f30",
                                                         borderRadius: 6, padding: "5px 8px",
-                                                        color: "#8a8b8e", cursor: "pointer",
+                                                        color: "var(--text-secondary)", cursor: "pointer",
                                                         display: "inline-flex", alignItems: "center",
                                                     }}
                                                 >
@@ -805,11 +802,11 @@ export default function AdminQuizFormPage() {
                         {/* Empty state */}
                         {questions.length === 0 && !showQForm && (
                             <div style={{
-                                background: "#131415", border: "1px dashed #2e2f30",
+                                background: "var(--surface)", border: "1px dashed #2e2f30",
                                 borderRadius: 16, padding: "36px 24px",
-                                textAlign: "center", color: "#4a4b4e", fontSize: 14,
+                                textAlign: "center", color: "var(--text-tertiary)", fontSize: 14,
                             }}>
-                                No questions yet — add the first one above.
+                                No questions yet - add the first one above.
                             </div>
                         )}
 
@@ -841,3 +838,4 @@ export default function AdminQuizFormPage() {
         </div>
     );
 }
+

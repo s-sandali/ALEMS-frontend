@@ -16,7 +16,7 @@ const chartTheme = {
     accent: "var(--accent)",
     textPrimary: "var(--text-primary)",
     textSecondary: "var(--text-secondary)",
-    border: "rgba(255,255,255,0.1)",
+    border: "var(--db-border2)",
     surface: "var(--surface)",
     average: "#f59e0b",
     worst: "#f87171",
@@ -29,7 +29,7 @@ function normalizeComplexityLabel(label) {
         .trim()
         .toLowerCase()
         .replace(/\s+/g, "")
-        .replace("Â²", "^2");
+        .replace("^2", "^2");
 }
 
 function ChartTooltip({ active, payload, label, labelFormatter, colors }) {
@@ -122,12 +122,12 @@ function ComplexityChartCard({
     const canRenderChart = chartSize.width > 0 && chartSize.height > 0;
 
     return (
-        <article className="min-w-0 rounded-[2rem] border border-white/[0.06] bg-surface p-6 sm:p-7">
+        <article className="min-w-0 rounded-[2rem] border p-6 sm:p-7" style={{ borderColor: "var(--db-border)", background: "var(--surface)" }}>
             <div className="mb-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-text-secondary">
                     {eyebrow}
                 </p>
-                <h3 className="mt-3 text-2xl font-bold tracking-tight text-white">
+                <h3 className="mt-3 text-2xl font-bold tracking-tight text-text-primary">
                     {title}
                 </h3>
                 <p className="mt-3 text-sm leading-7 text-text-secondary">
@@ -317,12 +317,12 @@ export default function AlgorithmComplexityCharts({ algorithm }) {
     );
 
     return (
-        <section className="rounded-[2rem] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01))] p-6 sm:p-8 lg:p-10">
+        <section className="rounded-[2rem] border p-6 sm:p-8 lg:p-10" style={{ borderColor: "var(--db-border)", background: "var(--db-bg2)" }}>
             <div className="max-w-4xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
                     {analysisCopy.eyebrow}
                 </p>
-                <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                <h2 className="mt-4 text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
                     {analysisCopy.title}
                 </h2>
                 <p className="mt-5 text-base leading-8 text-text-secondary">

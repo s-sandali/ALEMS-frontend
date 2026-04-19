@@ -18,12 +18,12 @@ export default function StatsCard({ title, value, icon, subtitle, className }) {
 
             <div className="relative flex items-start justify-between">
                 <div>
-                    <p className="text-sm font-medium text-text-secondary mb-1">
+                    <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-xl">
                         {title}
-                    </p>
-                    <p className="text-3xl font-bold text-white tracking-tight">
+                    </h1>
+                    <h1 className="text-3xl font-bold text-white tracking-tight">
                         {value}
-                    </p>
+                    </h1>
                     {subtitle && (
                         <p className="text-xs text-text-secondary mt-1">
                             {subtitle}

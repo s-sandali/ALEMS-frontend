@@ -1,33 +1,36 @@
 import { motion } from 'motion/react'
-import { Zap, BookOpen, Flame } from 'lucide-react'
+import { Zap, BookOpen, TrendingUp } from 'lucide-react'
 
 const cards = [
   {
     label: 'Total XP',
-    getValue: u => u.xp,
+    testId: 'dashboard-stat-total-xp',
+    getValue: u => u.xpTotal ?? 0,
     sub: 'Experience points earned',
-    iconColor: '#c8ff3e',
-    iconBg: 'rgba(200,255,62,0.1)',
-    valueColor: '#c8ff3e',
+    iconColor: 'var(--primary)',
+    iconBg: 'rgba(var(--primary-rgb),0.1)',
+    valueColor: 'var(--primary)',
     Icon: Zap,
   },
   {
-    label: 'Modules Completed',
-    getValue: u => u.modulesCompleted,
-    getSub: u => `${u.modulesCompleted} of ${u.totalModules} modules`,
+    label: 'Quizzes Passed',
+    testId: 'dashboard-stat-quizzes-passed',
+    getValue: u => u.totalPassed ?? 0,
+    sub: 'Quizzes passed',
     iconColor: '#4da6ff',
     iconBg: 'rgba(77,166,255,0.1)',
     valueColor: '#4da6ff',
     Icon: BookOpen,
   },
   {
-    label: 'Current Streak',
-    getValue: u => u.streakDays,
-    sub: 'days — keep it going!',
+    label: 'Pass Rate',
+    testId: 'dashboard-stat-pass-rate',
+    getValue: u => u.passRate != null ? `${u.passRate}%` : '-',
+    sub: 'Overall pass rate',
     iconColor: '#ffb830',
     iconBg: 'rgba(255,184,48,0.1)',
     valueColor: '#ffb830',
-    Icon: Flame,
+    Icon: TrendingUp,
   },
 ]
 
@@ -44,11 +47,12 @@ export default function StatCards({ user }) {
       {cards.map((card, i) => (
         <motion.div
           key={card.label}
+          data-testid={card.testId}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.08 }}
           style={{
-            background: '#131415',
+            background: 'var(--surface)',
             border: '1px solid #252627',
             borderRadius: 12,
             padding: '18px 20px',
@@ -58,20 +62,21 @@ export default function StatCards({ user }) {
           }}
         >
           <div>
-            <p style={{ fontSize: 12, color: '#8a8b8e', marginBottom: 6 }}>{card.label}</p>
+            <h1 className="text-4xl mb-4 font-bold tracking-tight text-text-primary sm:text-xl">{card.label}</h1>
             <p
+              data-testid={`${card.testId}-value`}
               style={{
                 fontSize: 26,
                 fontWeight: 700,
                 color: card.valueColor,
                 fontFamily: "'Poppins', sans-serif",
                 lineHeight: 1,
-                marginBottom: 4,
+                marginBottom: 6,
               }}
             >
               {card.getValue(user)}
             </p>
-            <p style={{ fontSize: 11, color: '#4a4b4e' }}>
+            <p className="mt-4 text-base leading-7 text-text-secondary">
               {card.getSub ? card.getSub(user) : card.sub}
             </p>
           </div>
@@ -94,3 +99,4 @@ export default function StatCards({ user }) {
     </div>
   )
 }
+

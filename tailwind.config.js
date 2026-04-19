@@ -5,12 +5,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        accent: "#D5FF40",
-        bg: "#0C0C0C",
-        surface: "#151515",
-        muted: "#C0C2B8",
-        "text-primary": "#FFFFFF",
-        "text-secondary": "#A1A1A1",
+        accent: "rgb(var(--accent-rgb) / <alpha-value>)",
+        bg: "rgb(var(--bg-rgb) / <alpha-value>)",
+        surface: "rgb(var(--surface-rgb) / <alpha-value>)",
+        muted: "rgb(var(--muted-rgb) / <alpha-value>)",
+        "text-primary": "rgb(var(--text-primary-rgb) / <alpha-value>)",
+        "text-secondary": "rgb(var(--text-secondary-rgb) / <alpha-value>)",
       },
       fontFamily: {
         poppins: ["Poppins", "sans-serif"],
