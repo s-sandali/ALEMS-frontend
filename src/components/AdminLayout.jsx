@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { LayoutDashboard, BarChart3, Users, BookOpen, Code2, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Users, BookOpen, Code2, ChevronRight, ShieldCheck } from 'lucide-react';
 import DashboardNav from '@/components/dashboard/DashboardNav';
 
 const adminMenuItems = [
@@ -60,16 +60,15 @@ export default function AdminLayout({ children }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontWeight: 'bold',
-                color: 'var(--bg)',
-                fontSize: 18,
               }}
             >
-              ⚙️
+              <ShieldCheck size={18} color="var(--bg)" />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Admin</div>
-              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>Panel</div>
+               <h1 className="text-l font-bold tracking-tight text-text-primary sm:text-l">
+                            Admin <span style={{ color: "var(--primary)" }}>Panel</span>
+                        </h1>
+
             </div>
           </div>
         </div>
