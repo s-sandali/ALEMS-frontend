@@ -12,7 +12,7 @@ function QuizCard({ quiz, onStart }) {
             type="button"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="group algo-card relative overflow-hidden rounded-3xl border p-6 text-left"
+            className="group algo-card relative w-full min-w-0 overflow-hidden rounded-3xl border p-6 text-left"
             style={{
                 background: "var(--surface)",
                 border: "1px solid var(--db-border)",
@@ -20,12 +20,16 @@ function QuizCard({ quiz, onStart }) {
                 flexDirection: "column",
                 gap: 18,
                 cursor: "pointer",
+                width: "100%",
+                maxWidth: "100%",
+                minWidth: 0,
+                boxSizing: "border-box",
             }}
             onClick={() => onStart(quiz.quizId)}
         >
             <div className="absolute inset-0 bg-accent/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-            <div className="relative flex h-full flex-col gap-4">
+            <div className="relative flex h-full min-w-0 flex-col gap-4">
             {/* Header */}
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                 <div
@@ -58,13 +62,16 @@ function QuizCard({ quiz, onStart }) {
             {/* Title + description */}
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <h3
-                        className="text-2xl font-bold tracking-tight transition-colors duration-300 group-hover:text-accent"
-                        style={{ color: "var(--db-text)" }}
+                        className="break-words text-2xl font-bold tracking-tight transition-colors duration-300 group-hover:text-accent"
+                        style={{ color: "var(--db-text)", overflowWrap: "anywhere", wordBreak: "break-word" }}
                     >
                     {quiz.title}
                 </h3>
                 {quiz.description && (
-                     <p className="text-sm leading-6 text-text-secondary">
+                     <p
+                        className="break-words text-sm leading-6 text-text-secondary"
+                        style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+                    >
                         {quiz.description}
                     </p>
                 )}
@@ -138,11 +145,11 @@ export default function QuizzesPage() {
     }, [getToken]);
 
     return (
-        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)", overflowX: "clip" }}>
             <DashboardNav />
 
             {/* Main */}
-            <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 60px" }}>
+            <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 60px", width: "100%" }}>
                 {/* Page title */}
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
@@ -184,9 +191,11 @@ export default function QuizzesPage() {
                 ) : (
                     <div style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
                         gap: 18,
                         alignItems: "start",
+                        width: "100%",
+                        maxWidth: "100%",
                     }}>
                         {quizzes.map((quiz, i) => (
                             <motion.div
@@ -194,6 +203,7 @@ export default function QuizzesPage() {
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.06 }}
+                                style={{ minWidth: 0 }}
                             >
                                 <QuizCard quiz={quiz} onStart={(id) => navigate(`/quiz/${id}`)} />
                             </motion.div>
