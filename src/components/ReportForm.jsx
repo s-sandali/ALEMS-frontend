@@ -19,6 +19,8 @@ function parseFileName(contentDisposition, fallback) {
   return fallback;
 }
 
+const CLERK_JWT_TEMPLATE = import.meta.env.VITE_CLERK_JWT_TEMPLATE;
+
 export default function ReportForm() {
   const { getToken } = useAuth();
   const [startDate, setStartDate] = useState("");
@@ -45,7 +47,7 @@ export default function ReportForm() {
     setLoading(true);
 
     try {
-      const token = await getToken();
+      const token = await getToken(CLERK_JWT_TEMPLATE ? { template: CLERK_JWT_TEMPLATE } : undefined);
       if (!token) {
         globalThis.alert("Your session has expired. Please sign in again.");
         return;
@@ -58,7 +60,7 @@ export default function ReportForm() {
         token,
       });
 
-      const blob = new Blob([res.data]);
+      const blob = new Blob([res.data], { type: res.headers["content-type"] });
       const url = globalThis.URL.createObjectURL(blob);
 
       const suggestedName = parseFileName(

@@ -1,9 +1,9 @@
 import axios from "axios";
 
-const API_URL = "/api/admin/reports";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5181/api";
 
 export const downloadReport = async ({ startDate, endDate, format, token }) => {
-  const response = await axios.get(API_URL, {
+  const response = await axios.get(`${BASE_URL}/admin/reports`, {
     params: {
       startDate,
       endDate,
