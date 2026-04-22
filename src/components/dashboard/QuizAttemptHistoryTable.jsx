@@ -22,15 +22,15 @@ const TH_STYLE = {
   textTransform: 'uppercase',
   color: 'var(--text-tertiary)',
   textAlign: 'left',
-  borderBottom: '1px solid #252627',
+  borderBottom: '1px solid var(--db-border)',
   whiteSpace: 'nowrap',
 }
 
 const TD_STYLE = {
   padding: '12px 14px',
   fontSize: 13,
-  color: '#c2c3c5',
-  borderBottom: '1px solid #1a1b1c',
+  color: 'var(--text-secondary)',
+  borderBottom: '1px solid var(--db-border)',
   verticalAlign: 'middle',
 }
 
@@ -51,7 +51,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
 
       <div style={{
         background: 'var(--surface)',
-        border: '1px solid #252627',
+        border: '1px solid var(--db-border)',
         borderRadius: 12,
         overflow: 'hidden',
       }}>
@@ -68,7 +68,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
           <div style={{ overflowX: 'auto' }}>
             <table data-testid="dashboard-attempt-history-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#0f1011' }}>
+                <tr style={{ background: 'var(--surface-2)' }}>
                   <th style={TH_STYLE}>Quiz</th>
                   <th style={TH_STYLE}>Algorithm</th>
                   <th style={{ ...TH_STYLE, textAlign: 'center' }}>Score</th>
@@ -101,7 +101,7 @@ export default function QuizAttemptHistoryTable({ attempts }) {
                       <span style={{
                         fontSize: 11,
                         background: 'var(--surface-2)',
-                        border: '1px solid #2e2f30',
+                        border: '1px solid var(--db-border)',
                         borderRadius: 20,
                         padding: '2px 10px',
                         color: 'var(--text-secondary)',
