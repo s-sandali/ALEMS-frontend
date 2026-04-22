@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { motion } from "motion/react";
 import { BarChart3, Users, TrendingUp, AlertCircle, ArrowLeft, LoaderCircle } from "lucide-react";
-import DashboardNav from "@/components/dashboard/DashboardNav";
 import { QuizService, AlgorithmService } from "../lib/api";
 import { useRole } from "../context/RoleContext";
 
@@ -29,7 +28,7 @@ export default function QuizStatsPage() {
                 setLoading(true);
                 setError("");
 
-                const id = parseInt(quizId, 10);
+                const id = Number.parseInt(quizId, 10);
                 if (isNaN(id)) {
                     setError("Invalid quiz ID");
                     setLoading(false);
@@ -91,10 +90,8 @@ export default function QuizStatsPage() {
     }
 
     return (
-        <div style={{ minHeight: "100vh", background: "#0d0e0f" }}>
-            <DashboardNav />
-
-            <main style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 24px 60px" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+            <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 60px" }}>
                 {/* Back Button */}
                 <motion.button
                     initial={{ opacity: 0, y: -10 }}
@@ -108,7 +105,7 @@ export default function QuizStatsPage() {
                         display: "flex",
                         alignItems: "center",
                         gap: 8,
-                        color: "#c8ff3e",
+                        color: "var(--primary)",
                         cursor: "pointer",
                         fontSize: 13,
                         fontWeight: 600,
@@ -124,11 +121,11 @@ export default function QuizStatsPage() {
                         alignItems: "center",
                         justifyContent: "center",
                         gap: 10,
-                        color: "#8a8b8e",
+                        color: "var(--text-secondary)",
                         fontSize: 14,
                         minHeight: 300,
                     }}>
-                        <LoaderCircle size={16} color="#c8ff3e" style={{ animation: "spin 1s linear infinite" }} />
+                        <LoaderCircle size={16} color="var(--primary)" style={{ animation: "spin 1s linear infinite" }} />
                         Loading quiz statistics...
                     </div>
                 ) : error ? (
@@ -155,11 +152,11 @@ export default function QuizStatsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         style={{
-                            background: "#131415",
-                            border: "1px solid #252627",
+                            background: "var(--surface)",
+                            border: "1px solid var(--db-border)",
                             borderRadius: 12,
                             padding: "20px",
-                            color: "#8a8b8e",
+                            color: "var(--text-secondary)",
                             fontSize: 14,
                         }}
                     >
@@ -175,30 +172,15 @@ export default function QuizStatsPage() {
                                 marginBottom: 32,
                             }}
                         >
-                            <p style={{
-                                fontSize: 11,
-                                color: "#4a4b4e",
-                                letterSpacing: "1.5px",
-                                textTransform: "uppercase",
-                                fontFamily: "'Poppins', sans-serif",
-                                marginBottom: 8,
-                            }}>
+                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent" style={{ marginBottom: 8 }}>
                                 Quiz Statistics
                             </p>
-                            <h1 style={{
-                                fontSize: 28,
-                                fontWeight: 700,
-                                color: "#e4e5e6",
-                                fontFamily: "'Poppins', sans-serif",
-                                letterSpacing: "-0.5px",
-                                lineHeight: 1.1,
-                                marginBottom: 8,
-                            }}>
+                            <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl" style={{ marginBottom: 8 }}>
                                 {quiz.title}
                             </h1>
                             {algorithm && (
-                                <p style={{ fontSize: 14, color: "#8a8b8e" }}>
-                                    Algorithm: <span style={{ color: "#c8ff3e" }}>{algorithm.name}</span>
+                                <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
+                                    Algorithm: <span style={{ color: "var(--primary)" }}>{algorithm.name}</span>
                                 </p>
                             )}
                         </motion.div>
@@ -248,7 +230,7 @@ export default function QuizStatsPage() {
                                         </div>
                                         <span style={{
                                             fontSize: 12,
-                                            color: "#8a8b8e",
+                                            color: "var(--text-secondary)",
                                             textTransform: "uppercase",
                                             letterSpacing: 0.5,
                                             fontWeight: 600,
@@ -260,13 +242,12 @@ export default function QuizStatsPage() {
                                         fontSize: 32,
                                         fontWeight: 700,
                                         color: "#c8ff3e",
-                                        fontFamily: "'Poppins', sans-serif",
                                     }}>
                                         {stats.attemptCount}
                                     </div>
                                     <p style={{
                                         fontSize: 12,
-                                        color: "#8a8b8e",
+                                        color: "var(--text-secondary)",
                                     }}>
                                         Unique student attempts at this quiz
                                     </p>
@@ -305,7 +286,7 @@ export default function QuizStatsPage() {
                                         </div>
                                         <span style={{
                                             fontSize: 12,
-                                            color: "#8a8b8e",
+                                            color: "var(--text-secondary)",
                                             textTransform: "uppercase",
                                             letterSpacing: 0.5,
                                             fontWeight: 600,
@@ -317,13 +298,12 @@ export default function QuizStatsPage() {
                                         fontSize: 32,
                                         fontWeight: 700,
                                         color: "#3b82f6",
-                                        fontFamily: "'Poppins', sans-serif",
                                     }}>
                                         {stats.averageScore.toFixed(1)}%
                                     </div>
                                     <p style={{
                                         fontSize: 12,
-                                        color: "#8a8b8e",
+                                        color: "var(--text-secondary)",
                                     }}>
                                         Mean score across all attempts
                                     </p>
@@ -362,7 +342,7 @@ export default function QuizStatsPage() {
                                         </div>
                                         <span style={{
                                             fontSize: 12,
-                                            color: "#8a8b8e",
+                                            color: "var(--text-secondary)",
                                             textTransform: "uppercase",
                                             letterSpacing: 0.5,
                                             fontWeight: 600,
@@ -374,13 +354,12 @@ export default function QuizStatsPage() {
                                         fontSize: 32,
                                         fontWeight: 700,
                                         color: "#22c55e",
-                                        fontFamily: "'Poppins', sans-serif",
                                     }}>
                                         {stats.passRate.toFixed(1)}%
                                     </div>
                                     <p style={{
                                         fontSize: 12,
-                                        color: "#8a8b8e",
+                                        color: "var(--text-secondary)",
                                     }}>
                                         Percentage of students who passed
                                     </p>
@@ -394,8 +373,8 @@ export default function QuizStatsPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.25 }}
                             style={{
-                                background: "#131415",
-                                border: "1px solid #252627",
+                                background: "var(--surface)",
+                                border: "1px solid var(--db-border)",
                                 borderRadius: 12,
                                 padding: 24,
                             }}
@@ -403,7 +382,7 @@ export default function QuizStatsPage() {
                             <h3 style={{
                                 fontSize: 14,
                                 fontWeight: 600,
-                                color: "#e4e5e6",
+                                color: "var(--text-primary)",
                                 marginBottom: 16,
                             }}>
                                 Quiz Information
@@ -416,7 +395,7 @@ export default function QuizStatsPage() {
                                 <div>
                                     <p style={{
                                         fontSize: 11,
-                                        color: "#8a8b8e",
+                                        color: "var(--text-secondary)",
                                         textTransform: "uppercase",
                                         letterSpacing: 0.5,
                                         marginBottom: 4,
@@ -425,7 +404,7 @@ export default function QuizStatsPage() {
                                     </p>
                                     <p style={{
                                         fontSize: 13,
-                                        color: quiz.isActive ? "#c8ff3e" : "#8a8b8e",
+                                        color: quiz.isActive ? "var(--primary)" : "var(--text-secondary)",
                                         fontWeight: 600,
                                     }}>
                                         {quiz.isActive ? "Active" : "Inactive"}
@@ -434,7 +413,7 @@ export default function QuizStatsPage() {
                                 <div>
                                     <p style={{
                                         fontSize: 11,
-                                        color: "#8a8b8e",
+                                        color: "var(--text-secondary)",
                                         textTransform: "uppercase",
                                         letterSpacing: 0.5,
                                         marginBottom: 4,
@@ -443,7 +422,7 @@ export default function QuizStatsPage() {
                                     </p>
                                     <p style={{
                                         fontSize: 13,
-                                        color: "#e4e5e6",
+                                        color: "var(--text-primary)",
                                         fontWeight: 600,
                                     }}>
                                         {quiz.passScore}%
@@ -452,7 +431,7 @@ export default function QuizStatsPage() {
                                 <div>
                                     <p style={{
                                         fontSize: 11,
-                                        color: "#8a8b8e",
+                                        color: "var(--text-secondary)",
                                         textTransform: "uppercase",
                                         letterSpacing: 0.5,
                                         marginBottom: 4,
@@ -461,7 +440,7 @@ export default function QuizStatsPage() {
                                     </p>
                                     <p style={{
                                         fontSize: 13,
-                                        color: "#e4e5e6",
+                                        color: "var(--text-primary)",
                                         fontWeight: 600,
                                     }}>
                                         {quiz.timeLimitMins ? `${quiz.timeLimitMins} minutes` : "No limit"}
@@ -470,7 +449,7 @@ export default function QuizStatsPage() {
                                 <div>
                                     <p style={{
                                         fontSize: 11,
-                                        color: "#8a8b8e",
+                                        color: "var(--text-secondary)",
                                         textTransform: "uppercase",
                                         letterSpacing: 0.5,
                                         marginBottom: 4,
@@ -479,7 +458,7 @@ export default function QuizStatsPage() {
                                     </p>
                                     <p style={{
                                         fontSize: 13,
-                                        color: "#e4e5e6",
+                                        color: "var(--text-primary)",
                                         fontWeight: 600,
                                     }}>
                                         {new Date(quiz.createdAt).toLocaleDateString()}

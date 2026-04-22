@@ -367,10 +367,9 @@ export default function AdminStudentProfilePage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 32,
             }}
           >
-            👤
+            <Users size={30} color="var(--text-secondary)" />
           </div>
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>

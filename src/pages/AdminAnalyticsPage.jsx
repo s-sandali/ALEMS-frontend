@@ -308,10 +308,10 @@ export default function AdminAnalyticsPage() {
         animate={{ opacity: 1, y: 0 }}
         style={{ marginBottom: 32 }}
       >
-        <h1 style={{ fontSize: 32, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
-          Platform Analytics
+        <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
+                            Platform <span style={{ color: "var(--primary)" }}>Analytics</span>
         </h1>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
+        <p className="mt-4 text-base leading-7 text-text-secondary">
           Real-time insights into platform usage, performance, and user engagement
         </p>
       </motion.div>

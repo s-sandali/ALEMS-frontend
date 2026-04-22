@@ -38,6 +38,9 @@ export default function BadgesGrid({ badges }) {
           border: '1px solid #252627',
           borderRadius: 12,
           padding: 20,
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
         }}
       >
         {/* Header */}
@@ -73,8 +76,10 @@ export default function BadgesGrid({ badges }) {
           data-testid="dashboard-badge-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
             gap: 10,
+            width: '100%',
+            maxWidth: '100%',
           }}
           className="grid-cols-4 md:grid-cols-6"
         >
@@ -103,6 +108,8 @@ export default function BadgesGrid({ badges }) {
                     borderRadius: 10,
                     padding: '14px 10px',
                     textAlign: 'center',
+                    minWidth: 0,
+                    maxWidth: '100%',
                     opacity: 1,
                     filter: isEarned ? 'none' : 'grayscale(1)',
                     cursor: 'default',
@@ -136,7 +143,10 @@ export default function BadgesGrid({ badges }) {
                     <Icon size={18} color={isEarned ? badge.iconColor : '#5c5f66'} />
                   </div>
                   {/* Name */}
-                  <h1 className="text-xl font-bold tracking-tight text-text-primary sm:text-lg">
+                  <h1
+                    className="break-words text-lg font-bold tracking-tight text-text-primary sm:text-base"
+                    style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                  >
                     {badge.name}
                   </h1>
                   {/* Status */}
